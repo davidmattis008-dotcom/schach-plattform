@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { MiniChessboard } from "@/components/mini-chessboard";
+import { tacticsPreviewFen } from "@/lib/tactics";
 import { getTacticsProgress, INITIAL_TACTICS_PROGRESS, subscribeToTacticsProgress } from "@/lib/tactics-progress";
 import { createClient } from "@/lib/supabase/client";
 import { InstallAppLink } from "@/components/install-app-link";
@@ -80,6 +82,12 @@ export default function Home() {
             <span aria-hidden="true">↓</span>App installieren
           </InstallAppLink>
         </header>
+
+        <section aria-label="Taktikvorschau" className="mx-auto mb-10 w-full max-w-md">
+          <Link href="/taktik" aria-label="Taktikaufgabe öffnen" className="block transition hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
+            <MiniChessboard fen={tacticsPreviewFen} label="Vorschau einer Taktikaufgabe" />
+          </Link>
+        </section>
 
         <section aria-labelledby="progress-heading" className="mb-10">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
