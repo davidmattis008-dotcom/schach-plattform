@@ -74,7 +74,7 @@ export default function GameHistoryPage() {
           setSyncMessage("Partien werden mit deinem Konto synchronisiert.");
         } catch (error) {
           console.error("Gespeicherte Online-Partien konnten nicht geladen werden:", error);
-          if (active) setSyncMessage("Kontoverlauf konnte nicht geladen werden. Lokale Partien bleiben verfügbar.");
+          if (active) setSyncMessage("Kontoverlauf konnte nicht geladen werden. Die Synchronisierung ist derzeit nicht verfügbar.");
         }
       })();
     };

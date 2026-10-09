@@ -14,7 +14,6 @@ const sections: { title: string; items: MenuItem[] }[] = [
     items: [
       { label: "Online spielen", mark: "◎", href: "/online" },
       { label: "Gegen Bot", mark: "♟", href: "/bot" },
-      { label: "Freie Partie", mark: "＋", href: "/play" },
       { label: "Turniere", mark: "♜", href: "/tournaments" },
     ],
   },

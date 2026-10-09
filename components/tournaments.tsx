@@ -281,7 +281,6 @@ export function Tournaments() {
           </> : <p className="rounded-xl border border-slate-800 bg-slate-900 p-5 text-sm text-slate-400">Wähle ein Turnier aus, dem du beigetreten bist, um Tabelle und Paarungen zu sehen.</p>}
         </section>
       </div>
-      <p className="text-xs leading-5 text-slate-500">Turniere verwenden Rundenturnier-Paarungen. Nach übereinstimmender Ergebnisbestätigung wird die Elo beider Spieler genau einmal im zugehörigen Zeitmodus (Bullet, Blitz, Rapid oder Klassisch) aktualisiert. Das Ergebnis wird nicht automatisch vom Partie-Server verifiziert.</p>
     </div>
   );
 }

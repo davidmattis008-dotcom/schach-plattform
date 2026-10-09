@@ -36,78 +36,127 @@ export default function BotPage() {
   const clock = clockOptions.find((option) => option.id === selectedClock) ?? clockOptions[4];
 
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-12 text-white">
-      <div className="mx-auto max-w-4xl">
+    <main className="min-h-screen bg-black px-4 py-5 text-white sm:px-8 sm:py-8">
+      <div className="mx-auto max-w-5xl">
         <Link href="/" className="text-sm text-slate-300 underline underline-offset-4 hover:text-white">
           ← Zur Startseite
         </Link>
-        <header className="mt-8">
-          <div className="text-5xl" aria-hidden="true">🤖</div>
-          <h1 className="mt-4 text-4xl font-bold">Gegen einen Bot spielen</h1>
-          <p className="mt-3 max-w-2xl text-slate-300">
+        <header className="mt-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-300">Spielen · Bot</p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Gegen einen Bot spielen</h1>
+          <p className="mt-2 max-w-2xl text-sm text-slate-400">
             Wähle die Spielstärke deines Gegners. Die Bots laufen kostenlos direkt in deinem Browser.
           </p>
         </header>
-        <section aria-label="Bot auswählen" className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {bots.map((bot) => {
-            const isSelected = selectedElo === bot.elo;
-            return (
-              <button key={bot.elo} type="button" aria-pressed={isSelected} onClick={() => setSelectedElo(bot.elo)}
-                className={isSelected
-                  ? 'rounded-2xl border border-emerald-400 bg-emerald-950/60 p-5 text-left ring-2 ring-emerald-400/50 transition'
-                  : 'rounded-2xl border border-slate-700 bg-slate-900 p-5 text-left transition hover:border-slate-500 hover:bg-slate-800'}>
-                <div className="flex items-center justify-between">
-                  <span className="text-4xl" aria-hidden="true">{bot.icon}</span>
-                  <span className="rounded-full bg-slate-800 px-3 py-1 text-sm font-semibold text-emerald-300">{bot.elo} Elo</span>
-                </div>
-                <h2 className="mt-4 text-xl font-bold">{bot.name}</h2>
-                <p className="mt-2 min-h-12 text-sm text-slate-400">{bot.description}</p>
-                <span className="mt-4 inline-block text-sm font-semibold text-emerald-300">{isSelected ? 'Ausgewählt ✓' : 'Bot auswählen →'}</span>
-              </button>
-            );
-          })}
-        </section>
-        <section className="mt-8" aria-label="Farbe auswählen">
-          <h2 className="mb-3 text-xl font-semibold">Deine Farbe</h2>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {colorOptions.map((option) => (
-              <button key={option.id} type="button" aria-pressed={selectedColor === option.id} onClick={() => setSelectedColor(option.id)}
-                className={selectedColor === option.id
-                  ? 'rounded-xl border border-emerald-400 bg-emerald-950/60 px-4 py-3 text-left ring-2 ring-emerald-400/40'
-                  : 'rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-left hover:border-slate-500'}>
-                <span className="mr-2 inline-flex h-8 w-8 items-center justify-center align-middle" aria-hidden="true">{option.color ? <ChessPieceIcon color={option.color} type="k" /> : <span className="text-xl">🎲</span>}</span>
-                <span className="font-bold">{option.label}</span>
-                <span className="mt-1 block text-sm text-slate-400">{option.description}</span>
-              </button>
-            ))}
+        <div className="mt-5 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+          <section aria-label="Bot auswählen" className="rounded-2xl border border-neutral-800 bg-neutral-950 p-3 sm:p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-sm font-semibold text-white">1 · Spielstärke</h2>
+              <span className="text-xs text-slate-500">Bot wählen</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {bots.map((bot) => {
+                const isSelected = selectedElo === bot.elo;
+                return (
+                  <button
+                    key={bot.elo}
+                    type="button"
+                    aria-pressed={isSelected}
+                    title={bot.description}
+                    onClick={() => setSelectedElo(bot.elo)}
+                    className={`min-h-20 rounded-xl border px-3 py-2.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 ${
+                      isSelected
+                        ? 'border-amber-300 bg-amber-300/10 text-amber-100 shadow-[inset_0_0_0_1px_rgba(252,211,77,0.2)]'
+                        : 'border-neutral-800 bg-black text-neutral-200 hover:border-neutral-600 hover:bg-neutral-900'
+                    }`}
+                  >
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="text-xl text-white" aria-hidden="true">{bot.icon}</span>
+                      <span className="text-[11px] font-semibold text-amber-200">{isSelected ? "✓ " : ""}{bot.elo} Elo</span>
+                    </span>
+                    <span className="mt-1 block truncate text-xs font-semibold sm:text-sm">{bot.name}</span>
+                    <span className="mt-0.5 block truncate text-[10px] text-neutral-500">{bot.description}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <div className="space-y-4">
+            <section aria-label="Farbe auswählen" className="rounded-2xl border border-neutral-800 bg-neutral-950 p-3 sm:p-4">
+              <h2 className="mb-3 text-sm font-semibold text-white">2 · Deine Farbe</h2>
+              <div className="grid grid-cols-3 gap-2">
+                {colorOptions.map((option) => {
+                  const isSelected = selectedColor === option.id;
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      aria-pressed={isSelected}
+                      aria-label={`${option.label}: ${option.description}`}
+                      onClick={() => setSelectedColor(option.id)}
+                      className={`flex min-h-14 items-center justify-center gap-2 rounded-xl border px-2 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 ${
+                        isSelected
+                          ? 'border-amber-300 bg-amber-300/10 text-amber-100 shadow-[inset_0_0_0_1px_rgba(252,211,77,0.2)]'
+                          : 'border-neutral-800 bg-black text-neutral-300 hover:border-neutral-600 hover:bg-neutral-900'
+                      }`}
+                    >
+                      <span className="inline-flex h-6 w-6 items-center justify-center" aria-hidden="true">{option.color ? <ChessPieceIcon color={option.color} type="k" /> : <span className="text-lg">🎲</span>}</span>
+                      <span>{isSelected ? "✓ " : ""}{option.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section aria-label="Bedenkzeit auswählen" className="rounded-2xl border border-neutral-800 bg-neutral-950 p-3 sm:p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h2 className="text-sm font-semibold text-white">3 · Bedenkzeit</h2>
+                <span className="text-[11px] text-neutral-500">inkl. Zuschlag</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {clockOptions.map((option) => {
+                  const isSelected = selectedClock === option.id;
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      aria-pressed={isSelected}
+                      onClick={() => setSelectedClock(option.id)}
+                      className={`min-h-14 rounded-xl border px-2 py-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 ${
+                        isSelected
+                          ? 'border-amber-300 bg-amber-300/10 text-amber-100 shadow-[inset_0_0_0_1px_rgba(252,211,77,0.2)]'
+                          : 'border-neutral-800 bg-black text-neutral-200 hover:border-neutral-600 hover:bg-neutral-900'
+                      }`}
+                    >
+                      <span className="block text-sm font-bold tabular-nums">{option.label}{isSelected ? " ✓" : ""}</span>
+                      <span className="mt-0.5 block truncate text-[10px] text-neutral-500">{option.category}{option.increment > 0 ? ` · +${option.increment}s` : ''}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
           </div>
-        </section>
-        <section className="mt-8" aria-label="Bedenkzeit auswählen">
-          <h2 className="mb-3 text-xl font-semibold">Bedenkzeit</h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {clockOptions.map((option) => (
-              <button key={option.id} type="button" aria-pressed={selectedClock === option.id} onClick={() => setSelectedClock(option.id)}
-                className={selectedClock === option.id
-                  ? 'rounded-xl border border-emerald-400 bg-emerald-950/60 px-4 py-3 text-left ring-2 ring-emerald-400/40'
-                  : 'rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-left hover:border-slate-500'}>
-                <span className="font-bold">{option.label}</span>
-                <span className="ml-2 text-sm text-slate-400">{option.category}{option.increment > 0 ? ' · +' + option.increment + ' Sek. pro Zug' : ''}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-        <p className="mt-5 rounded-xl border border-slate-800 bg-slate-900/70 p-4 text-sm text-slate-400">
-          Die Elo-Angaben sind ungefähre Schwierigkeitsstufen und keine garantierte Wertung. Besonders 500 und 1000 werden durch eine verkürzte Suche angenähert.
-        </p>
-        <p className="mt-5 text-sm text-slate-400">Für Offline-Partien die installierte App einmal mit Internet öffnen, damit Seiten und Bot-Engine gespeichert werden.</p>
-        <div className="mt-6 flex flex-wrap items-center gap-4">
-          {selectedElo !== null ? (
-            <a href={'/play?mode=bot&elo=' + selectedElo + '&time=' + clock.minutes + '&increment=' + clock.increment + '&color=' + selectedColor} className="rounded-xl bg-emerald-400 px-6 py-3 font-bold text-slate-950 transition hover:bg-emerald-300">
-              Spiel gegen {selectedElo}-Elo-Bot starten
-            </a>
-          ) : <p aria-live="polite" className="text-sm text-slate-300">Wähle zuerst eine Spielstärke aus.</p>}
-          <Link href="/play" className="text-sm text-slate-400 underline underline-offset-4 hover:text-white">Ohne Bot spielen</Link>
         </div>
+
+        <div className="mt-4 rounded-2xl border border-neutral-800 bg-neutral-950 p-3 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:p-4">
+          {selectedElo !== null && (
+            <div className="mb-3 min-w-0 sm:mb-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-300">Deine Partie</p>
+              <p className="mt-1 truncate text-sm text-neutral-200">
+                {bots.find((bot) => bot.elo === selectedElo)?.name} · {selectedColor === 'random' ? 'Zufallsfarbe' : selectedColor === 'white' ? 'Weiß' : 'Schwarz'} · {clock.label} {clock.category}
+              </p>
+            </div>
+          )}
+          <div className="flex flex-wrap items-center gap-3">
+            {selectedElo !== null ? (
+              <a href={'/play?mode=bot&elo=' + selectedElo + '&time=' + clock.minutes + '&increment=' + clock.increment + '&color=' + selectedColor} className="inline-flex min-h-11 items-center justify-center rounded-lg bg-amber-300 px-4 py-2.5 text-sm font-bold text-black transition hover:bg-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-100">
+                Spiel starten →
+              </a>
+            ) : null}
+          </div>
+        </div>
+
       </div>
     </main>
   );

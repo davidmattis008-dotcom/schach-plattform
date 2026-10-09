@@ -10,7 +10,6 @@ import { createClient } from "@/lib/supabase/client";
 const activities = [
   { title: "Online spielen", detail: "Finde einen Gegner", href: "/online", tag: "LIVE", mark: "↗" },
   { title: "Gegen den Bot", detail: "Spiele in deinem Tempo", href: "/bot", tag: "SOLO", mark: "♟" },
-  { title: "Freie Partie", detail: "Stelle deine Partie ein", href: "/play", tag: "LOKAL", mark: "＋" },
 ];
 
 const dashboardSections = [

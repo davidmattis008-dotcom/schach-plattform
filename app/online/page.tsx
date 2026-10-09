@@ -199,16 +199,16 @@ export default function OnlinePage() {
           <p className="mt-4 text-lg leading-7 text-slate-300">Wähle deine Bedenkzeit und wir suchen jemanden, der dieselbe Partie spielen möchte.</p>
         </header>
 
-        <section className="mt-8 rounded-3xl border border-slate-800 bg-slate-900/70 p-5 sm:p-8" aria-labelledby="clock-heading">
+        <section className="mt-6 rounded-2xl border border-neutral-800 bg-black p-3 sm:p-5" aria-labelledby="clock-heading">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 id="clock-heading" className="text-2xl font-bold">Bedenkzeit</h2>
-              <p className="mt-1 text-sm text-slate-400">Die zweite Zahl gibt die Sekunden pro Zug an.</p>
+              <h2 id="clock-heading" className="text-lg font-bold">Bedenkzeit</h2>
+              <p className="mt-1 text-xs text-neutral-400">Zahl nach dem Plus: Sekunden Zuschlag pro Zug.</p>
             </div>
-            <span className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1 text-sm text-slate-300">Ungewertete Partie</span>
+            <span className="rounded-full border border-neutral-800 bg-neutral-950 px-2.5 py-1 text-xs text-neutral-300">Ungewertet</span>
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
             {ONLINE_TIME_CONTROLS.map((control) => {
               const selected = selectedControl.id === control.id;
               return (
@@ -218,18 +218,18 @@ export default function OnlinePage() {
                   aria-pressed={selected}
                   disabled={searching}
                   onClick={() => setSelectedControl(control)}
-                  className={"rounded-2xl border p-4 text-left transition disabled:cursor-not-allowed disabled:opacity-60 " + (selected ? "border-emerald-400 bg-emerald-950/60 ring-2 ring-emerald-400/30" : "border-slate-700 bg-slate-950 hover:border-slate-500")}
+                  className={"min-h-14 rounded-xl border px-2 py-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 disabled:cursor-not-allowed disabled:opacity-60 " + (selected ? "border-amber-300 bg-amber-300/10 text-amber-100 shadow-[inset_0_0_0_1px_rgba(252,211,77,0.2)]" : "border-neutral-800 bg-neutral-950 text-neutral-200 hover:border-neutral-600 hover:bg-neutral-900")}
                 >
-                  <span className="block text-xl font-bold">{control.label}</span>
-                  <span className="mt-1 block text-sm text-slate-400">{control.group}{control.incrementSeconds ? ` · +${control.incrementSeconds} Sek.` : ""}</span>
+                  <span className="block text-sm font-bold tabular-nums">{control.label}</span>
+                  <span className="mt-0.5 block truncate text-[10px] text-neutral-500">{control.group}{control.incrementSeconds ? ` · +${control.incrementSeconds}s` : ""}</span>
                 </button>
               );
             })}
           </div>
 
           {!searching ? (
-            <button type="button" onClick={() => void startSearch()} className="mt-7 min-h-14 w-full rounded-2xl bg-emerald-400 px-6 py-4 text-lg font-bold text-slate-950 transition hover:bg-emerald-300 sm:w-auto sm:min-w-72">
-              Gegner suchen
+            <button type="button" onClick={() => void startSearch()} className="mt-4 min-h-11 w-full rounded-xl bg-amber-300 px-5 py-3 text-sm font-bold text-black transition hover:bg-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-100 sm:w-auto sm:min-w-56">
+              Gegner suchen · {selectedControl.label}
             </button>
           ) : (
             <div className="mt-7 flex flex-wrap items-center gap-4 rounded-2xl border border-emerald-900 bg-emerald-950/40 p-4" role="status" aria-live="polite">

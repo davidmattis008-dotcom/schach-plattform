@@ -9,11 +9,6 @@ export default function ChessClubTrainingPage() {
         <header className="mb-7 mt-6 max-w-3xl">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">Kostenloses Vereinstraining</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Gemeinsam besser werden.</h1>
-          <p className="mt-3 text-sm leading-6 text-slate-400">
-            Richte einen Verein und Trainingsgruppen ein, teile Taktikaufgaben und Trainingspläne
-            und behalte Fortschritt, Team-Challenges und Vereinsturniere im Blick. Die Aufgabenlösung
-            wird aktuell im Browser geprüft; die Teilnahmeerfassung ist nicht manipulationssicher.
-          </p>
         </header>
         <ChessClubTraining />
       </div>

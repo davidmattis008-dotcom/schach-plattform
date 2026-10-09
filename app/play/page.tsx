@@ -13,6 +13,7 @@ function formatTime(seconds: number) {
 
 export default function Home() {
   const [game, setGame] = useState(() => new Chess());
+  const [botRouteReady, setBotRouteReady] = useState(false);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [possibleMoves, setPossibleMoves] = useState<string[]>([]); const [promotionPending, setPromotionPending] = useState<{ from: string; to: string } | null>(null);
   const [whiteTime, setWhiteTime] = useState(600);
@@ -53,22 +54,26 @@ export default function Home() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('mode') === 'bot') {
-      const elo = Number(params.get('elo'));
-      if ([500, 1000, 1500, 2000, 2500].includes(elo)) setBotElo(elo);
-      const color = params.get('color');
-      if (color === 'black') setBotColor('w');
-      else if (color === 'random') setBotColor(Math.random() < 0.5 ? 'w' : 'b');
-      else setBotColor('b');
-      const minutes = Number(params.get('time'));
-      const increment = Number(params.get('increment'));
-      if ([0, 1, 3, 5, 10, 15, 30].includes(minutes)) {
-        setClockMinutes(minutes);
-        setWhiteTime(minutes * 60);
-        setBlackTime(minutes * 60);
-      }
-      if ([0, 1, 2, 5, 10].includes(increment)) setIncrementSeconds(increment);
+    const elo = Number(params.get('elo'));
+    if (params.get('mode') !== 'bot' || ![500, 1000, 1500, 2000, 2500].includes(elo)) {
+      window.location.replace('/bot');
+      return;
     }
+
+    setBotElo(elo);
+    const color = params.get('color');
+    if (color === 'black') setBotColor('w');
+    else if (color === 'random') setBotColor(Math.random() < 0.5 ? 'w' : 'b');
+    else setBotColor('b');
+    const minutes = Number(params.get('time'));
+    const increment = Number(params.get('increment'));
+    if ([0, 1, 3, 5, 10, 15, 30].includes(minutes)) {
+      setClockMinutes(minutes);
+      setWhiteTime(minutes * 60);
+      setBlackTime(minutes * 60);
+    }
+    if ([0, 1, 2, 5, 10].includes(increment)) setIncrementSeconds(increment);
+    setBotRouteReady(true);
   }, []);
 
   useEffect(() => {
@@ -259,6 +264,8 @@ export default function Home() {
   else if (game.isDraw()) status = '🤝 Remis – Unentschieden.';
   else if (botThinking) status = '🤖 Der Bot denkt nach …';
   else if (game.inCheck()) status = '⚠️ Schach! ' + currentPlayer + ' muss reagieren.';
+
+  if (!botRouteReady) return null;
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">

@@ -72,9 +72,6 @@ export function SelfLearningCourse() {
         <header className="mb-8">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Kostenloser Schachkurs</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Selbstständig Schach lernen</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
-            Du brauchst kein Vorwissen und keinen Trainer. Arbeite dich in deinem Tempo von den Regeln bis zu Taktik und Endspielen vor. Jede kurze Lektion endet mit einer Verständnisfrage.
-          </p>
         </header>
 
         <section aria-labelledby="learning-options-heading" className="mb-8">
