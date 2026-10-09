@@ -123,6 +123,7 @@ export default function AppNavigation() {
           <InstallAppLink className="flex items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-slate-900 hover:text-white"><span aria-hidden="true" className="w-5 text-center text-base">↓</span>App installieren</InstallAppLink>
           {navLink({ label: "Einstellungen", mark: "⚙", href: "/einstellungen" })}
           <Link href="/profile" onClick={() => setOpen(false)} aria-current={pathname.startsWith("/profile") ? "page" : undefined} className={`flex items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-sm font-medium transition ${pathname.startsWith("/profile") ? "border-emerald-400 bg-emerald-400/10 text-emerald-200" : "border-transparent text-slate-400 hover:bg-slate-900 hover:text-white"}`}><span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-800 text-xs text-slate-300">♟</span>Profil</Link>
+          <Link href="/datenschutz" onClick={() => setOpen(false)} aria-current={pathname === "/datenschutz" ? "page" : undefined} className="mt-2 flex items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-slate-900 hover:text-white"><span aria-hidden="true" className="w-5 text-center text-base">§</span>Datenschutz</Link>
         </div>
       </aside>
     </>

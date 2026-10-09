@@ -5,6 +5,7 @@ import AppNavigation from "./navigation";
 import RatingPlacementGate from "./rating-placement-gate";
 import { DirectMessageNotifications } from "@/components/direct-message-notifications";
 import { AdminCenterProvider } from "@/components/admin-center-provider";
+import { PrivacyNoticeGate } from "@/components/privacy-notice-gate";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <AdminCenterProvider>
             <AppNavigation />
             <RatingPlacementGate />
+            <PrivacyNoticeGate />
             <div className="min-h-screen pt-14 md:pt-0 md:pl-72">{children}</div>
           </AdminCenterProvider>
         </DirectMessageNotifications>
