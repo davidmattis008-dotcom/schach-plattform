@@ -26,7 +26,7 @@ function readProgress(): SavedTacticsProgress {
       solved: Math.max(0, Number(saved.solved) || 0),
       attempted: Math.max(0, Number(saved.attempted) || 0),
       recent: Array.isArray(saved.recent)
-        ? saved.recent.filter((id): id is string => typeof id === "string").slice(-12)
+        ? Array.from(new Set(saved.recent.filter((id): id is string => typeof id === "string")))
         : [],
     };
   } catch {

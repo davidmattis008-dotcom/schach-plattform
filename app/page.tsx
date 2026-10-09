@@ -19,6 +19,8 @@ const dashboardSections = [
     title: "Training & Analyse",
     description: "Verbessere deine Taktik, lerne Eröffnungen und untersuche Stellungen.",
     items: [
+      { title: "Selbstständig Schach lernen", detail: "Arbeite dich ohne Vorwissen vom ersten Zug bis zu Endspielen vor.", href: "/lernen", mark: "↗" },
+      { title: "Tägliche Taktikaufgabe", detail: "Eine echte Schachstellung passend zu deiner Spielstärke.", href: "/taktik?daily=1", mark: "♞" },
       { title: "Taktikaufgaben", detail: "Trainiere mit Aufgaben passend zu deiner Taktik-Elo.", href: "/taktik", mark: "♞" },
       { title: "Eröffnungen", detail: "Spiele ausgewählte Varianten Zug für Zug nach.", href: "/repertoire", mark: "⌂" },
       { title: "Analysebrett", detail: "Untersuche Stellungen und spiele Züge nach.", href: "/analyse", mark: "⌕" },
@@ -85,15 +87,15 @@ export default function Home() {
 
         <section aria-labelledby="welcome-heading" className="mb-10 grid gap-6 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 p-5 shadow-xl shadow-black/10 sm:p-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
           <div className="py-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Taktiktraining</p>
-            <h1 id="welcome-heading" className="mt-3 max-w-xl text-3xl font-semibold tracking-tight text-white sm:text-4xl">{username ? <>Willkommen zurück, <span className="text-emerald-300">{username}</span>.</> : "Der nächste Zug liegt bei dir."}</h1>
-            <p className="mt-3 max-w-md text-sm leading-6 text-slate-400">Löse eine Aufgabe in deiner Spielstärke und schärfe deinen Blick für die entscheidenden Züge.</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Selbstständig lernen</p>
+            <h1 id="welcome-heading" className="mt-3 max-w-xl text-3xl font-semibold tracking-tight text-white sm:text-4xl">{username ? <>Willkommen zurück, <span className="text-emerald-300">{username}</span>.</> : "Lerne Schach von Anfang an."}</h1>
+            <p className="mt-3 max-w-md text-sm leading-6 text-slate-400">Lerne die Regeln, übe in deinem Tempo und arbeite dich Schritt für Schritt bis zu Taktik und Endspielen vor.</p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/taktik" className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
-                Aufgabe starten <span aria-hidden="true">→</span>
+              <Link href="/lernen" className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
+                Lernpfad starten <span aria-hidden="true">→</span>
               </Link>
-              <Link href="/online" className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:border-emerald-400/70 hover:text-emerald-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
-                Online spielen
+              <Link href="/taktik?daily=1" className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:border-emerald-400/70 hover:text-emerald-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
+                Tägliche Aufgabe
               </Link>
             </div>
           </div>
