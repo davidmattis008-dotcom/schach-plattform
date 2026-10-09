@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 
 export type SelectMenuOption = {
   value: string;
@@ -46,7 +46,7 @@ export function SelectMenu({
       rootRef.current?.querySelector<HTMLButtonElement>('[aria-selected="true"]')?.focus();
     }
 
-    function dismiss(event: PointerEvent | KeyboardEvent) {
+    function dismiss(event: Event) {
       if (event instanceof KeyboardEvent && event.key === "Escape") {
         setOpen(false);
         setQuery("");
@@ -65,7 +65,7 @@ export function SelectMenu({
     };
   }, [open, searchable]);
 
-  function moveFocus(event: KeyboardEvent<HTMLButtonElement>) {
+  function moveFocus(event: ReactKeyboardEvent<HTMLButtonElement>) {
     const buttons = rootRef.current?.querySelectorAll<HTMLButtonElement>('[role="option"]');
     if (!buttons?.length) return;
     const currentIndex = Array.from(buttons).indexOf(event.currentTarget);
