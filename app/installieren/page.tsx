@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { isAppInstalled, markAppInstalled } from "@/lib/pwa-installation";
 
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -16,15 +17,14 @@ export default function InstallierenPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const standalone = window.matchMedia("(display-mode: standalone)").matches ||
-      ("standalone" in window.navigator && Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone));
-    setInstalled(standalone);
+    setInstalled(isAppInstalled());
 
     const handlePrompt = (event: Event) => {
       event.preventDefault();
       setInstallPrompt(event as InstallPromptEvent);
     };
     const handleInstalled = () => {
+      markAppInstalled();
       setInstalled(true);
       setInstallPrompt(null);
       setMessage("Fertig! Die Schachplattform ist installiert.");
@@ -42,6 +42,7 @@ export default function InstallierenPage() {
     await installPrompt.prompt();
     const choice = await installPrompt.userChoice;
     if (choice.outcome === "accepted") {
+      markAppInstalled();
       setInstalled(true);
       setMessage("Fertig! Die Schachplattform ist installiert.");
     } else {
@@ -64,15 +65,15 @@ export default function InstallierenPage() {
             <span className="absolute left-0 top-0 text-4xl leading-none text-slate-100">♝</span>
             <span className="absolute bottom-0 right-0 text-4xl leading-none text-slate-300">♞</span>
           </div>
-          <h1 className="text-3xl font-bold sm:text-4xl">Schachplattform installieren</h1>
-          <p className="mt-3 text-slate-300">Wähle dein Gerät und folge den kurzen Schritten.</p>
+          <h1 className="text-3xl font-bold sm:text-4xl">{installed ? "Schachplattform" : "Schachplattform installieren"}</h1>
+          {!installed && <p className="mt-3 text-slate-300">Wähle dein Gerät und folge den kurzen Schritten.</p>}
           {installed ? (
             <p className="mt-6 rounded-xl bg-emerald-900/60 px-5 py-4 font-semibold text-emerald-100" role="status">Bereits installiert ✓</p>
           ) : installPrompt ? (
             <button type="button" onClick={installApp} className="mt-6 w-full rounded-xl bg-white px-5 py-4 text-lg font-bold text-slate-950 hover:bg-slate-200">Jetzt installieren</button>
           ) : null}
           {message && <p className="mt-4 text-sm text-emerald-200" role="status">{message}</p>}
-          <details open className="mt-7 rounded-xl border border-slate-700 p-4">
+          {!installed && <details open className="mt-7 rounded-xl border border-slate-700 p-4">
             <summary className="cursor-pointer font-semibold">Installation auf Handy oder Computer</summary>
             <div className="mt-4 space-y-5 text-sm text-slate-300">
               <div>
@@ -96,7 +97,7 @@ export default function InstallierenPage() {
                 <p className="mt-2">In Safari: Menü „Ablage“ → „Zum Dock hinzufügen“.</p>
               </div>
             </div>
-          </details>
+          </details>}
           <p className="mt-6 text-xs text-slate-400">Website-Änderungen sind beim nächsten Öffnen verfügbar. Das App-Symbol aktualisiert dein Gerät separat.</p>
         </div>
       </div>

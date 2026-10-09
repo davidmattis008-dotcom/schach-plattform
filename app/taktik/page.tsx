@@ -240,10 +240,6 @@ export default function TacticsPage() {
                   <p className="mt-1 text-2xl font-semibold tabular-nums">{progress.attempted}</p>
                 </div>
               </div>
-              <p className="mt-4 text-xs leading-5 text-slate-400">
-                Die Aufgabenwahl richtet sich nach deiner Taktik-Elo. Sie passt sich daran an, welche Aufgaben du löst.
-                Deine Online-Elo bleibt davon getrennt; der Fortschritt wird in diesem Browser gespeichert.
-              </p>
             </section>
 
             <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
@@ -256,15 +252,6 @@ export default function TacticsPage() {
                 </div>
               ))}
               </div>
-              <p className="mt-3 text-xs text-slate-500">Fortschritt und Abzeichen werden in diesem Browser gespeichert.</p>
-            </section>
-
-            <section className="rounded-2xl border border-slate-800 p-5">
-              <h2 className="font-semibold">Legale Züge und klare Hinweise</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-400">
-                Die Aufgaben verwenden realistische Stellungen. Du kannst nur mit der am Zug befindlichen Farbe ziehen;
-                die besten Antworten der Gegenseite werden automatisch ausgespielt.
-              </p>
             </section>
           </aside>
         </div>

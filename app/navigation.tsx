@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useDirectMessageNotifications } from "@/components/direct-message-notifications";
 import { useAdminCenter } from "@/components/admin-center-provider";
+import { InstallAppLink } from "@/components/install-app-link";
 
 type MenuItem = { label: string; mark: string; href: string };
 
@@ -97,7 +98,7 @@ export default function AppNavigation() {
       <div className="fixed inset-x-0 top-0 z-30 flex h-14 items-center border-b border-slate-800 bg-slate-950/95 px-4 backdrop-blur md:hidden">
         <button ref={menuButtonRef} type="button" onClick={() => setOpen(true)} aria-label="Menü öffnen" aria-expanded={open} className="flex h-10 w-10 items-center justify-center rounded-lg text-2xl text-slate-300 hover:bg-slate-800">☰</button>
         <Link href="/" aria-label="Startseite" className="ml-3 flex items-center gap-2 font-semibold tracking-tight text-slate-100"><img src="/chess-logo-192.png" alt="" className="h-8 w-8 rounded-lg" /> Schach</Link>
-        <Link href="/installieren" className="ml-auto rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-slate-300 transition hover:border-slate-500 hover:text-white">App installieren</Link>
+        <InstallAppLink className="ml-auto rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-slate-300 transition hover:border-slate-500 hover:text-white">App installieren</InstallAppLink>
       </div>
 
       {open && <button type="button" aria-label="Menü schließen" onClick={() => setOpen(false)} className="fixed inset-0 z-40 bg-black/60 md:hidden" />}
@@ -119,7 +120,7 @@ export default function AppNavigation() {
 
         <div className="border-t border-slate-800 pt-4">
           {role && navLink({ label: "Administration", mark: "⚑", href: "/admin" })}
-          {navLink({ label: "App installieren", mark: "↓", href: "/installieren" })}
+          <InstallAppLink className="flex items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-slate-900 hover:text-white"><span aria-hidden="true" className="w-5 text-center text-base">↓</span>App installieren</InstallAppLink>
           {navLink({ label: "Einstellungen", mark: "⚙", href: "/einstellungen" })}
           <Link href="/profile" onClick={() => setOpen(false)} aria-current={pathname.startsWith("/profile") ? "page" : undefined} className={`flex items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-sm font-medium transition ${pathname.startsWith("/profile") ? "border-emerald-400 bg-emerald-400/10 text-emerald-200" : "border-transparent text-slate-400 hover:bg-slate-900 hover:text-white"}`}><span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-800 text-xs text-slate-300">♟</span>Profil</Link>
         </div>

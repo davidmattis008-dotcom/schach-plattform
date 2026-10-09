@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -25,24 +24,8 @@ export default function SettingsPage() {
       <div className="mx-auto max-w-3xl">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">Konto</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">Einstellungen</h1>
-        <p className="mt-2 text-sm text-slate-400">Verwalte dein Konto und dein öffentliches Spielerprofil.</p>
 
         <section className="mt-8 rounded-2xl border border-slate-800 bg-slate-900/60 p-5 sm:p-6">
-          <h2 className="text-lg font-semibold">Spielerprofil</h2>
-          <p className="mt-1 text-sm text-slate-400">Benutzername, Profilbild und Biografie bearbeitest du jetzt direkt in deinem Profil.</p>
-          <Link href="/profile#profile-settings" className="mt-4 inline-flex text-sm font-medium text-emerald-300 underline underline-offset-4">Zu meinem Profil</Link>
-        </section>
-
-        <section className="mt-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-5 sm:p-6">
-          <h2 className="font-semibold">Community</h2>
-          <p className="mt-1 text-sm text-slate-400">Verwalte Freundschaften und schreibe mit anderen Schachspielern.</p>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <Link href="/freunde" className="rounded-lg border border-slate-700 px-4 py-2.5 text-sm font-medium hover:border-slate-500">Freunde</Link>
-            <Link href="/chat" className="rounded-lg border border-slate-700 px-4 py-2.5 text-sm font-medium hover:border-slate-500">Globaler Chat</Link>
-          </div>
-        </section>
-
-        <section className="mt-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-5 sm:p-6">
           <h2 className="font-semibold">Sitzung</h2>
           <p className="mt-1 text-sm text-slate-400">Melde dich auf diesem Gerät von deinem Konto ab.</p>
           {error && <p role="alert" className="mt-4 text-sm text-rose-300">{error}</p>}

@@ -245,11 +245,6 @@ export default function OnlinePage() {
           {message && <p className="mt-4 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-300" role="status">{message}</p>}
         </section>
 
-        <section className="mt-6 grid gap-4 md:grid-cols-3" aria-label="So funktionieren Online-Partien">
-          <article className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5"><span className="text-2xl">⚡</span><h2 className="mt-3 font-bold">Gleiche Bedenkzeit</h2><p className="mt-2 text-sm leading-6 text-slate-400">Du wirst mit jemandem zusammengebracht, der dieselbe Zeitkontrolle gewählt hat.</p></article>
-          <article className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5"><span className="text-2xl">♟</span><h2 className="mt-3 font-bold">Weiß oder Schwarz</h2><p className="mt-2 text-sm leading-6 text-slate-400">Die Farben werden beim Start der Partie festgelegt.</p></article>
-          <article className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5"><span className="text-2xl">🤝</span><h2 className="mt-3 font-bold">Faires Spielen</h2><p className="mt-2 text-sm leading-6 text-slate-400">Partien sind vorerst zum Ausprobieren da und verändern keine Wertung.</p></article>
-        </section>
       </div>
     </main>
   );

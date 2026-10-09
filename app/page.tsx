@@ -6,6 +6,7 @@ import { MiniChessboard } from "@/components/mini-chessboard";
 import { tacticsPreviewFen } from "@/lib/tactics";
 import { getTacticsProgress, INITIAL_TACTICS_PROGRESS, subscribeToTacticsProgress } from "@/lib/tactics-progress";
 import { createClient } from "@/lib/supabase/client";
+import { InstallAppLink } from "@/components/install-app-link";
 
 const activities = [
   { title: "Online spielen", detail: "Finde einen Gegner", href: "/online", tag: "LIVE", mark: "↗" },
@@ -78,9 +79,9 @@ export default function Home() {
             {username && <Link href="/einstellungen" className="rounded-lg px-3 py-2.5 text-sm text-slate-400 transition hover:bg-slate-900 hover:text-white">Einstellungen</Link>}
             {!loading && !username && <Link href="/login" className="rounded-lg bg-emerald-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300">Anmelden</Link>}
           </div>
-          <Link href="/installieren" className="hidden items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:border-emerald-400/70 hover:text-emerald-200 md:inline-flex">
+          <InstallAppLink className="hidden items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:border-emerald-400/70 hover:text-emerald-200 md:inline-flex">
             <span aria-hidden="true">↓</span>App installieren
-          </Link>
+          </InstallAppLink>
         </header>
 
         <section aria-labelledby="welcome-heading" className="mb-10 grid gap-6 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 p-5 shadow-xl shadow-black/10 sm:p-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
