@@ -33,20 +33,20 @@ input[type="date"], input[type="time"], input[type="datetime-local"] { accent-co
 .text-emerald-300 { color: var(--gold-light) !important; }
 .text-emerald-200 { color: #f1da82 !important; }
 .bg-emerald-400 { background-color: var(--gold) !important; }
-.hover\\:bg-emerald-300:hover { background-color: var(--gold-light) !important; }
-.bg-emerald-400\\/10 { background-color: color-mix(in srgb, var(--gold) 10%, transparent) !important; }
-.bg-emerald-950\\/60 { background-color: color-mix(in srgb, var(--gold-dark) 35%, #050505) !important; }
+.hover\:bg-emerald-300:hover { background-color: var(--gold-light) !important; }
+.bg-emerald-400\/10 { background-color: color-mix(in srgb, var(--gold) 10%, transparent) !important; }
+.bg-emerald-950\/60 { background-color: color-mix(in srgb, var(--gold-dark) 35%, #050505) !important; }
 .border-emerald-400 { border-color: var(--gold) !important; }
-.border-emerald-400\\/70 { border-color: color-mix(in srgb, var(--gold) 70%, transparent) !important; }
-.border-emerald-500\\/50 { border-color: color-mix(in srgb, var(--gold-dark) 50%, transparent) !important; }
+.border-emerald-400\/70 { border-color: color-mix(in srgb, var(--gold) 70%, transparent) !important; }
+.border-emerald-500\/50 { border-color: color-mix(in srgb, var(--gold-dark) 50%, transparent) !important; }
 .border-emerald-900 { border-color: #5d4b19 !important; }
-.focus\\:border-emerald-400:focus { border-color: var(--gold) !important; }
-.focus-visible\\:ring-emerald-400:focus-visible { --tw-ring-color: var(--gold) !important; }
-.focus-visible\\:outline-emerald-400:focus-visible { outline-color: var(--gold) !important; }
-.hover\\:border-emerald-400\\/70:hover { border-color: color-mix(in srgb, var(--gold) 70%, transparent) !important; }
-.hover\\:border-emerald-500\\/50:hover { border-color: color-mix(in srgb, var(--gold-dark) 50%, transparent) !important; }
-.hover\\:text-emerald-300:hover { color: var(--gold-light) !important; }
-.hover\\:text-emerald-200:hover { color: #f1da82 !important; }
+.focus\:border-emerald-400:focus { border-color: var(--gold) !important; }
+.focus-visible\:ring-emerald-400:focus-visible { --tw-ring-color: var(--gold) !important; }
+.focus-visible\:outline-emerald-400:focus-visible { outline-color: var(--gold) !important; }
+.hover\:border-emerald-400\/70:hover { border-color: color-mix(in srgb, var(--gold) 70%, transparent) !important; }
+.hover\:border-emerald-500\/50:hover { border-color: color-mix(in srgb, var(--gold-dark) 50%, transparent) !important; }
+.hover\:text-emerald-300:hover { color: var(--gold-light) !important; }
+.hover\:text-emerald-200:hover { color: #f1da82 !important; }
 
 /* Keep the existing Tailwind slate-based layout, but neutralize its blue cast. */
 .bg-slate-950 { background-color: #050505 !important; }
