@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { createClient } from "@/lib/supabase/client";
 import { getTacticsDifficulty, getTacticsTheme, tacticsPuzzles } from "@/lib/tactics";
 import { ONLINE_TIME_CONTROLS } from "@/app/online/protocol";
+import { SelectMenu } from "@/components/select-menu";
 
 type ClubGroup = {
   group_id: string;
@@ -97,6 +98,12 @@ type TournamentDraft = {
   increment_seconds: number;
   max_players: number;
 };
+type ClubConfirmation = {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  requiredText?: string;
+};
 
 function errorText(error: unknown) {
   if (typeof error === "object" && error !== null) {
@@ -156,6 +163,9 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
   const [editingPlan, setEditingPlan] = useState<PlanDraft | null>(null);
   const [editingTask, setEditingTask] = useState<TaskDraft | null>(null);
   const [editingTournament, setEditingTournament] = useState<TournamentDraft | null>(null);
+  const [confirmation, setConfirmation] = useState<(ClubConfirmation & { resolve: (confirmed: boolean) => void }) | null>(null);
+  const [confirmationInput, setConfirmationInput] = useState("");
+  const confirmationCancelRef = useRef<HTMLButtonElement>(null);
   const [initialGroupName, setInitialGroupName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [newGroupName, setNewGroupName] = useState("");
@@ -177,6 +187,28 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
   const selectedGroup = groups.find((group) => group.group_id === groupId) ?? null;
   const isTrainer = !adminMode && selectedGroup?.role === "trainer";
   const isClubOwner = selectedGroup?.is_club_owner === true;
+
+  function askConfirmation(options: ClubConfirmation) {
+    setConfirmationInput("");
+    return new Promise<boolean>((resolve) => setConfirmation({ ...options, resolve }));
+  }
+
+  const finishConfirmation = useCallback((confirmed: boolean) => {
+    const pending = confirmation;
+    setConfirmation(null);
+    setConfirmationInput("");
+    pending?.resolve(confirmed);
+  }, [confirmation]);
+
+  useEffect(() => {
+    if (!confirmation) return;
+    confirmationCancelRef.current?.focus();
+    function dismiss(event: KeyboardEvent) {
+      if (event.key === "Escape") finishConfirmation(false);
+    }
+    document.addEventListener("keydown", dismiss);
+    return () => document.removeEventListener("keydown", dismiss);
+  }, [confirmation, finishConfirmation]);
 
   const loadGroups = useCallback(async (preferredGroupId?: string, fallbackGroup?: ClubGroup) => {
     const { data, error: queryError } = await getClient().rpc(
@@ -530,7 +562,11 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
 
   async function removeClubMember(member: ClubMember) {
     if (!selectedGroup || !isClubOwner || member.user_id === userId || (member.role === "Vereinsgründer" && !adminMode)) return;
-    if (!window.confirm(`Möchtest du ${member.username} wirklich aus dem Verein entfernen? Die Person verliert den Zugang zu allen Vereinsgruppen und internen Turnieren.`)) return;
+    if (!await askConfirmation({
+      title: "Mitglied aus dem Verein entfernen?",
+      message: `${member.username} verliert den Zugang zu allen Vereinsgruppen und internen Turnieren.`,
+      confirmLabel: "Mitglied entfernen",
+    })) return;
     setBusy(true);
     setError("");
     setNotice("");
@@ -560,7 +596,11 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
 
   async function leaveClub() {
     if (!selectedGroup || !userId || isClubOwner || adminMode) return;
-    if (!window.confirm(`Möchtest du den Verein „${selectedGroup.club_name}“ wirklich verlassen? Du verlierst den Zugang zu allen Vereinsgruppen und internen Turnieren.`)) return;
+    if (!await askConfirmation({
+      title: "Verein verlassen?",
+      message: `Du verlierst den Zugang zu „${selectedGroup.club_name}“, allen Vereinsgruppen und internen Turnieren.`,
+      confirmLabel: "Verein verlassen",
+    })) return;
     setBusy(true);
     setError("");
     setNotice("");
@@ -608,10 +648,12 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
 
   async function deleteClub() {
     if (!selectedGroup || !isClubOwner) return;
-    const confirmation = window.prompt(
-      `Damit der Verein "${selectedGroup.club_name}" einschließlich Gruppen, Mitglieder, Pläne, Aufgaben und Vereinsturniere dauerhaft gelöscht wird, gib bitte exakt seinen Namen ein.`,
-    );
-    if (confirmation?.trim() !== selectedGroup.club_name) return;
+    if (!await askConfirmation({
+      title: "Verein dauerhaft löschen?",
+      message: `Der Verein und alle Gruppen, Mitglieder, Trainingspläne, Aufgaben und Vereinsturniere werden gelöscht. Bereits verbuchte Online-Wertungen bleiben bestehen. Gib zur Bestätigung exakt „${selectedGroup.club_name}“ ein.`,
+      confirmLabel: "Verein dauerhaft löschen",
+      requiredText: selectedGroup.club_name,
+    })) return;
     setBusy(true);
     setError("");
     setNotice("");
@@ -666,7 +708,11 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
       setError("Die letzte Trainingsgruppe kann nicht einzeln gelöscht werden. Lösche stattdessen den gesamten Verein.");
       return;
     }
-    if (!window.confirm(`Trainingsgruppe „${selectedGroup.group_name}“ einschließlich ihrer Pläne, Aufgaben, Mitglieder und Turniere dauerhaft löschen? Bereits verbuchte Online-Wertungen bleiben bestehen.`)) return;
+    if (!await askConfirmation({
+      title: "Trainingsgruppe dauerhaft löschen?",
+      message: `„${selectedGroup.group_name}“ und ihre Pläne, Aufgaben, Mitglieder und Turniere werden gelöscht. Bereits verbuchte Online-Wertungen bleiben bestehen.`,
+      confirmLabel: "Gruppe löschen",
+    })) return;
     setBusy(true);
     setError("");
     setNotice("");
@@ -713,7 +759,11 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
 
   async function deletePlan(plan: TrainingPlan) {
     if (!isClubOwner || !selectedGroup) return;
-    if (!window.confirm(`Trainingsplan „${plan.name}“ löschen? Alle diesem Plan zugeordneten Aufgaben und deren Teilnahme werden ebenfalls gelöscht.`)) return;
+    if (!await askConfirmation({
+      title: "Trainingsplan löschen?",
+      message: `„${plan.name}“ und alle zugeordneten Aufgaben samt Teilnahme werden gelöscht.`,
+      confirmLabel: "Trainingsplan löschen",
+    })) return;
     setBusy(true);
     setError("");
     setNotice("");
@@ -762,7 +812,11 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
 
   async function deleteTask(task: TrainingTask) {
     if (!isClubOwner || !selectedGroup) return;
-    if (!window.confirm(`Taktikaufgabe „${task.title}“ einschließlich der erfassten Teilnahme löschen?`)) return;
+    if (!await askConfirmation({
+      title: "Taktikaufgabe löschen?",
+      message: `„${task.title}“ wird einschließlich der erfassten Teilnahme gelöscht.`,
+      confirmLabel: "Aufgabe löschen",
+    })) return;
     setBusy(true);
     setError("");
     setNotice("");
@@ -810,7 +864,11 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
 
   async function deleteTournament(tournament: ClubTournament) {
     if (!isClubOwner || !selectedGroup || tournament.status !== "open") return;
-    if (!window.confirm(`Offenes Vereinsturnier „${tournament.name}“ samt Anmeldungen löschen?`)) return;
+    if (!await askConfirmation({
+      title: "Vereinsturnier löschen?",
+      message: `Das offene Turnier „${tournament.name}“ wird samt Anmeldungen gelöscht.`,
+      confirmLabel: "Turnier löschen",
+    })) return;
     setBusy(true);
     setError("");
     setNotice("");
@@ -884,9 +942,7 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
           <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 sm:p-6">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <label className="min-w-56 flex-1 text-sm font-medium text-slate-300">Verein und Trainingsgruppe
-                <select value={groupId} onChange={(event) => setGroupId(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-white">
-                  {groups.map((group) => <option key={group.group_id} value={group.group_id}>{group.club_name} · {group.group_name}</option>)}
-                </select>
+                <SelectMenu className="mt-2" aria-label="Verein und Trainingsgruppe" value={groupId} options={groups.map((group) => ({ value: group.group_id, label: `${group.club_name} · ${group.group_name}` }))} onChange={setGroupId} />
               </label>
               {selectedGroup?.invite_code && <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/5 px-4 py-3">
                 <p className="text-xs text-slate-400">Einladungscode für diese Gruppe</p>
@@ -959,16 +1015,14 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
               <input required minLength={3} maxLength={100} value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-sm" placeholder="Titel der Aufgabe" aria-label="Titel der Aufgabe" />
               <textarea maxLength={500} value={taskDescription} onChange={(event) => setTaskDescription(event.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-sm" placeholder="Hinweis für die Gruppe (optional)" aria-label="Beschreibung der Aufgabe" rows={2} />
               <label className="block text-xs text-slate-400">Aufgabe aus dem Taktiktraining
-                <select value={taskPuzzleId} onChange={(event) => setTaskPuzzleId(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-white">
-                  {tacticsPuzzles.map((puzzle) => <option key={puzzle.id} value={puzzle.id}>{puzzle.id} · {puzzle.rating} Elo · {getTacticsDifficulty(puzzle.rating)} · {getTacticsTheme(puzzle.themes)}</option>)}
-                </select>
+                <SelectMenu className="mt-1" aria-label="Aufgabe aus dem Taktiktraining" value={taskPuzzleId} options={tacticsPuzzles.map((puzzle) => ({ value: puzzle.id, label: `${puzzle.id} · ${puzzle.rating} Elo · ${getTacticsDifficulty(puzzle.rating)} · ${getTacticsTheme(puzzle.themes)}` }))} onChange={setTaskPuzzleId} />
               </label>
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="text-xs text-slate-400">Trainingsplan (optional)
-                  <select value={taskPlanId} onChange={(event) => setTaskPlanId(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white">
-                    <option value="">Ohne Trainingsplan</option>
-                    {plans.map((plan) => <option key={plan.plan_id} value={plan.plan_id}>{plan.name}</option>)}
-                  </select>
+                  <SelectMenu className="mt-1" aria-label="Trainingsplan (optional)" value={taskPlanId} options={[
+                    { value: "", label: "Ohne Trainingsplan" },
+                    ...plans.map((plan) => ({ value: plan.plan_id, label: plan.name })),
+                  ]} onChange={setTaskPlanId} />
                 </label>
                 <label className="text-xs text-slate-400">Aufgabenfrist (optional)
                   <input type="datetime-local" value={taskDueAt} onChange={(event) => setTaskDueAt(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-200" />
@@ -985,9 +1039,7 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
               </div>
               <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
                 <input required minLength={3} maxLength={80} value={tournamentName} onChange={(event) => setTournamentName(event.target.value)} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-sm" placeholder="Turniername" aria-label="Turniername" />
-                <select value={tournamentControlId} onChange={(event) => setTournamentControlId(event.target.value)} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-white" aria-label="Bedenkzeit">
-                  {tournamentControls.map((control) => <option key={control.id} value={control.id}>{control.label} · {control.group}</option>)}
-                </select>
+                <SelectMenu aria-label="Bedenkzeit" value={tournamentControlId} options={tournamentControls.map((control) => ({ value: control.id, label: `${control.label} · ${control.group}` }))} onChange={setTournamentControlId} />
                 <button disabled={busy} className="rounded-lg border border-emerald-400/50 px-4 py-3 text-sm font-semibold text-emerald-200 hover:bg-emerald-400/10 disabled:opacity-50">{busy ? "Wird erstellt …" : "Vereinsturnier erstellen"}</button>
               </div>
             </form>
@@ -1106,16 +1158,14 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
                         <textarea maxLength={500} value={editingTask.description} onChange={(event) => setEditingTask((current) => current ? { ...current, description: event.target.value } : current)} rows={2} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white" />
                       </label>
                       <label className="block text-xs text-slate-400">Taktikaufgabe
-                        <select value={editingTask.puzzle_id} onChange={(event) => setEditingTask((current) => current ? { ...current, puzzle_id: event.target.value } : current)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white">
-                          {tacticsPuzzles.map((item) => <option key={item.id} value={item.id}>{item.id} · {item.rating} Elo · {getTacticsDifficulty(item.rating)}</option>)}
-                        </select>
+                        <SelectMenu className="mt-1" aria-label="Taktikaufgabe" value={editingTask.puzzle_id} options={tacticsPuzzles.map((item) => ({ value: item.id, label: `${item.id} · ${item.rating} Elo · ${getTacticsDifficulty(item.rating)}` }))} onChange={(puzzle_id) => setEditingTask((current) => current ? { ...current, puzzle_id } : current)} />
                       </label>
                       <div className="grid gap-3 sm:grid-cols-2">
                         <label className="text-xs text-slate-400">Trainingsplan
-                          <select value={editingTask.plan_id} onChange={(event) => setEditingTask((current) => current ? { ...current, plan_id: event.target.value } : current)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white">
-                            <option value="">Ohne Trainingsplan</option>
-                            {plans.map((plan) => <option key={plan.plan_id} value={plan.plan_id}>{plan.name}</option>)}
-                          </select>
+                          <SelectMenu className="mt-1" aria-label="Trainingsplan" value={editingTask.plan_id} options={[
+                            { value: "", label: "Ohne Trainingsplan" },
+                            ...plans.map((plan) => ({ value: plan.plan_id, label: plan.name })),
+                          ]} onChange={(plan_id) => setEditingTask((current) => current ? { ...current, plan_id } : current)} />
                         </label>
                         <label className="text-xs text-slate-400">Frist
                           <input type="datetime-local" value={editingTask.due_at} onChange={(event) => setEditingTask((current) => current ? { ...current, due_at: event.target.value } : current)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white" />
@@ -1197,13 +1247,10 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
                     <input required minLength={3} maxLength={80} value={editingTournament.name} onChange={(event) => setEditingTournament((current) => current ? { ...current, name: event.target.value } : current)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white" />
                   </label>
                   <label className="text-xs text-slate-400">Bedenkzeit
-                    <select value={tournamentControls.find((control) => control.initialSeconds === editingTournament.initial_seconds && control.incrementSeconds === editingTournament.increment_seconds)?.id ?? ""} onChange={(event) => {
-                      const selectedControl = tournamentControls.find((control) => control.id === event.target.value);
+                    <SelectMenu className="mt-1" aria-label="Bedenkzeit" value={tournamentControls.find((control) => control.initialSeconds === editingTournament.initial_seconds && control.incrementSeconds === editingTournament.increment_seconds)?.id ?? ""} options={tournamentControls.map((control) => ({ value: control.id, label: `${control.label} · ${control.group}` }))} onChange={(id) => {
+                      const selectedControl = tournamentControls.find((control) => control.id === id);
                       if (selectedControl) setEditingTournament((current) => current ? { ...current, initial_seconds: selectedControl.initialSeconds, increment_seconds: selectedControl.incrementSeconds } : current);
-                    }} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white">
-                      <option value="" disabled>Bitte auswählen</option>
-                      {tournamentControls.map((control) => <option key={control.id} value={control.id}>{control.label} · {control.group}</option>)}
-                    </select>
+                    }} />
                   </label>
                   <label className="text-xs text-slate-400">Maximale Spielerzahl
                     <input type="number" min={2} max={16} value={editingTournament.max_players} onChange={(event) => setEditingTournament((current) => current ? { ...current, max_players: Number(event.target.value) } : current)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white" />
@@ -1229,6 +1276,29 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
           </details>}
         </>
       )}
+      {confirmation && <div
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4"
+        onClick={(event) => {
+          if (event.target === event.currentTarget) finishConfirmation(false);
+        }}
+      >
+        <section role="alertdialog" aria-modal="true" aria-labelledby="club-confirm-title" aria-describedby="club-confirm-message" className="w-full max-w-md rounded-xl border border-neutral-700 bg-neutral-950 p-5 shadow-2xl shadow-black/60">
+          <h2 id="club-confirm-title" className="text-lg font-semibold text-white">{confirmation.title}</h2>
+          <p id="club-confirm-message" className="mt-2 whitespace-pre-line text-sm leading-6 text-neutral-300">{confirmation.message}</p>
+          {confirmation.requiredText && <label className="mt-4 block text-sm text-neutral-300">Vereinsname zur Bestätigung eingeben
+            <input value={confirmationInput} onChange={(event) => setConfirmationInput(event.target.value)} className="mt-1 w-full rounded-lg border border-neutral-700 bg-black px-3 py-2.5 text-white focus:border-amber-300 focus:outline-none focus:ring-1 focus:ring-amber-300" />
+          </label>}
+          <div className="mt-5 flex justify-end gap-2">
+            <button ref={confirmationCancelRef} type="button" onClick={() => finishConfirmation(false)} className="rounded-lg border border-neutral-700 px-3 py-2 text-sm text-neutral-200 hover:bg-neutral-900">Abbrechen</button>
+            <button
+              type="button"
+              disabled={confirmation.requiredText !== undefined && confirmationInput.trim() !== confirmation.requiredText}
+              onClick={() => finishConfirmation(true)}
+              className="rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-black hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-40"
+            >{confirmation.confirmLabel}</button>
+          </div>
+        </section>
+      </div>}
     </div>
   );
 }

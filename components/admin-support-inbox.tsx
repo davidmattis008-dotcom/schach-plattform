@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { SelectMenu } from "@/components/select-menu";
 
 type TicketStatus = "open" | "in_progress" | "resolved";
 type TicketFilter = TicketStatus | "all";
@@ -167,13 +168,12 @@ export function AdminSupportInbox() {
           <p className="mt-1 text-xs text-slate-400">Nur Owner und Admins können diese Nachrichten lesen.</p>
         </div>
         <div className="flex gap-2">
-          <label className="sr-only" htmlFor="support-ticket-filter">Supportstatus filtern</label>
-          <select id="support-ticket-filter" value={filter} onChange={(event) => setFilter(event.target.value as TicketFilter)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm">
-            <option value="open">Offen</option>
-            <option value="in_progress">In Bearbeitung</option>
-            <option value="resolved">Erledigt</option>
-            <option value="all">Alle</option>
-          </select>
+          <SelectMenu compact aria-label="Supportstatus filtern" value={filter} options={[
+            { value: "open", label: "Offen" },
+            { value: "in_progress", label: "In Bearbeitung" },
+            { value: "resolved", label: "Erledigt" },
+            { value: "all", label: "Alle" },
+          ]} onChange={(value) => setFilter(value as TicketFilter)} />
           <button type="button" onClick={() => void refresh()} disabled={loading || sending} className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50">Aktualisieren</button>
         </div>
       </div>
@@ -203,11 +203,11 @@ export function AdminSupportInbox() {
                 <h3 className="mt-1 text-xl font-semibold">{selectedTicket.subject}</h3>
               </div>
               <label className="text-xs text-slate-400">Status
-                <select value={selectedTicket.status} disabled={sending} onChange={(event) => void changeStatus(selectedTicket.ticket_id, event.target.value as TicketStatus)} className="mt-1 block rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 disabled:opacity-50">
-                  <option value="open">Offen</option>
-                  <option value="in_progress">In Bearbeitung</option>
-                  <option value="resolved">Erledigt</option>
-                </select>
+                <SelectMenu compact className="mt-1" aria-label="Status der Supportanfrage" value={selectedTicket.status} disabled={sending} options={[
+                  { value: "open", label: "Offen" },
+                  { value: "in_progress", label: "In Bearbeitung" },
+                  { value: "resolved", label: "Erledigt" },
+                ]} onChange={(value) => void changeStatus(selectedTicket.ticket_id, value as TicketStatus)} />
               </label>
             </header>
             <div className="flex-1 space-y-3 overflow-y-auto py-4">

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { createClient } from "@/lib/supabase/client";
 import { useDirectMessageNotifications } from "@/components/direct-message-notifications";
 import { ONLINE_TIME_CONTROLS } from "@/app/online/protocol";
+import { SelectMenu } from "@/components/select-menu";
 
 type SocialTab = "friends" | "global";
 type Person = { id: string; username: string; bio?: string; avatar_url?: string | null };
@@ -409,7 +410,7 @@ export function SocialHub({ initialTab = "friends" }: { initialTab?: SocialTab }
             </section>
 
             <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-semibold">Deine Freunde</h2><label className="flex items-center gap-2 text-xs text-slate-400">Zeit<select value={challengeControlId} onChange={(event) => setChallengeControlId(event.target.value)} className="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-200">{ONLINE_TIME_CONTROLS.map((control) => <option key={control.id} value={control.id}>{control.label}</option>)}</select></label></div>
+              <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-semibold">Deine Freunde</h2><label className="flex items-center gap-2 text-xs text-slate-400">Zeit<SelectMenu compact aria-label="Bedenkzeit für Herausforderungen" value={challengeControlId} options={ONLINE_TIME_CONTROLS.map((control) => ({ value: control.id, label: control.label }))} onChange={setChallengeControlId} /></label></div>
               {friends.length === 0 ? <p className="mt-3 text-sm text-slate-500">Noch keine Freunde – suche nach einem Spielernamen.</p> : <ul className="mt-3 space-y-2">{friends.map((friend) => <li key={friend.id} className="flex items-center gap-2 rounded-lg p-2 hover:bg-slate-800/60">
                 <Link href={`/profile/${encodeURIComponent(friend.username)}`} className="flex min-w-0 flex-1 items-center gap-2" aria-label={`Profil von ${friend.username} öffnen`}>
                   <Avatar person={friend} size="h-8 w-8" />

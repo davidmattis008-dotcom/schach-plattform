@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { SelectMenu } from "@/components/select-menu";
 import { createClient } from "@/lib/supabase/client";
 
 type TicketStatus = "open" | "in_progress" | "resolved";
@@ -192,11 +193,11 @@ export function SupportCenter() {
           <h2 className="text-lg font-semibold">Neue Supportanfrage</h2>
           <p className="text-xs leading-5 text-slate-400">Nur du und das zuständige Admin-Team können diese Anfrage und den Verlauf lesen.</p>
           <label className="block text-sm">Thema
-            <select value={category} onChange={(event) => setCategory(event.target.value as SupportTicket["category"])} className="mt-1 block w-full rounded-lg border border-slate-700 bg-slate-950 p-3">
-              <option value="problem">Problem melden</option>
-              <option value="suggestion">Verbesserung vorschlagen</option>
-              <option value="other">Sonstiges</option>
-            </select>
+            <SelectMenu className="mt-1" aria-label="Thema" value={category} options={[
+              { value: "problem", label: "Problem melden" },
+              { value: "suggestion", label: "Verbesserung vorschlagen" },
+              { value: "other", label: "Sonstiges" },
+            ]} onChange={(value) => setCategory(value as SupportTicket["category"])} />
           </label>
           <label className="block text-sm">Betreff
             <input required minLength={3} maxLength={120} value={subject} onChange={(event) => setSubject(event.target.value)} className="mt-1 block w-full rounded-lg border border-slate-700 bg-slate-950 p-3" />

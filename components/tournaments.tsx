@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getOnlineRatingMode, getOnlineRatingModeLabel, ONLINE_TIME_CONTROLS } from "@/app/online/protocol";
+import { SelectMenu, type SelectMenuOption } from "@/components/select-menu";
 
 type Tournament = {
   tournament_id: string;
@@ -32,120 +33,9 @@ type TournamentGame = {
   white_report: "white" | "black" | "draw" | null;
   black_report: "white" | "black" | "draw" | null;
 };
-type ChoiceOption = { value: string; label: string; detail?: string };
-
 const statusLabels = { open: "Anmeldung offen", running: "Läuft", completed: "Beendet" } as const;
 const gameStatusLabels = { pending: "Ergebnis offen", disputed: "Ergebnisse weichen ab", finished: "Bestätigt" } as const;
 const resultLabels = { white: "Weiß gewinnt", black: "Schwarz gewinnt", draw: "Remis" } as const;
-
-function TournamentChoice({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: ChoiceOption[];
-  onChange: (value: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const selected = options.find((option) => option.value === value) ?? options[0];
-  const menuId = `tournament-choice-${label.toLowerCase().replaceAll(" ", "-")}`;
-
-  useEffect(() => {
-    if (!open) return;
-    const selectedOption = rootRef.current?.querySelector<HTMLButtonElement>('[aria-selected="true"]');
-    selectedOption?.focus();
-
-    function dismiss(event: PointerEvent | KeyboardEvent) {
-      if (event instanceof KeyboardEvent && event.key === "Escape") {
-        setOpen(false);
-        triggerRef.current?.focus();
-      } else if (event instanceof PointerEvent && !rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    }
-
-    document.addEventListener("pointerdown", dismiss);
-    document.addEventListener("keydown", dismiss);
-    return () => {
-      document.removeEventListener("pointerdown", dismiss);
-      document.removeEventListener("keydown", dismiss);
-    };
-  }, [open]);
-
-  return (
-    <div ref={rootRef} className="relative text-sm">
-      <span className="mb-1 block">{label}</span>
-      <button
-        ref={triggerRef}
-        type="button"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls={menuId}
-        onClick={() => setOpen((current) => !current)}
-        className="flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border border-amber-300/30 bg-gradient-to-br from-slate-900 to-black px-3 py-2.5 text-left text-white shadow-inner shadow-white/[0.03] transition hover:border-amber-300/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70"
-      >
-        <span className="flex min-w-0 items-center gap-2">
-          <span className="truncate font-semibold">{selected?.label}</span>
-          {selected?.detail && <span className="shrink-0 rounded-full border border-amber-300/20 bg-amber-300/10 px-2 py-0.5 text-[10px] font-medium text-amber-200">{selected.detail}</span>}
-        </span>
-        <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" className={`h-4 w-4 shrink-0 text-amber-200 transition-transform ${open ? "rotate-180" : ""}`}>
-          <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-      {open && (
-        <div id={menuId} role="listbox" aria-label={`${label} auswählen`} className="absolute inset-x-0 top-full z-50 mt-2 max-h-64 overflow-y-auto rounded-xl border border-amber-300/25 bg-slate-950 p-1.5 shadow-2xl shadow-black/70">
-          {options.map((option) => {
-            const isSelected = option.value === value;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                role="option"
-                aria-selected={isSelected}
-                tabIndex={isSelected ? 0 : -1}
-                onKeyDown={(event) => {
-                  const optionButtons = rootRef.current?.querySelectorAll<HTMLButtonElement>('[role="option"]');
-                  if (!optionButtons?.length) return;
-                  const currentIndex = Array.from(optionButtons).indexOf(event.currentTarget);
-                  const nextIndex = event.key === "ArrowDown"
-                    ? (currentIndex + 1) % optionButtons.length
-                    : event.key === "ArrowUp"
-                      ? (currentIndex - 1 + optionButtons.length) % optionButtons.length
-                      : event.key === "Home"
-                        ? 0
-                        : event.key === "End"
-                          ? optionButtons.length - 1
-                          : -1;
-                  if (nextIndex >= 0) {
-                    event.preventDefault();
-                    optionButtons[nextIndex].focus();
-                  }
-                }}
-                onClick={() => {
-                  onChange(option.value);
-                  setOpen(false);
-                  triggerRef.current?.focus();
-                }}
-                className={`flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70 ${isSelected ? "bg-amber-300 text-slate-950" : "text-slate-100 hover:bg-white/[0.07] hover:text-amber-100"}`}
-              >
-                <span className="flex min-w-0 items-center gap-2">
-                  <span className="truncate font-medium">{option.label}</span>
-                  {option.detail && <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${isSelected ? "bg-black/10 text-slate-800" : "bg-amber-300/10 text-amber-200"}`}>{option.detail}</span>}
-                </span>
-                {isSelected && <span aria-hidden="true" className="font-bold">✓</span>}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
 
 function roomUrl(game: TournamentGame, tournament: Tournament, playerId: string) {
   const white = playerId === game.white_user_id;
@@ -192,10 +82,10 @@ export function Tournaments() {
     if (!clientRef.current) clientRef.current = createClient();
     return clientRef.current;
   }, []);
-  const timeControlOptions: ChoiceOption[] = ONLINE_TIME_CONTROLS
+  const timeControlOptions: SelectMenuOption[] = ONLINE_TIME_CONTROLS
     .filter((control) => control.initialSeconds >= 60)
-    .map((control) => ({ value: control.id, label: control.label, detail: control.group }));
-  const playerCountOptions: ChoiceOption[] = [2, 4, 6, 8, 10, 12, 14, 16]
+    .map((control) => ({ value: control.id, label: `${control.label} · ${control.group}` }));
+  const playerCountOptions: SelectMenuOption[] = [2, 4, 6, 8, 10, 12, 14, 16]
     .map((count) => ({ value: String(count), label: `${count} Spieler` }));
 
   const loadTournaments = useCallback(async () => {
@@ -337,8 +227,12 @@ export function Tournaments() {
         <label className="text-sm">Turnier erstellen
           <input required minLength={3} maxLength={80} value={name} onChange={(event) => setName(event.target.value)} placeholder="Turniername" className="mt-1 block w-full rounded-lg border border-slate-700 bg-slate-950 p-2.5" />
         </label>
-        <TournamentChoice label="Bedenkzeit" value={timeControl} options={timeControlOptions} onChange={setTimeControl} />
-        <TournamentChoice label="Plätze" value={String(maxPlayers)} options={playerCountOptions} onChange={(value) => setMaxPlayers(Number(value))} />
+        <label className="block text-sm">Bedenkzeit
+          <SelectMenu className="mt-1" aria-label="Bedenkzeit" value={timeControl} options={timeControlOptions} onChange={setTimeControl} />
+        </label>
+        <label className="block text-sm">Plätze
+          <SelectMenu className="mt-1" aria-label="Maximale Spielerzahl" value={String(maxPlayers)} options={playerCountOptions} onChange={(value) => setMaxPlayers(Number(value))} />
+        </label>
         <button type="submit" disabled={busy} className="rounded-lg bg-emerald-400 px-4 py-2.5 text-sm font-semibold text-slate-950 disabled:opacity-50">Erstellen</button>
       </form>
 

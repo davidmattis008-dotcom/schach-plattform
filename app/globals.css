@@ -26,6 +26,7 @@ body {
 
 ::selection { color: #050505; background: var(--gold); }
 :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+input[type="date"], input[type="time"], input[type="datetime-local"] { accent-color: var(--gold); color-scheme: dark; }
 
 /* New visual identity: black / white / gold. */
 .text-emerald-400 { color: var(--gold) !important; }

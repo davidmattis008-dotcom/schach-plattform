@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { SelectMenu } from "@/components/select-menu";
 
 type GameMode = "bullet" | "blitz" | "rapid" | "classical";
 type LeaderboardScope = "global" | "friends";
@@ -90,9 +91,7 @@ export function Leaderboards() {
         </div>
         <label className="flex items-center gap-2 text-sm text-slate-300">
           <span>Bedenkzeit</span>
-          <select value={gameMode} onChange={(event) => setGameMode(event.target.value as GameMode)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-white">
-            {gameModes.map((mode) => <option key={mode.id} value={mode.id}>{mode.label}</option>)}
-          </select>
+          <SelectMenu compact aria-label="Bedenkzeit" value={gameMode} options={gameModes.map((mode) => ({ value: mode.id, label: mode.label }))} onChange={(value) => setGameMode(value as GameMode)} />
         </label>
       </div>
 
