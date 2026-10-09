@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,13 +18,45 @@ export default function LoginPage() {
     setMessage("");
     try {
       const supabase = createClient();
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        setMessage(error.message);
-        return;
+      const usesEmail = identifier.includes("@");
+      if (usesEmail) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: identifier.trim(),
+          password,
+        });
+        if (error) {
+          setMessage("Anmeldung fehlgeschlagen. Prüfe deine E-Mail-Adresse und dein Passwort.");
+          return;
+        }
+      } else {
+        const response = await fetch("/api/auth/username-login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: identifier.trim(), password }),
+        });
+        const result: unknown = await response.json().catch(() => null);
+        if (!response.ok || !result || typeof result !== "object" ||
+          !("access_token" in result) || typeof result.access_token !== "string" ||
+          !("refresh_token" in result) || typeof result.refresh_token !== "string") {
+          setMessage(
+            result && typeof result === "object" && "error" in result && typeof result.error === "string"
+              ? result.error
+              : "Anmeldung fehlgeschlagen. Prüfe Benutzername und Passwort.",
+          );
+          return;
+        }
+        const { error } = await supabase.auth.setSession({
+          access_token: result.access_token,
+          refresh_token: result.refresh_token,
+        });
+        if (error) {
+          console.error("Die Username-Anmeldesitzung konnte nicht gespeichert werden:", error);
+          setMessage("Anmeldung momentan nicht möglich. Bitte versuche es erneut.");
+          return;
+        }
       }
-      const user = data.user;
-      if (!user) {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
         setMessage("Login fehlgeschlagen.");
         return;
       }
@@ -48,8 +80,8 @@ export default function LoginPage() {
           <p className="mt-2 text-slate-400">Melde dich an, um weiterzuspielen.</p>
           <form onSubmit={handleLogin} className="mt-7 space-y-5">
             <div>
-              <label htmlFor="email" className="mb-2 block text-sm font-medium text-slate-200">E-Mail</label>
-              <input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition placeholder:text-slate-600 focus:border-emerald-400" placeholder="deine@email.de" />
+              <label htmlFor="login-identifier" className="mb-2 block text-sm font-medium text-slate-200">E-Mail oder Benutzername</label>
+              <input id="login-identifier" type="text" autoComplete="username" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition placeholder:text-slate-600 focus:border-emerald-400" placeholder="E-Mail oder Benutzername" />
             </div>
             <div>
               <label htmlFor="password" className="mb-2 block text-sm font-medium text-slate-200">Passwort</label>
