@@ -558,6 +558,32 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
     }
   }
 
+  async function leaveClub() {
+    if (!selectedGroup || !userId || isClubOwner || adminMode) return;
+    if (!window.confirm(`Möchtest du den Verein „${selectedGroup.club_name}“ wirklich verlassen? Du verlierst den Zugang zu allen Vereinsgruppen und internen Turnieren.`)) return;
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const { error: leaveError } = await getClient().rpc("leave_chess_club", {
+        p_club_id: selectedGroup.club_id,
+      });
+      if (leaveError) throw leaveError;
+      setNotice(`Du hast den Verein „${selectedGroup.club_name}“ verlassen.`);
+      try {
+        await loadGroups();
+      } catch (refreshError) {
+        console.error("Verein wurde verlassen, aber die Gruppenliste konnte nicht aktualisiert werden:", refreshError);
+        setError(`Du hast den Verein verlassen. Die Gruppenliste konnte nicht aktualisiert werden: ${errorText(refreshError)}`);
+      }
+    } catch (leaveError) {
+      console.error("Verein konnte nicht verlassen werden:", leaveError);
+      setError(errorText(leaveError));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function saveClubName(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selectedGroup || !isClubOwner) return;
@@ -1133,6 +1159,7 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
               {clubMembers.map((member) => <div key={member.user_id} className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 px-5 py-3 last:border-b-0">
                 <div><p className="font-medium text-slate-200">{member.username}</p><p className="text-xs text-slate-500">{member.role} · {member.group_count} {member.group_count === 1 ? "Trainingsgruppe" : "Trainingsgruppen"} · dabei seit {formatDate(member.joined_at)}</p></div>
                 {isClubOwner && member.user_id !== userId && (adminMode || member.role !== "Vereinsgründer") && <button type="button" disabled={busy} onClick={() => void removeClubMember(member)} className="rounded-lg border border-red-900/70 px-3 py-2 text-xs font-semibold text-red-200 hover:border-red-700 hover:bg-red-950/40 disabled:opacity-50">Aus Verein entfernen</button>}
+                {!adminMode && !isClubOwner && member.user_id === userId && <button type="button" disabled={busy} onClick={() => void leaveClub()} className="rounded-lg border border-amber-300/40 px-3 py-2 text-xs font-semibold text-amber-200 hover:border-amber-300/70 disabled:opacity-50">Verein verlassen</button>}
               </div>)}
               {!loadingGroup && !sectionErrors.clubMembers && clubMembers.length === 0 && <p className="p-5 text-sm text-slate-400">Noch keine Vereinsmitglieder.</p>}
             </div>
