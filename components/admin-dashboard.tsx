@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { AdminSupportInbox } from "@/components/admin-support-inbox";
+import { ChessClubTraining } from "@/components/chess-club-training";
 
 type AdminRole = "owner" | "admin" | "moderator";
 type AdminUser = { user_id: string; username: string; avatar_url: string | null; is_suspended: boolean; reason: string | null; expires_at: string | null };
@@ -18,7 +19,7 @@ type ChatReport = {
   reported_username: string;
 };
 type AuditItem = { action: string; actor_username: string | null; target_username: string | null; details: Record<string, unknown>; created_at: string };
-type View = "reports" | "users" | "audit" | "support";
+type View = "reports" | "users" | "audit" | "support" | "clubs";
 
 function profileAvatarObjectPath(url: string, userId: string) {
   try {
@@ -35,6 +36,7 @@ function profileAvatarObjectPath(url: string, userId: string) {
 
 export function AdminDashboard() {
   const [role, setRole] = useState<AdminRole | null>(null);
+  const [canManageClubs, setCanManageClubs] = useState(false);
   const [accessChecked, setAccessChecked] = useState(false);
   const [view, setView] = useState<View>("reports");
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -82,12 +84,22 @@ export function AdminDashboard() {
   useEffect(() => {
     let active = true;
     async function checkAccess() {
-      const { data, error } = await getSupabase().rpc("get_my_admin_access");
+      const [accessResult, clubAccessResult] = await Promise.all([
+        getSupabase().rpc("get_my_admin_access"),
+        getSupabase().rpc("admin_can_manage_chess_clubs"),
+      ]);
       if (!active) return;
-      if (error) setMessage("Adminzugriff konnte nicht geprüft werden. Wurde die Admin-Migration bereits ausgeführt?");
+      if (accessResult.error) setMessage("Adminzugriff konnte nicht geprüft werden. Wurde die Admin-Migration bereits ausgeführt?");
       else {
-        const currentRole = (data ?? [])[0]?.role as AdminRole | undefined;
+        const currentRole = (accessResult.data ?? [])[0]?.role as AdminRole | undefined;
         setRole(currentRole ?? null);
+      }
+      if (clubAccessResult.error) {
+        console.error("Zugriff auf die Vereinsverwaltung konnte nicht geprüft werden:", clubAccessResult.error);
+        setCanManageClubs(false);
+        setMessage("Die Vereinsverwaltung ist noch nicht eingerichtet. Wende die Migration 20261009000002_chess_club_administration.sql in Supabase an.");
+      } else {
+        setCanManageClubs(clubAccessResult.data === true);
       }
       setAccessChecked(true);
     }
@@ -265,9 +277,9 @@ export function AdminDashboard() {
         <p className="mt-2 text-sm text-slate-400">Bearbeite gemeldete Nachrichten und Profile, verwalte Kontosperren und sende Nutzerhinweise. Alle Maßnahmen werden protokolliert.</p>
 
         <div className="mt-6 flex flex-wrap gap-2" aria-label="Admin-Bereiche">
-          {(["reports", "users", ...(role === "owner" || role === "admin" ? ["support", "audit"] : [])] as View[]).map((item) => (
+          {(["reports", "users", ...(role === "owner" || role === "admin" ? ["support", "audit"] : []), ...(canManageClubs ? ["clubs"] : [])] as View[]).map((item) => (
             <button key={item} type="button" onClick={() => void changeView(item)} aria-pressed={view === item} className={`rounded-lg px-4 py-2 text-sm font-semibold ${view === item ? "bg-emerald-400 text-slate-950" : "border border-slate-700 text-slate-300 hover:bg-slate-800"}`}>
-              {item === "reports" ? `Meldungen${reports.length ? ` · ${reports.length}` : ""}` : item === "users" ? "Nutzer" : item === "support" ? "Support" : "Protokoll"}
+              {item === "reports" ? `Meldungen${reports.length ? ` · ${reports.length}` : ""}` : item === "users" ? "Nutzer" : item === "support" ? "Support" : item === "clubs" ? "Vereine" : "Protokoll"}
             </button>
           ))}
         </div>
@@ -328,6 +340,11 @@ export function AdminDashboard() {
           <div className="mt-3 overflow-x-auto rounded-xl border border-slate-800"><table className="w-full min-w-[36rem] text-left text-sm"><thead className="bg-slate-900 text-xs uppercase text-slate-400"><tr><th className="p-3">Zeit</th><th className="p-3">Admin</th><th className="p-3">Aktion</th><th className="p-3">Nutzer</th><th className="p-3">Details</th></tr></thead><tbody>{audit.map((item, index) => <tr key={`${item.created_at}-${index}`} className="border-t border-slate-800"><td className="p-3 text-slate-400">{new Date(item.created_at).toLocaleString("de-DE")}</td><td className="p-3">{item.actor_username ?? "—"}</td><td className="p-3">{item.action}</td><td className="p-3">{item.target_username ?? "—"}</td><td className="max-w-sm truncate p-3 text-slate-400">{JSON.stringify(item.details)}</td></tr>)}</tbody></table>{audit.length === 0 && <p className="p-4 text-sm text-slate-400">Noch keine protokollierten Maßnahmen.</p>}</div>
         </section>}
         {view === "support" && (role === "owner" || role === "admin") && <AdminSupportInbox />}
+        {view === "clubs" && canManageClubs && <section className="mt-5">
+          <h2 className="mb-3 text-lg font-semibold">Vereinsverwaltung</h2>
+          <p className="mb-4 text-sm text-slate-400">Verwalte Vereine, Gruppen, Mitglieder, Trainingspläne, Aufgaben und interne Turniere.</p>
+          <ChessClubTraining adminMode />
+        </section>}
       </div>
     </main>
   );

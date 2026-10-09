@@ -16,6 +16,8 @@ type Tournament = {
   player_count: number;
   is_joined: boolean;
   is_creator: boolean;
+  can_join: boolean;
+  can_manage: boolean;
   created_at: string;
 };
 type Player = { user_id: string; username: string; score: number; is_creator: boolean };
@@ -220,7 +222,7 @@ export function Tournaments() {
     const preferredId = typeof preferred === "string" ? preferred : preferred?.tournament_id ?? selected?.tournament_id;
     const next = rows.find((item) => item.tournament_id === preferredId) ?? null;
     setSelected(next);
-    if (next?.is_joined) await loadDetails(next);
+    if (next?.is_joined || next?.can_manage) await loadDetails(next);
     else {
       setPlayers([]);
       setGames([]);
@@ -239,10 +241,12 @@ export function Tournaments() {
           if (user) {
             const rows = await loadTournaments();
             if (!active) return;
-            const joined = rows.find((item) => item.is_joined);
-            if (joined) {
-              setSelected(joined);
-              await loadDetails(joined);
+            const requestedTournamentId = new URLSearchParams(window.location.search).get("clubTournament");
+            const requested = rows.find((item) => item.tournament_id === requestedTournamentId);
+            const initialSelection = requested ?? rows.find((item) => item.is_joined);
+            if (initialSelection) {
+              setSelected(initialSelection);
+              if (initialSelection.is_joined || initialSelection.can_manage) await loadDetails(initialSelection);
             }
           }
         } catch (loadError) {
@@ -342,11 +346,12 @@ export function Tournaments() {
         <section className="space-y-3">
           <div className="flex items-center justify-between"><h2 className="text-lg font-semibold">Turnierübersicht</h2><button type="button" onClick={() => void refresh()} disabled={busy} className="text-xs text-slate-400 underline disabled:opacity-50">Aktualisieren</button></div>
           {tournaments.map((tournament) => <article key={tournament.tournament_id} className={`rounded-xl border p-4 ${selected?.tournament_id === tournament.tournament_id ? "border-emerald-400/60 bg-slate-900" : "border-slate-800 bg-slate-900/60"}`}>
-            <button type="button" onClick={() => { setSelected(tournament); setError(""); if (tournament.is_joined) void loadDetails(tournament).catch((loadError) => { console.error("Turnierdetails konnten nicht geladen werden:", loadError); setError(`Turnierdetails konnten nicht geladen werden: ${errorMessage(loadError, "unbekannter Fehler")}`); }); }} className="block w-full text-left">
+            <button type="button" onClick={() => { setSelected(tournament); setError(""); if (tournament.is_joined || tournament.can_manage) void loadDetails(tournament).catch((loadError) => { console.error("Turnierdetails konnten nicht geladen werden:", loadError); setError(`Turnierdetails konnten nicht geladen werden: ${errorMessage(loadError, "unbekannter Fehler")}`); }); }} className="block w-full text-left">
               <span className="flex items-start justify-between gap-2"><strong>{tournament.name}</strong><span className="shrink-0 text-xs text-emerald-300">{statusLabels[tournament.status]}</span></span>
               <span className="mt-1 block text-xs text-slate-400">{tournament.player_count}/{tournament.max_players} Spieler · {Math.floor(tournament.initial_seconds / 60)}+{tournament.increment_seconds} · von {tournament.creator_username}</span>
             </button>
-            {!tournament.is_joined && tournament.status === "open" && <button type="button" disabled={busy || tournament.player_count >= tournament.max_players} onClick={() => void perform("Du bist dem Turnier beigetreten.", async () => { const { error: joinError } = await getClient().rpc("join_chess_tournament", { p_tournament_id: tournament.tournament_id }); if (joinError) throw joinError; }, tournament)} className="mt-3 rounded-lg bg-emerald-400 px-3 py-2 text-xs font-semibold text-slate-950 disabled:opacity-50">Beitreten</button>}
+            {!tournament.is_joined && tournament.can_join && tournament.status === "open" && <button type="button" disabled={busy || tournament.player_count >= tournament.max_players} onClick={() => void perform("Du bist dem Turnier beigetreten.", async () => { const { error: joinError } = await getClient().rpc("join_chess_tournament", { p_tournament_id: tournament.tournament_id }); if (joinError) throw joinError; }, tournament)} className="mt-3 rounded-lg bg-emerald-400 px-3 py-2 text-xs font-semibold text-slate-950 disabled:opacity-50">Beitreten</button>}
+            {!tournament.is_joined && !tournament.can_join && !tournament.can_manage && tournament.status === "open" && <p className="mt-3 text-xs text-slate-500">Nur Mitglieder der Trainingsgruppe können teilnehmen.</p>}
             {tournament.is_joined && !tournament.is_creator && tournament.status === "open" && <button type="button" disabled={busy} onClick={() => void perform("Du hast das Turnier verlassen.", async () => { const { error: leaveError } = await getClient().rpc("leave_chess_tournament", { p_tournament_id: tournament.tournament_id }); if (leaveError) throw leaveError; }, tournament)} className="mt-3 ml-2 rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-300 disabled:opacity-50">Verlassen</button>}
             {selected?.tournament_id === tournament.tournament_id && tournament.is_creator && tournament.status === "open" && <button type="button" disabled={busy || tournament.player_count < 2} onClick={() => void perform("Turnier gestartet. Die Paarungen sind jetzt sichtbar.", async () => { const { error: startError } = await getClient().rpc("start_chess_tournament", { p_tournament_id: tournament.tournament_id }); if (startError) throw startError; }, tournament)} className="mt-3 rounded-lg border border-amber-400/40 px-3 py-2 text-xs text-amber-200 disabled:opacity-50">Turnier starten</button>}
           </article>)}
@@ -354,7 +359,8 @@ export function Tournaments() {
         </section>
 
         <section className="space-y-4">
-          {selected?.is_joined ? <>
+          {selected && !selected.is_joined && !selected.can_manage ? <p className="rounded-xl border border-slate-800 bg-slate-900 p-5 text-sm text-slate-400">Du bist für dieses Turnier noch nicht angemeldet. Tritt einem offenen Turnier über die Übersicht bei, um Tabelle und Paarungen zu sehen.</p> : selected && (selected.is_joined || selected.can_manage) ? <>
+            {selected.can_manage && !selected.is_joined && <p className="rounded-xl border border-amber-300/20 bg-amber-300/5 p-3 text-sm text-amber-100">Du kannst dieses Vereinsturnier administrativ einsehen, bist aber nicht zur Teilnahme angemeldet.</p>}
             <div className="flex flex-wrap items-end justify-between gap-2"><div><h2 className="text-xl font-semibold">{selected.name}</h2><p className="mt-1 text-xs text-slate-400">{statusLabels[selected.status]} · {games.length} Paarungen, {activeGameCount} offen · Elo-Modus: {getOnlineRatingModeLabel(getOnlineRatingMode(selected.initial_seconds, selected.increment_seconds))}</p></div></div>
             <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
               <h3 className="font-semibold">Tabelle</h3>
