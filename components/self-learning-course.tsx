@@ -7,6 +7,14 @@ import { learningLessons, learningPaths } from "@/lib/learning-course";
 
 const STORAGE_KEY = "schach-selbstlernen-v1";
 
+const learningOptions = [
+  { label: "Lernpfad", detail: "Arbeite dich Schritt für Schritt durch alle Themen.", href: "#lernplan", mark: "↗" },
+  { label: "Schachregeln für Anfänger", detail: "Starte ohne Vorwissen mit Brett und Figuren.", href: "#anfang", mark: "♙" },
+  { label: "Eröffnungen lernen", detail: "Spiele ausgewählte Varianten Zug für Zug nach.", href: "/repertoire", mark: "⌂" },
+  { label: "Mattsetzen lernen", detail: "Übe Mattführungen mit Dame und Turm.", href: "#matt", mark: "♛" },
+  { label: "Endspiele für Fortgeschrittene", detail: "Lerne Pläne für Bauern- und Turmendspiele.", href: "#endspiele", mark: "♜" },
+];
+
 export function SelfLearningCourse() {
   const [completed, setCompleted] = useState<string[]>([]);
   const [currentLessonId, setCurrentLessonId] = useState(learningLessons[0].id);
@@ -69,7 +77,24 @@ export function SelfLearningCourse() {
           </p>
         </header>
 
-        <section id="lernplan" aria-label="Dein Lernfortschritt" className="mb-6 rounded-xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5">
+        <section aria-labelledby="learning-options-heading" className="mb-8">
+          <h2 id="learning-options-heading" className="mb-3 text-lg font-semibold text-white">Womit möchtest du lernen?</h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {learningOptions.map((option) => (
+              <Link
+                key={option.href}
+                href={option.href}
+                className="group rounded-xl border border-slate-800 bg-slate-900/50 p-4 transition hover:border-amber-300/50 hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
+              >
+                <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-300/10 text-lg text-amber-200">{option.mark}</span>
+                <span className="mt-3 block text-sm font-semibold text-white group-hover:text-amber-100">{option.label}</span>
+                <span className="mt-1 block text-xs leading-5 text-slate-400">{option.detail}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section aria-label="Dein Lernfortschritt" className="mb-6 rounded-xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="font-semibold">Dein Lernpfad</h2>
@@ -83,17 +108,8 @@ export function SelfLearningCourse() {
           {!storageAvailable && <p role="status" className="mt-3 text-xs text-amber-200">Der Browser kann den Fortschritt gerade nicht speichern. Deine Lektionen bleiben bis zum Schließen dieser Seite auswählbar.</p>}
         </section>
 
-        <section aria-label="Heute üben" className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-amber-300/20 bg-amber-300/5 p-4 sm:p-5">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-amber-200">Jeden Tag eine neue Aufgabe</p>
-            <h2 className="mt-1 font-semibold text-white">Taktik passend zu deiner Spielstärke</h2>
-            <p className="mt-1 text-sm text-slate-400">Löse eine echte Schachstellung und lerne, Kombinationen zu erkennen.</p>
-          </div>
-          <Link href="/taktik?daily=1" className="rounded-lg bg-amber-300 px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-amber-200">Tagesaufgabe starten →</Link>
-        </section>
-
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(16rem,0.75fr)_minmax(0,1.5fr)]">
-          <nav aria-label="Lernpfade" className="space-y-3">
+          <nav id="lernplan" aria-label="Lernpfade" className="space-y-3">
             {learningPaths.map((path) => {
               const lessons = path.lessonIds.map((id) => learningLessons.find((item) => item.id === id)!);
               const doneCount = lessons.filter((item) => completed.includes(item.id)).length;

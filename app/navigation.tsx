@@ -19,14 +19,15 @@ const sections: { title: string; items: MenuItem[] }[] = [
     ],
   },
   {
-    title: "Selbstständig lernen",
+    title: "Lernen",
     items: [
-      { label: "Lernpfad", mark: "↗", href: "/lernen#lernplan" },
-      { label: "Schachregeln für Anfänger", mark: "♙", href: "/lernen#anfang" },
-      { label: "Tägliche Taktikaufgabe", mark: "♞", href: "/taktik?daily=1" },
-      { label: "Eröffnungen Schritt für Schritt", mark: "⌂", href: "/repertoire" },
-      { label: "Mattsetzen lernen", mark: "♛", href: "/lernen#matt" },
-      { label: "Endspiele & Fortgeschritten", mark: "♜", href: "/lernen#endspiele" },
+      { label: "Selbstständiges Lernen", mark: "↗", href: "/lernen" },
+    ],
+  },
+  {
+    title: "Taktiktraining",
+    items: [
+      { label: "Taktikaufgaben", mark: "♞", href: "/taktik" },
     ],
   },
   {

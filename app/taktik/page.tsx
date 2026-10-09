@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { Chess, type Color, type Square } from "chess.js";
 import { MiniChessboard } from "@/components/mini-chessboard";
-import { chooseTacticsPuzzle, getDailyTacticsPuzzle, getTacticsDifficulty, getTacticsPuzzleForRating, getTacticsRatingChange, getTacticsTheme, tacticsPuzzles } from "@/lib/tactics";
+import { chooseTacticsPuzzle, getTacticsDifficulty, getTacticsPuzzleForRating, getTacticsRatingChange, getTacticsTheme, tacticsPuzzles } from "@/lib/tactics";
 import { getTacticsProgress, INITIAL_TACTICS_PROGRESS, subscribeToTacticsProgress, updateTacticsProgress } from "@/lib/tactics-progress";
 import { createClient } from "@/lib/supabase/client";
 
@@ -28,7 +28,6 @@ function moveToUci(move: { from: Square; to: Square; promotion?: string }): stri
 export default function TacticsPage() {
   const progress = useSyncExternalStore(subscribeToTacticsProgress, getTacticsProgress, () => INITIAL_TACTICS_PROGRESS);
   const [puzzleId, setPuzzleId] = useState<string | null>(null);
-  const [dailyChallenge, setDailyChallenge] = useState(false);
   const [clubTaskId, setClubTaskId] = useState<string | null>(null);
   const [clubTaskMessage, setClubTaskMessage] = useState("");
   const [clubTaskError, setClubTaskError] = useState("");
@@ -42,12 +41,6 @@ export default function TacticsPage() {
     const params = new URLSearchParams(window.location.search);
     const requestedTaskId = params.get("clubTask");
     const requestedPuzzleId = params.get("puzzle");
-    if (!requestedTaskId && !requestedPuzzleId && params.get("daily") === "1") {
-      setDailyChallenge(true);
-      const currentProgress = getTacticsProgress();
-      setPuzzleId(getDailyTacticsPuzzle(currentProgress.rating, currentProgress.recent).id);
-      return;
-    }
     if (!requestedTaskId && !requestedPuzzleId) return;
     const assignedPuzzle = requestedPuzzleId
       ? tacticsPuzzles.find((candidate) => candidate.id === requestedPuzzleId)
@@ -185,7 +178,6 @@ export default function TacticsPage() {
             <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Taktikaufgaben</h1>
             <p className="mt-2 text-sm text-slate-400">Echte Partiestellungen, passend zu deiner Taktik-Elo.</p>
             <p className="mt-1 text-xs text-slate-500">{tacticsPuzzles.length} unterschiedliche Aufgaben · Schwierigkeit von ca. {Math.min(...tacticsPuzzles.map((item) => item.rating))} bis {Math.max(...tacticsPuzzles.map((item) => item.rating))} Elo</p>
-            {dailyChallenge && <p className="mt-2 text-sm text-amber-200">Deine heutige Aufgabe · auf deine Taktik-Elo abgestimmt.</p>}
             {clubTaskId && <p className="mt-2 text-sm text-emerald-200">Vereinsaufgabe · Dein Ergebnis wird mit deiner Trainingsgruppe geteilt.</p>}
             {clubTaskError && <p className="mt-2 text-sm text-amber-200" role="alert">{clubTaskError}</p>}
           </div>

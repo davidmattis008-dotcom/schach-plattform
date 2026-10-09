@@ -20,7 +20,6 @@ const dashboardSections = [
     description: "Verbessere deine Taktik, lerne Eröffnungen und untersuche Stellungen.",
     items: [
       { title: "Selbstständig Schach lernen", detail: "Arbeite dich ohne Vorwissen vom ersten Zug bis zu Endspielen vor.", href: "/lernen", mark: "↗" },
-      { title: "Tägliche Taktikaufgabe", detail: "Eine echte Schachstellung passend zu deiner Spielstärke.", href: "/taktik?daily=1", mark: "♞" },
       { title: "Taktikaufgaben", detail: "Trainiere mit Aufgaben passend zu deiner Taktik-Elo.", href: "/taktik", mark: "♞" },
       { title: "Eröffnungen", detail: "Spiele ausgewählte Varianten Zug für Zug nach.", href: "/repertoire", mark: "⌂" },
       { title: "Analysebrett", detail: "Untersuche Stellungen und spiele Züge nach.", href: "/analyse", mark: "⌕" },
@@ -93,9 +92,6 @@ export default function Home() {
             <div className="mt-6 flex flex-wrap gap-3">
               <Link href="/lernen" className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
                 Lernpfad starten <span aria-hidden="true">→</span>
-              </Link>
-              <Link href="/taktik?daily=1" className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:border-emerald-400/70 hover:text-emerald-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
-                Tägliche Aufgabe
               </Link>
             </div>
           </div>

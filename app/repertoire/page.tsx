@@ -24,6 +24,48 @@ const openings = [
     idea: "Mit c4 setzt du d5 unter Druck. Nach ...e6 kannst du Figuren entwickeln und Raum im Zentrum sichern.",
     moves: "d4 d5 c4 e6 Nc3 Nf6 Bg5 Be7 e3 O-O Nf3 h6 Bh4",
   },
+  {
+    name: "Spanische Partie",
+    side: "Weiß",
+    idea: "Der Läufer greift den Springer c6 an. Entwickle ruhig weiter und bereite den zentralen Vorstoß d4 vor.",
+    moves: "e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O",
+  },
+  {
+    name: "Schottische Partie",
+    side: "Weiß",
+    idea: "Mit d4 öffnest du früh das Zentrum. Entwickle deine Figuren aktiv und achte auf die zentrale Kontrolle.",
+    moves: "e4 e5 Nf3 Nc6 d4 exd4 Nxd4 Nf6 Nc3 Bb4 Nxc6 bxc6 Bd3 d5 exd5 cxd5 O-O",
+  },
+  {
+    name: "Sizilianische Verteidigung",
+    side: "Schwarz",
+    idea: "Du bekämpfst e4 mit einem Flankenbauern und erhältst ein dynamisches, asymmetrisches Spiel.",
+    moves: "e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 Nb3 Be6 f3 Be7 Qd2 O-O O-O-O",
+  },
+  {
+    name: "Französische Verteidigung",
+    side: "Schwarz",
+    idea: "Mit ...e6 und ...d5 baust du ein stabiles Zentrum auf. Der Läufer c8 wird häufig über d7 entwickelt.",
+    moves: "e4 e6 d4 d5 Nc3 Bb4 e5 c5 a3 Bxc3+ bxc3 Ne7 Nf3 Nbc6 Bd3 c4 Be2 O-O",
+  },
+  {
+    name: "Caro-Kann-Verteidigung",
+    side: "Schwarz",
+    idea: "Du unterstützt ...d5 zunächst mit ...c6 und erhältst eine solide Bauernstruktur.",
+    moves: "e4 c6 d4 d5 Nc3 dxe4 Nxe4 Bf5 Ng3 Bg6 Nf3 Nd7 Bd3 Bxd3 Qxd3 e6 O-O Ngf6",
+  },
+  {
+    name: "Damengambit abgelehnt",
+    side: "Schwarz",
+    idea: "Mit ...d5 und ...e6 hältst du das Zentrum und entwickelst dich solide gegen den weißen c-Bauern.",
+    moves: "d4 d5 c4 e6 Nc3 Nf6 Bg5 Be7 e3 O-O Nf3 h6 Bh4",
+  },
+  {
+    name: "Königsindische Verteidigung",
+    side: "Schwarz",
+    idea: "Du fianchettierst den Läufer und lässt Weiß zunächst Raum im Zentrum, um es später anzugreifen.",
+    moves: "d4 Nf6 c4 g6 Nc3 Bg7 e4 d6 Nf3 O-O Be2 e5 O-O Nc6 d5 Ne7",
+  },
 ];
 
 export default function RepertoirePage() {
@@ -49,7 +91,7 @@ export default function RepertoirePage() {
         <header className="mt-8">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300">Eröffnungen lernen</p>
           <h1 className="mt-3 text-4xl font-bold sm:text-5xl">Dein Repertoire</h1>
-          <p className="mt-3 max-w-2xl leading-7 text-slate-300">Lerne drei solide Einstiege Zug für Zug. Nutze die Navigation, um die Stellung nach jedem Zugpaar nachzuspielen.</p>
+          <p className="mt-3 max-w-2xl leading-7 text-slate-300">Lerne mehrere solide Eröffnungen für Weiß und Schwarz Zug für Zug. Wähle eine Variante aus und spiele die Stellung nach jedem Zug nach.</p>
         </header>
 
         <nav className="mt-7 flex flex-wrap gap-2" aria-label="Eröffnung auswählen">

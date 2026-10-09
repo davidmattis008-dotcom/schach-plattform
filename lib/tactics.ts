@@ -31,19 +31,6 @@ export function chooseTacticsPuzzle(rating: number, recent: string[]): TacticsPu
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
-export function getDailyTacticsPuzzle(rating: number, recent: string[], date = new Date()): TacticsPuzzle {
-  const unseen = tacticsPuzzles.filter((puzzle) => !recent.includes(puzzle.id));
-  const available = unseen.length > 0 ? unseen : tacticsPuzzles;
-  const nearby = available.filter((puzzle) => Math.abs(puzzle.rating - rating) <= 200);
-  const closestRating = Math.min(...available.map((puzzle) => Math.abs(puzzle.rating - rating)));
-  const candidates = nearby.length > 0
-    ? nearby
-    : available.filter((puzzle) => Math.abs(puzzle.rating - rating) === closestRating);
-  const day = `${date.getUTCFullYear()}-${date.getUTCMonth() + 1}-${date.getUTCDate()}:${Math.floor(rating / 100)}`;
-  const hash = Array.from(day).reduce((value, character) => (value * 31 + character.charCodeAt(0)) >>> 0, 0);
-  return candidates[hash % candidates.length];
-}
-
 export function getTacticsRatingChange(userRating: number, puzzleRating: number, solved: boolean): number {
   const expectedScore = 1 / (1 + 10 ** ((puzzleRating - userRating) / 400));
   return Math.round(24 * ((solved ? 1 : 0) - expectedScore));
