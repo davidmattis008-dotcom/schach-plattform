@@ -154,7 +154,6 @@ export default function TacticsPage() {
 
   function nextPuzzle() {
     const next = chooseTacticsPuzzle(progress.rating, progress.recent);
-    setDailyChallenge(false);
     setPuzzleId(next.id);
     setPositionState(null);
     setSolutionIndex(0);
