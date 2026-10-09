@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { MiniChessboard } from "@/components/mini-chessboard";
-import { tacticsPreviewFen } from "@/lib/tactics";
 import { getTacticsProgress, INITIAL_TACTICS_PROGRESS, subscribeToTacticsProgress } from "@/lib/tactics-progress";
 import { createClient } from "@/lib/supabase/client";
 import { InstallAppLink } from "@/components/install-app-link";
@@ -76,29 +74,12 @@ export default function Home() {
             <span>Schach<span className="font-normal text-slate-400">plattform</span></span>
           </Link>
           <div className="flex items-center gap-3">
-            {username && <Link href="/einstellungen" className="rounded-lg px-3 py-2.5 text-sm text-slate-400 transition hover:bg-slate-900 hover:text-white">Einstellungen</Link>}
             {!loading && !username && <Link href="/login" className="rounded-lg bg-emerald-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300">Anmelden</Link>}
           </div>
           <InstallAppLink className="hidden items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:border-emerald-400/70 hover:text-emerald-200 md:inline-flex">
             <span aria-hidden="true">↓</span>App installieren
           </InstallAppLink>
         </header>
-
-        <section aria-labelledby="welcome-heading" className="mb-10 grid gap-6 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 p-5 shadow-xl shadow-black/10 sm:p-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-          <div className="py-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Selbstständig lernen</p>
-            <h1 id="welcome-heading" className="mt-3 max-w-xl text-3xl font-semibold tracking-tight text-white sm:text-4xl">{username ? <>Willkommen zurück, <span className="text-emerald-300">{username}</span>.</> : "Lerne Schach von Anfang an."}</h1>
-            <p className="mt-3 max-w-md text-sm leading-6 text-slate-400">Lerne die Regeln, übe in deinem Tempo und arbeite dich Schritt für Schritt bis zu Taktik und Endspielen vor.</p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/lernen" className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
-                Lernpfad starten <span aria-hidden="true">→</span>
-              </Link>
-            </div>
-          </div>
-          <Link href="/taktik" aria-label="Taktikaufgabe öffnen" className="mx-auto block w-full max-w-md transition hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
-            <MiniChessboard fen={tacticsPreviewFen} label="Vorschau einer Taktikaufgabe" />
-          </Link>
-        </section>
 
         <section aria-labelledby="progress-heading" className="mb-10">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
