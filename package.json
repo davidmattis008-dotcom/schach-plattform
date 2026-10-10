@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:tactics": "node scripts/validate-tactics.mjs"
+    "test:tactics": "node scripts/validate-tactics.mjs",
+    "test:endgame-exercises": "node scripts/validate-endgame-exercises.mjs",
+    "import:endgame-exercises": "node scripts/import-endgame-exercises.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
