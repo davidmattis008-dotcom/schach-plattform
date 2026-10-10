@@ -22,6 +22,7 @@
     "title": "Der König",
     "description": "Der König zieht ein Feld in jede Richtung. Er darf niemals auf ein angegriffenes Feld ziehen oder dort stehen bleiben.",
     "fen": "4k3/8/8/8/8/8/4K3/8 w - - 0 1",
+    "focusSquare": "e2",
     "demo": [
       { "move": "e2e3", "explanation": "Der weiße König zieht ein Feld diagonal." },
       { "move": "e8d7", "explanation": "Auch der schwarze König zieht genau ein Feld." }
@@ -37,6 +38,7 @@
     "title": "Die Dame",
     "description": "Die Dame zieht beliebig weit waagerecht, senkrecht oder diagonal – aber nicht über andere Figuren hinweg.",
     "fen": "4k3/8/8/8/3p4/8/3Q4/4K3 w - - 0 1",
+    "focusSquare": "d2",
     "demo": [
       { "move": "d2d4", "explanation": "Die Dame zieht senkrecht und schlägt den schwarzen Bauern auf d4." }
     ],
@@ -51,6 +53,7 @@
     "title": "Der Turm",
     "description": "Der Turm zieht beliebig weit waagerecht oder senkrecht. Er kann nicht über Figuren springen.",
     "fen": "4k3/8/8/8/p7/8/8/R3K3 w - - 0 1",
+    "focusSquare": "a1",
     "demo": [
       { "move": "a1a4", "explanation": "Der Turm zieht gerade über die freie Linie und schlägt den Bauern auf a4." }
     ],
@@ -65,6 +68,7 @@
     "title": "Der Läufer",
     "description": "Der Läufer zieht beliebig weit diagonal und bleibt immer auf Feldern derselben Farbe.",
     "fen": "4k3/8/8/8/8/4p3/8/2B1K3 w - - 0 1",
+    "focusSquare": "c1",
     "demo": [
       { "move": "c1e3", "explanation": "Der Läufer zieht diagonal und schlägt den Bauern auf e3." }
     ],
@@ -79,6 +83,7 @@
     "title": "Der Springer",
     "description": "Der Springer zieht in einem L: zwei Felder in eine Richtung und danach ein Feld seitwärts. Er darf springen.",
     "fen": "4k3/8/8/8/8/3p4/8/2N1K3 w - - 0 1",
+    "focusSquare": "c1",
     "demo": [
       { "move": "c1d3", "explanation": "Der Springer springt im L und schlägt den Bauern auf d3." }
     ],
@@ -93,6 +98,7 @@
     "title": "Der Bauer",
     "description": "Bauern ziehen geradeaus, schlagen aber diagonal. Vom Startfeld dürfen sie einmal zwei Felder vorziehen.",
     "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    "focusSquare": "e2",
     "demo": [
       { "move": "e2e4", "explanation": "Vom Startfeld darf ein Bauer ein oder zwei freie Felder vorziehen." },
       { "move": "d7d5", "explanation": "Auch Schwarz darf einen Bauern vom Startfeld zwei Felder ziehen." },

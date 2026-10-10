@@ -9,8 +9,7 @@ const STORAGE_KEY = "schach-selbstlernen-v1";
 
 const learningOptions = [
   { label: "Lernpfad", detail: "Arbeite dich Schritt für Schritt durch alle Themen.", href: "#lernplan", mark: "↗" },
-  { label: "Schachregeln für Anfänger", detail: "Starte ohne Vorwissen mit Brett und Figuren.", href: "#anfang", mark: "♙" },
-  { label: "Alle Schachregeln lernen", detail: "Übe Figuren, Sonderzüge und Partieende direkt am interaktiven Brett.", href: "/lernen/regeln", mark: "♟" },
+  { label: "Schachregeln lernen", detail: "Vom Brett und den Figuren bis zu Sonderzügen, Matt und Remis – mit Schachbrett links und Erklärung rechts.", href: "/lernen/regeln", mark: "♟" },
   { label: "Eröffnungen lernen", detail: "Spiele ausgewählte Varianten Zug für Zug nach.", href: "/repertoire", mark: "⌂" },
   { label: "Mattsetzen lernen", detail: "Übe Mattführungen mit Dame und Turm.", href: "#matt", mark: "♛" },
   { label: "Endspiele lernen", detail: "Verstehe 500 Stellungen Zug für Zug und wende die Pläne selbst an.", href: "/lernen/endspiele", mark: "♜" },
