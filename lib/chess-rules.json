@@ -1,0 +1,242 @@
+[
+  {
+    "id": "board-and-turns",
+    "title": "Brett, Figuren und Zugfolge",
+    "description": "Das Brett hat 64 Felder. Weiß beginnt; danach ziehen die Farben abwechselnd je einen Zug.",
+    "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    "demo": [
+      { "move": "e2e4", "explanation": "Weiß zieht den Bauern zwei Felder von seinem Startfeld." },
+      { "move": "e7e5", "explanation": "Jetzt ist Schwarz genau einmal am Zug." },
+      { "move": "g1f3", "explanation": "Danach zieht wieder Weiß. Ein Zug besteht aus einer Aktion der gerade ziehenden Seite." }
+    ],
+    "facts": [
+      "Das Brett wird so aufgestellt, dass rechts unten aus Sicht jedes Spielers ein helles Feld liegt.",
+      "Die Dame steht auf ihrer eigenen Farbe; die Könige stehen auf den übrigen mittleren Feldern.",
+      "Weiß zieht zuerst. Danach ziehen Weiß und Schwarz abwechselnd; Weiß darf keinen zweiten Zug direkt hintereinander machen.",
+      "Keine Figur darf auf ein Feld mit einer eigenen Figur ziehen. Nur der Springer kann über besetzte Felder springen.",
+      "Ein Zug ist beendet, sobald die Figur auf dem Zielfeld losgelassen wurde. Online wird das durch die Brettbedienung festgelegt."
+    ]
+  },
+  {
+    "id": "king",
+    "title": "Der König",
+    "description": "Der König zieht ein Feld in jede Richtung. Er darf niemals auf ein angegriffenes Feld ziehen oder dort stehen bleiben.",
+    "fen": "4k3/8/8/8/8/8/4K3/8 w - - 0 1",
+    "demo": [
+      { "move": "e2e3", "explanation": "Der weiße König zieht ein Feld diagonal." },
+      { "move": "e8d7", "explanation": "Auch der schwarze König zieht genau ein Feld." }
+    ],
+    "facts": [
+      "Der König darf nicht neben dem gegnerischen König stehen, denn Könige greifen die Nachbarfelder an.",
+      "Könige werden nicht geschlagen. Eine Stellung, in der der König angegriffen ist, heißt Schach.",
+      "Du darfst deinen König nicht ins Schach ziehen und keinen Zug machen, der deinen eigenen König im Schach stehen lässt."
+    ]
+  },
+  {
+    "id": "queen",
+    "title": "Die Dame",
+    "description": "Die Dame zieht beliebig weit waagerecht, senkrecht oder diagonal – aber nicht über andere Figuren hinweg.",
+    "fen": "4k3/8/8/8/3p4/8/3Q4/4K3 w - - 0 1",
+    "demo": [
+      { "move": "d2d4", "explanation": "Die Dame zieht senkrecht und schlägt den schwarzen Bauern auf d4." }
+    ],
+    "facts": [
+      "Die Dame verbindet die Reichweite von Turm und Läufer.",
+      "Sie darf nicht springen: Der Weg zum Zielfeld muss frei sein.",
+      "Eine gegnerische Figur wird geschlagen, indem die Dame auf deren Feld zieht. Eigene Figuren darf sie nicht schlagen."
+    ]
+  },
+  {
+    "id": "rook",
+    "title": "Der Turm",
+    "description": "Der Turm zieht beliebig weit waagerecht oder senkrecht. Er kann nicht über Figuren springen.",
+    "fen": "4k3/8/8/8/p7/8/8/R3K3 w - - 0 1",
+    "demo": [
+      { "move": "a1a4", "explanation": "Der Turm zieht gerade über die freie Linie und schlägt den Bauern auf a4." }
+    ],
+    "facts": [
+      "Der Turm bleibt immer auf derselben Reihe oder Linie.",
+      "Andere Figuren blockieren den Weg; nur ein Springer darf über Figuren springen.",
+      "Der Turm wirkt außerdem beim Rochieren mit."
+    ]
+  },
+  {
+    "id": "bishop",
+    "title": "Der Läufer",
+    "description": "Der Läufer zieht beliebig weit diagonal und bleibt immer auf Feldern derselben Farbe.",
+    "fen": "4k3/8/8/8/8/4p3/8/2B1K3 w - - 0 1",
+    "demo": [
+      { "move": "c1e3", "explanation": "Der Läufer zieht diagonal und schlägt den Bauern auf e3." }
+    ],
+    "facts": [
+      "Der Läufer darf nicht über Figuren springen; eine blockierte Diagonale kann er nicht benutzen.",
+      "Jeder Spieler beginnt mit einem hellfeldrigen und einem dunkelfeldrigen Läufer.",
+      "Beim Schlagen ersetzt der Läufer die gegnerische Figur auf deren Feld."
+    ]
+  },
+  {
+    "id": "knight",
+    "title": "Der Springer",
+    "description": "Der Springer zieht in einem L: zwei Felder in eine Richtung und danach ein Feld seitwärts. Er darf springen.",
+    "fen": "4k3/8/8/8/8/3p4/8/2N1K3 w - - 0 1",
+    "demo": [
+      { "move": "c1d3", "explanation": "Der Springer springt im L und schlägt den Bauern auf d3." }
+    ],
+    "facts": [
+      "Der Springer landet immer auf einer andersfarbigen Feldfarbe.",
+      "Zwischen Start- und Zielfeld dürfen Figuren stehen; sie blockieren den Springer nicht.",
+      "Der Springer schlägt nur eine gegnerische Figur auf seinem Zielfeld."
+    ]
+  },
+  {
+    "id": "pawn",
+    "title": "Der Bauer",
+    "description": "Bauern ziehen geradeaus, schlagen aber diagonal. Vom Startfeld dürfen sie einmal zwei Felder vorziehen.",
+    "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    "demo": [
+      { "move": "e2e4", "explanation": "Vom Startfeld darf ein Bauer ein oder zwei freie Felder vorziehen." },
+      { "move": "d7d5", "explanation": "Auch Schwarz darf einen Bauern vom Startfeld zwei Felder ziehen." },
+      { "move": "e4d5", "explanation": "Der weiße Bauer schlägt diagonal nach vorne. Geradeaus schlagen darf er nicht." }
+    ],
+    "facts": [
+      "Bauern ziehen nie rückwärts und können nicht über Figuren springen.",
+      "Nach dem ersten Zug darf ein Bauer pro Zug nur ein Feld vorziehen, sofern es frei ist.",
+      "Bauern schlagen ein Feld diagonal nach vorne – nicht auf dem Feld direkt vor ihnen.",
+      "Erreicht ein Bauer die letzte Reihe, muss er sofort umgewandelt werden."
+    ]
+  },
+  {
+    "id": "check",
+    "title": "Schach und legale Verteidigung",
+    "description": "Der schwarze König steht im Schach. Finde auf dem Brett einen legalen Zug, der den Angriff beendet.",
+    "fen": "4k3/8/8/8/8/8/8/K3R3 b - - 0 1",
+    "demo": [],
+    "facts": [
+      "Auf Schach musst du sofort reagieren. Du darfst keinen anderen Zug machen und den König angegriffen lassen.",
+      "Du kannst den Angreifer schlagen, den Angriff mit einer Figur blockieren oder den König auf ein sicheres Feld ziehen.",
+      "Gegen einen Springerangriff kann man nicht blockieren; meist muss der Springer geschlagen oder der König bewegt werden.",
+      "Bei Doppelschach kann nur der König ziehen. Die angreifenden Figuren müssen nicht beide geschlagen werden.",
+      "Ein König steht nicht „im Schach“, wenn der Angriff durch eine Regel verhindert wird; nur legale Angriffe zählen."
+    ]
+  },
+  {
+    "id": "castling",
+    "title": "Die Rochade",
+    "description": "Die Rochade ist ein gemeinsamer König-und-Turm-Zug. Pro Partie darf jeder König höchstens einmal rochieren.",
+    "fen": "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+    "demo": [
+      { "move": "e1g1", "explanation": "Kurze Rochade: Der König zieht zwei Felder zum Turm, der Turm springt direkt daneben." },
+      { "move": "e8c8", "explanation": "Lange Rochade: Der König zieht zwei Felder zur Damenseite, der Turm kommt auf d8." }
+    ],
+    "facts": [
+      "Rochiert wird mit dem König: kurz (O-O) oder lang (O-O-O). Der König zieht zwei Felder, dann kommt der Turm auf das Feld direkt neben ihn.",
+      "Zwischen König und Turm müssen alle Felder frei sein; bei der langen Rochade muss auch b1/b8 frei sein.",
+      "Der König darf aktuell nicht im Schach stehen und kein angegriffenes Feld überqueren oder betreten.",
+      "Der König darf zuvor noch nicht gezogen haben. Auch der beteiligte Turm darf zuvor nicht gezogen haben – selbst wenn er zurückgekehrt ist.",
+      "Rochade ist nicht erlaubt, wenn der König dabei im Schach bleibt oder durch ein angegriffenes Feld zieht. Ein angegriffener Turm allein verhindert sie nicht."
+    ]
+  },
+  {
+    "id": "en-passant",
+    "title": "En passant",
+    "description": "En passant ist ein besonderer Bauernschlag unmittelbar nach dem Doppelschritt eines gegnerischen Bauern.",
+    "fen": "4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 2",
+    "demo": [
+      { "move": "e5d6", "explanation": "Der weiße Bauer zieht nach d6 und nimmt den gerade zwei Felder vorgezogenen schwarzen Bauern von d5." }
+    ],
+    "facts": [
+      "Der schlagende Bauer zieht ein Feld diagonal auf das Feld, an dem der gegnerische Bauer vorbeigezogen ist.",
+      "Der geschlagene Bauer wird vom Feld neben dem Zielfeld entfernt.",
+      "En passant ist nur direkt im nächsten Zug möglich. Wird zuerst etwas anderes gezogen, verfällt das Recht.",
+      "Der Schlag ist verboten, wenn dadurch der eigene König im Schach bleibt oder ins Schach gerät."
+    ]
+  },
+  {
+    "id": "promotion",
+    "title": "Umwandlung und Unterverwandlung",
+    "description": "Ein Bauer, der die letzte Reihe erreicht, wird im selben Zug zu einer Dame, einem Turm, Läufer oder Springer.",
+    "fen": "4k3/P7/8/8/8/8/8/4K3 w - - 0 1",
+    "demo": [
+      { "move": "a7a8n", "explanation": "Der Bauer wird hier zum Springer. Das ist eine Unterverwandlung – manchmal ist sie taktisch besser als eine Dame." }
+    ],
+    "facts": [
+      "Die Wahl ist nicht auf bereits geschlagene Figuren beschränkt: Du darfst zum Beispiel eine zweite Dame haben.",
+      "Ein Bauer kann nicht König bleiben und nicht zu einem Bauern umgewandelt werden.",
+      "Die Umwandlung ist sofort wirksam; der neue Stein kann im selben Zug Schach geben oder mattsetzen.",
+      "Du darfst auch Turm, Läufer oder Springer wählen. Diese Wahl heißt Unterverwandlung."
+    ]
+  },
+  {
+    "id": "checkmate",
+    "title": "Matt und Partieende",
+    "description": "Schachmatt ist Schach, gegen das es keinen legalen Zug gibt. Die Partie ist sofort beendet.",
+    "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    "demo": [
+      { "move": "e2e4", "explanation": "Weiß öffnet Linien für Dame und Läufer." },
+      { "move": "e7e5", "explanation": "Schwarz antwortet mit einem zentralen Bauernzug." },
+      { "move": "d1h5", "explanation": "Die Dame greift f7 an." },
+      { "move": "b8c6", "explanation": "Schwarz entwickelt den Springer." },
+      { "move": "f1c4", "explanation": "Der Läufer unterstützt den Angriff auf f7." },
+      { "move": "g8f6", "explanation": "Schwarz entwickelt den Springer – nun folgt das Mattmotiv." },
+      { "move": "h5f7", "explanation": "Dxf7 ist matt: Der König steht im Schach und kann weder entkommen noch die Dame schlagen oder den Angriff blockieren." }
+    ],
+    "facts": [
+      "Der König wird nicht tatsächlich geschlagen. Mit dem Mattzug endet die Partie.",
+      "Wer mattsetzt, gewinnt; die andere Seite verliert.",
+      "Schachmatt zählt auch dann als Gewinn, wenn der Gegner gerade wenig Material hat."
+    ]
+  },
+  {
+    "id": "stalemate",
+    "title": "Patt",
+    "description": "Patt liegt vor, wenn die Seite am Zug nicht im Schach steht, aber keinen legalen Zug hat. Die Partie endet remis.",
+    "fen": "7k/5K2/6Q1/8/8/8/8/8 b - - 0 1",
+    "demo": [],
+    "facts": [
+      "Der König darf nicht ziehen, weil alle Nachbarfelder angegriffen oder besetzt sind.",
+      "Es gibt keinen anderen legalen Zug und der König steht nicht im Schach: Das ist Patt, kein Matt.",
+      "Patt ist sofort remis – auch wenn eine Seite noch deutlich mehr Material hat.",
+      "Prüfe vor jedem Endspielzug, ob du dem gegnerischen König versehentlich jedes Feld nimmst, ohne Schach zu geben."
+    ]
+  },
+  {
+    "id": "draws",
+    "title": "Remis und Unentschieden",
+    "description": "Eine Partie kann auf mehreren Wegen remis enden – durch eine Regel, eine gültige Reklamation oder eine Vereinbarung.",
+    "fen": "7k/8/8/8/8/8/8/KN5n w - - 0 1",
+    "demo": [
+      { "move": "b1c3", "explanation": "Der weiße Springer beginnt einen Zugzyklus." },
+      { "move": "h1g3", "explanation": "Schwarz zieht den Springer." },
+      { "move": "c3b1", "explanation": "Weiß kehrt zur Ausgangsstellung zurück." },
+      { "move": "g3h1", "explanation": "Auch Schwarz kehrt zurück. Wiederholt sich die Stellung ein drittes Mal, kann remis reklamiert werden." },
+      { "move": "b1c3", "explanation": "Ein zweiter gleicher Zyklus lässt dieselbe Stellung erneut entstehen." },
+      { "move": "h1g3", "explanation": "Die Züge wiederholen sich." },
+      { "move": "c3b1", "explanation": "Die Wiederholung steht kurz vor dem Abschluss." },
+      { "move": "g3h1", "explanation": "Dies ist die dritte gleiche Stellung: Nach den FIDE-Regeln kann die am Zug befindliche Seite remis beanspruchen. Bei fünfmaligem Auftreten endet die Partie automatisch remis." }
+    ],
+    "facts": [
+      "Patt ist remis. Ebenso eine tote Stellung, in der keine mögliche Folge legaler Züge mehr zu Matt führen kann.",
+      "Bei dreimaliger Wiederholung kann eine Seite remis beanspruchen; bei fünfmaliger Wiederholung ist es automatisch remis. Es muss dieselbe Seite am Zug sein und dieselben legalen Möglichkeiten bestehen – etwa Rochaderechte oder en-passant-Rechte dürfen sich nicht geändert haben.",
+      "Nach 50 Zügen je Seite ohne Bauernzug und ohne Schlag kann remis beansprucht werden; nach 75 solchen Zügen ist es automatisch remis, sofern der letzte Zug nicht mattsetzt.",
+      "Die Regel zählt Halbzüge: 50 Züge je Seite sind 100 Halbzüge, 75 je Seite sind 150 Halbzüge.",
+      "Typische tote Stellungen sind König gegen König, König und Läufer gegen König sowie König und Springer gegen König.",
+      "Die Spieler können sich auf Remis einigen. Turnierordnungen können festlegen, ab wann ein Remisangebot erlaubt ist.",
+      "Fällt die Zeit, gewinnt der Gegner nur, wenn er mit irgendeiner möglichen legalen Zugfolge mattsetzen kann; andernfalls ist es remis."
+    ]
+  },
+  {
+    "id": "over-the-board",
+    "title": "Turnierregeln am Brett",
+    "description": "Neben den Zugregeln gibt es bei klassischen Partien Regeln für Berühren, Uhr, Notation und Aufgabe.",
+    "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    "demo": [],
+    "facts": [
+      "Berührst du am Brett absichtlich eine eigene Figur, musst du sie ziehen, sofern ein legaler Zug möglich ist. Berührst du eine gegnerische Figur, musst du sie schlagen, sofern das legal möglich ist.",
+      "Möchtest du eine Figur nur zurechtrücken, kündige es vorher an (zum Beispiel „j'adoube“). Online gilt die Berührregel nicht auf dieselbe Weise.",
+      "Bei Uhrenpartien wird nach dem Zug die eigene Uhr gedrückt. Wer die Zeit überschreitet, verliert grundsätzlich – mit der Ausnahme, dass der Gegner nicht mattsetzen kann.",
+      "In Turnierpartien müssen Züge üblicherweise korrekt notiert werden; Ausnahmen und Details hängen von Zeitkontrolle und Turnierregeln ab.",
+      "Du kannst aufgeben; dann gewinnt der Gegner. Ist Matt durch irgendeine legale Zugfolge unmöglich, ist die Partie stattdessen remis.",
+      "Ein regelwidriger Zug muss nach den Regeln der jeweiligen Partie korrigiert werden; im Turnier können dafür Zeitstrafen gelten. Die genaue Behandlung hängt von Spielart und Turnierordnung ab."
+    ]
+  }
+]
