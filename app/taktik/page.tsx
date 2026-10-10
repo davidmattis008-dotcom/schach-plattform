@@ -9,6 +9,7 @@ import { getTacticsProgress, INITIAL_TACTICS_PROGRESS, subscribeToTacticsProgres
 import { createClient } from "@/lib/supabase/client";
 
 type Outcome = "solved" | "missed" | null;
+type SavedTacticRow = { puzzle_id: string };
 
 function playUci(position: Chess, uci: string) {
   const match = uci.match(/^([a-h][1-8])([a-h][1-8])([qrbn])?$/);
@@ -31,6 +32,12 @@ export default function TacticsPage() {
   const [clubTaskId, setClubTaskId] = useState<string | null>(null);
   const [clubTaskMessage, setClubTaskMessage] = useState("");
   const [clubTaskError, setClubTaskError] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
+  const [savedPuzzleIds, setSavedPuzzleIds] = useState<string[]>([]);
+  const [savedLoading, setSavedLoading] = useState(true);
+  const [savedBusy, setSavedBusy] = useState(false);
+  const [savedMessage, setSavedMessage] = useState("");
+  const [showSavedPuzzles, setShowSavedPuzzles] = useState(false);
   const [positionState, setPositionState] = useState<{ puzzleId: string; fen: string } | null>(null);
   const [solutionIndex, setSolutionIndex] = useState(0);
   const [selected, setSelected] = useState<Square | null>(null);
@@ -51,6 +58,30 @@ export default function TacticsPage() {
     }
     setClubTaskId(requestedTaskId);
     setPuzzleId(assignedPuzzle.id);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    async function loadSavedPuzzles() {
+      try {
+        const client = createClient();
+        const { data: { user }, error: authError } = await client.auth.getUser();
+        if (authError) throw authError;
+        if (!active) return;
+        setUserId(user?.id ?? null);
+        if (!user) return;
+        const { data, error: savedError } = await client.rpc("list_my_saved_tactics");
+        if (savedError) throw savedError;
+        if (active) setSavedPuzzleIds(((data ?? []) as SavedTacticRow[]).map((item) => item.puzzle_id));
+      } catch (loadError) {
+        console.error("Gespeicherte Taktikaufgaben konnten nicht geladen werden:", loadError);
+        if (active) setSavedMessage("Gespeicherte Aufgaben konnten nicht geladen werden. Bitte lade die Seite neu.");
+      } finally {
+        if (active) setSavedLoading(false);
+      }
+    }
+    void loadSavedPuzzles();
+    return () => { active = false; };
   }, []);
 
   const puzzle = puzzleId
@@ -162,6 +193,42 @@ export default function TacticsPage() {
     setMessage("");
   }
 
+  function selectSavedPuzzle(id: string) {
+    setPuzzleId(id);
+    setPositionState(null);
+    setSolutionIndex(0);
+    setSelected(null);
+    setOutcome(null);
+    setMessage("");
+    setShowSavedPuzzles(false);
+  }
+
+  async function toggleSavedPuzzle() {
+    if (!userId) {
+      setSavedMessage("Melde dich an, um Taktikaufgaben zu speichern.");
+      return;
+    }
+    setSavedBusy(true);
+    setSavedMessage("");
+    try {
+      const isSaved = savedPuzzleIds.includes(puzzle.id);
+      const { error: saveError } = await createClient().rpc(
+        isSaved ? "remove_saved_tactics_puzzle" : "save_tactics_puzzle",
+        { p_puzzle_id: puzzle.id },
+      );
+      if (saveError) throw saveError;
+      setSavedPuzzleIds((current) => isSaved
+        ? current.filter((id) => id !== puzzle.id)
+        : [...current, puzzle.id]);
+      setSavedMessage(isSaved ? "Aufgabe aus deinen gespeicherten Taktiken entfernt." : "Taktikaufgabe gespeichert.");
+    } catch (saveError) {
+      console.error("Taktikaufgabe konnte nicht gespeichert werden:", saveError);
+      setSavedMessage("Die Aufgabe konnte nicht gespeichert werden. Bitte versuche es erneut.");
+    } finally {
+      setSavedBusy(false);
+    }
+  }
+
   const badges = [
     { label: "Erster Treffer", description: "1 Aufgabe gelöst", earned: progress.solved >= 1 },
     { label: "Taktik im Blick", description: "10 Aufgaben gelöst", earned: progress.solved >= 10 },
@@ -180,11 +247,53 @@ export default function TacticsPage() {
             {clubTaskId && <p className="mt-2 text-sm text-emerald-200">Vereinsaufgabe · Dein Ergebnis wird mit deiner Trainingsgruppe geteilt.</p>}
             {clubTaskError && <p className="mt-2 text-sm text-amber-200" role="alert">{clubTaskError}</p>}
           </div>
+          <button
+            type="button"
+            onClick={() => setShowSavedPuzzles((current) => !current)}
+            aria-expanded={showSavedPuzzles}
+            aria-controls="saved-tactics-list"
+            className="rounded-xl border border-amber-300/40 px-4 py-3 text-sm font-semibold text-amber-200 transition hover:bg-amber-300/10"
+          >
+            Gespeicherte Aufgaben ({savedPuzzleIds.length})
+          </button>
           <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/5 px-5 py-3">
             <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Deine Taktik-Elo</p>
             <p className="mt-1 text-3xl font-bold tabular-nums text-emerald-300">{progress.rating}</p>
           </div>
         </header>
+
+        {showSavedPuzzles && <section id="saved-tactics-list" aria-labelledby="saved-tactics-title" className="mb-5 rounded-2xl border border-amber-300/20 bg-slate-900/70 p-4 sm:p-5">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 id="saved-tactics-title" className="font-semibold text-white">Deine gespeicherten Taktikaufgaben</h2>
+              <p className="mt-1 text-sm text-slate-400">Sieh dir die Stellungen an oder wähle eine Aufgabe zum Lösen.</p>
+            </div>
+            {!userId && <Link href="/login" className="text-sm text-amber-200 underline underline-offset-4">Anmelden zum Speichern</Link>}
+          </div>
+          {savedLoading ? <p role="status" className="text-sm text-slate-400">Gespeicherte Aufgaben werden geladen …</p> : savedPuzzleIds.length ? (
+            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {savedPuzzleIds.flatMap((id) => {
+                const savedPuzzle = tacticsPuzzles.find((item) => item.id === id);
+                if (!savedPuzzle) return [];
+                const preview = new Chess(savedPuzzle.fen);
+                if (savedPuzzle.setupMove) playUci(preview, savedPuzzle.setupMove);
+                return [<li key={savedPuzzle.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+                  <MiniChessboard
+                    fen={preview.fen()}
+                    label={`Vorschau der Taktikaufgabe ${savedPuzzle.id}`}
+                    orientation={preview.turn() === "w" ? "white" : "black"}
+                  />
+                  <p className="mt-3 text-sm font-semibold text-white">Aufgabe {savedPuzzle.id} · {savedPuzzle.rating} Elo</p>
+                  <p className="mt-1 text-xs text-slate-400">{getTacticsDifficulty(savedPuzzle.rating)} · {getTacticsTheme(savedPuzzle.themes)}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => selectSavedPuzzle(savedPuzzle.id)} className="rounded-lg bg-emerald-400 px-3 py-2 text-xs font-semibold text-slate-950 hover:bg-emerald-300">Aufgabe lösen</button>
+                    <Link href={`/analyse?puzzle=${encodeURIComponent(savedPuzzle.id)}`} className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800">Analysieren</Link>
+                  </div>
+                </li>];
+              })}
+            </ul>
+          ) : <p className="text-sm text-slate-400">{savedMessage || "Noch keine Aufgaben gespeichert. Nutze „Aufgabe speichern“ unter dem Schachbrett."}</p>}
+        </section>}
 
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
           <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-3 sm:p-5">
@@ -214,6 +323,21 @@ export default function TacticsPage() {
               {message || "Wähle eine Figur und danach das Zielfeld."}
             </div>
             {clubTaskMessage && <p className="mt-2 text-sm text-slate-400" role="status">{clubTaskMessage}</p>}
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void toggleSavedPuzzle()}
+                disabled={savedBusy || savedLoading || !userId}
+                className="rounded-lg border border-amber-300/40 px-4 py-2.5 text-sm font-semibold text-amber-200 hover:bg-amber-300/10 disabled:opacity-50"
+              >
+                {savedLoading ? "Gespeicherte Aufgaben werden geladen …" : savedPuzzleIds.includes(puzzle.id) ? "Aufgabe gespeichert · Entfernen" : "Aufgabe speichern"}
+              </button>
+              <Link href={`/analyse?puzzle=${encodeURIComponent(puzzle.id)}`} className="rounded-lg border border-slate-700 px-4 py-2.5 text-sm text-slate-200 hover:bg-slate-800">
+                Stellung analysieren
+              </Link>
+              {!userId && !savedLoading && <Link href="/login" className="self-center text-xs text-slate-400 underline underline-offset-4">Anmelden zum Speichern</Link>}
+            </div>
+            {savedMessage && <p role="status" className="mt-2 text-sm text-slate-400">{savedMessage}</p>}
             {outcome && (
               clubTaskId
                 ? <Link href="/verein" className="mt-3 block w-full rounded-lg bg-emerald-400 px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-emerald-300">Zur Vereinsgruppe →</Link>
