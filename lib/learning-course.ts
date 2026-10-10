@@ -217,6 +217,7 @@ export const learningLessons: LearningLesson[] = [
     answers: ["Der König", "Der bereits geschlagene Läufer", "Die Rochade"],
     correctAnswer: 0,
     explanation: "Ohne Schwerfiguren kämpft der König direkt um Felder und unterstützt die Bauern.",
+    practice: { label: "500 Endspielübungen Zug für Zug lernen", href: "/lernen/endspiele" },
   },
   {
     id: "turmendspiel",
@@ -235,6 +236,7 @@ export const learningLessons: LearningLesson[] = [
     answers: ["Hinter dem Freibauern.", "Auf einem Randfeld ohne Verbindung zum Bauern.", "Immer direkt neben dem gegnerischen König."],
     correctAnswer: 0,
     explanation: "Von hinten kann der Turm den Bauern über die ganze Linie unterstützen, auch wenn er weiter vorrückt.",
+    practice: { label: "Turmendspiele selbst üben", href: "/lernen/endspiele" },
   },
   {
     id: "stellungsplan",

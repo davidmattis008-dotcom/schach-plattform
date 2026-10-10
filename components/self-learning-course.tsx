@@ -12,7 +12,7 @@ const learningOptions = [
   { label: "Schachregeln für Anfänger", detail: "Starte ohne Vorwissen mit Brett und Figuren.", href: "#anfang", mark: "♙" },
   { label: "Eröffnungen lernen", detail: "Spiele ausgewählte Varianten Zug für Zug nach.", href: "/repertoire", mark: "⌂" },
   { label: "Mattsetzen lernen", detail: "Übe Mattführungen mit Dame und Turm.", href: "#matt", mark: "♛" },
-  { label: "Endspiele für Fortgeschrittene", detail: "Lerne Pläne für Bauern- und Turmendspiele.", href: "#endspiele", mark: "♜" },
+  { label: "Endspiele lernen", detail: "Verstehe 500 Stellungen Zug für Zug und wende die Pläne selbst an.", href: "/lernen/endspiele", mark: "♜" },
 ];
 
 export function SelfLearningCourse() {
@@ -30,17 +30,22 @@ export function SelfLearningCourse() {
   const progressPercent = Math.round((completed.length / learningLessons.length) * 100);
 
   useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]");
-      if (Array.isArray(saved)) {
-        setCompleted(Array.from(new Set(saved.filter((id): id is string => (
-          typeof id === "string" && learningLessons.some((item) => item.id === id)
-        )))));
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]");
+        if (Array.isArray(saved)) {
+          setCompleted(Array.from(new Set(saved.filter((id): id is string => (
+            typeof id === "string" && learningLessons.some((item) => item.id === id)
+          )))));
+        }
+      } catch {
+        setStorageAvailable(false);
       }
-    } catch {
-      setStorageAvailable(false);
-    }
-    setReady(true);
+      setReady(true);
+    });
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -48,7 +53,7 @@ export function SelfLearningCourse() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(completed));
     } catch {
-      setStorageAvailable(false);
+      queueMicrotask(() => setStorageAvailable(false));
     }
   }, [completed, ready, storageAvailable]);
 
