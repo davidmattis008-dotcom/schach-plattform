@@ -315,7 +315,6 @@ export function EndgameLearning() {
         <header className="mt-7">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200">Selbstständiges Lernen · 500 kostenlose Übungen</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Endspiele lernen</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">Lerne zuerst eine Endspiel-Fortsetzung Zug für Zug am Schachbrett. Danach wendest du die Idee in einer neuen Stellung derselben Kategorie selbst an.</p>
         </header>
 
         <section aria-label="Endspielthemen" className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
