@@ -29,6 +29,7 @@ function moveToUci(move: { from: Square; to: Square; promotion?: string }): stri
 export default function TacticsPage() {
   const progress = useSyncExternalStore(subscribeToTacticsProgress, getTacticsProgress, () => INITIAL_TACTICS_PROGRESS);
   const [puzzleId, setPuzzleId] = useState<string | null>(null);
+  const [practicePuzzleId, setPracticePuzzleId] = useState<string | null>(null);
   const [clubTaskId, setClubTaskId] = useState<string | null>(null);
   const [clubTaskMessage, setClubTaskMessage] = useState("");
   const [clubTaskError, setClubTaskError] = useState("");
@@ -100,10 +101,11 @@ export default function TacticsPage() {
   function finish(correct: boolean, answer: string) {
     if (outcome) return;
 
-    const ratingChange = getTacticsRatingChange(progress.rating, puzzle.rating, correct);
+    const isPractice = practicePuzzleId === puzzle.id;
+    const ratingChange = isPractice ? 0 : getTacticsRatingChange(progress.rating, puzzle.rating, correct);
     updateTacticsProgress((current) => ({
       ...current,
-      rating: Math.max(400, Math.min(2400, current.rating + ratingChange)),
+      rating: isPractice ? current.rating : Math.max(400, Math.min(2400, current.rating + ratingChange)),
       solved: current.solved + (correct ? 1 : 0),
       attempted: current.attempted + 1,
       recent: Array.from(new Set([...current.recent, puzzle.id])),
@@ -112,8 +114,8 @@ export default function TacticsPage() {
     setOutcome(correct ? "solved" : "missed");
     setSelected(null);
     setMessage(correct
-      ? `Richtig! ${answer} Deine Taktik-Elo ${ratingChange >= 0 ? "+" : ""}${ratingChange}.`
-      : `Noch nicht. Gesucht war ${answer} Deine Taktik-Elo ${ratingChange >= 0 ? "+" : ""}${ratingChange}.`);
+      ? `Richtig! ${answer}${isPractice ? " Wiederholungen verändern deine Taktik-Elo nicht." : ` Deine Taktik-Elo ${ratingChange >= 0 ? "+" : ""}${ratingChange}.`}`
+      : `Noch nicht. Gesucht war ${answer}${isPractice ? " Wiederholungen verändern deine Taktik-Elo nicht." : ` Deine Taktik-Elo ${ratingChange >= 0 ? "+" : ""}${ratingChange}.`}`);
     if (clubTaskId) {
       void (async () => {
         try {
@@ -186,6 +188,7 @@ export default function TacticsPage() {
   function nextPuzzle() {
     const next = chooseTacticsPuzzle(progress.rating, progress.recent);
     setPuzzleId(next.id);
+    setPracticePuzzleId(null);
     setPositionState(null);
     setSolutionIndex(0);
     setSelected(null);
@@ -195,6 +198,7 @@ export default function TacticsPage() {
 
   function selectSavedPuzzle(id: string) {
     setPuzzleId(id);
+    setPracticePuzzleId(id);
     setPositionState(null);
     setSolutionIndex(0);
     setSelected(null);
