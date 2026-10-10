@@ -207,6 +207,9 @@ function ExerciseWorkspace({
             targets={targets}
             orientation={(mode === "practice" ? applicationColor : playerColor) === "w" ? "white" : "black"}
           />
+          <p role="status" aria-live="polite" className="mt-3 rounded-lg border border-amber-300/20 bg-amber-300/5 px-3 py-2 text-center text-sm font-semibold text-amber-100">
+            {board.turn() === "w" ? "Weiß" : "Schwarz"} ist am Zug
+          </p>
           <p className="mt-2 text-center text-xs text-slate-500">
             {mode === "practice" ? "Wähle eine Figur und dann ihr Zielfeld." : `Stellung nach ${guideStep} von ${line.length} Lösungszügen`}
           </p>
@@ -215,7 +218,7 @@ function ExerciseWorkspace({
         <div>
           {mode === "guide" ? (
             <>
-              <h3 className="font-semibold text-white">Die Lösung</h3>
+              <h3 className="font-semibold text-white">Erklärung Schritt für Schritt</h3>
               {currentMove ? (
                 <p className="mt-3 min-h-20 rounded-xl border border-amber-300/20 bg-amber-300/5 p-4 text-sm leading-6 text-amber-100">
                   Zug {guideStep}: {describeMove(currentMove)}
@@ -225,24 +228,10 @@ function ExerciseWorkspace({
                   Schau dir die Stellung an und überlege, was dein König, deine Bauern oder deine Figuren erreichen sollen. Danach gehen wir die beste Fortsetzung Schritt für Schritt durch.
                 </p>
               )}
-              <ol className="mt-3 max-h-52 space-y-1 overflow-y-auto" aria-label="Lösungszüge">
-                {line.map((step, index) => (
-                  <li key={`${index}-${step.san}`}>
-                    <button
-                      type="button"
-                      onClick={() => setGuideStep(index + 1)}
-                      aria-current={guideStep === index + 1 ? "step" : undefined}
-                      className={`w-full rounded-lg px-3 py-2 text-left text-sm ${guideStep === index + 1 ? "bg-amber-300/10 text-amber-100" : "text-slate-300 hover:bg-slate-800"}`}
-                    >
-                      {index + 1}. {step.color === "w" ? "Weiß" : "Schwarz"}: {step.san}
-                    </button>
-                  </li>
-                ))}
-              </ol>
               <div className="mt-4 flex flex-wrap gap-2">
                 <button type="button" onClick={() => setGuideStep((step) => Math.max(0, step - 1))} disabled={guideStep === 0} className="rounded-lg border border-slate-700 px-3 py-2 text-sm disabled:opacity-40">← Zurück</button>
                 {guideStep < line.length
-                  ? <button type="button" onClick={() => setGuideStep((step) => Math.min(line.length, step + 1))} className="rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-slate-950">Nächsten Zug erklären →</button>
+                  ? <button type="button" onClick={() => setGuideStep((step) => Math.min(line.length, step + 1))} className="rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-slate-950">{guideStep === 0 ? "Ersten Zug erklären →" : "Nächsten Zug erklären →"}</button>
                   : <button type="button" onClick={startPractice} className="rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-slate-950">Jetzt selbst anwenden →</button>}
               </div>
             </>
@@ -370,10 +359,6 @@ export function EndgameLearning() {
           </div>
         )}
 
-        <p className="mt-5 text-xs leading-5 text-slate-500">
-          Aufgaben und Lösungen stammen aus der Lichess-Puzzledatenbank und stehen unter CC0. Die Auswahl ist thematisch nach Endspieltyp sortiert; der Fortschritt wird nur in diesem Browser gespeichert.
-          {" "}<a href="https://database.lichess.org/#puzzles" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-slate-300">Quelle und Datensatz</a>
-        </p>
       </div>
     </main>
   );
