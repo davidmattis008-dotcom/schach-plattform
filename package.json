@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test:tactics": "node scripts/validate-tactics.mjs",
     "test:endgame-exercises": "node scripts/validate-endgame-exercises.mjs",
+    "test:chess-rules": "node scripts/validate-chess-rules.mjs",
     "import:endgame-exercises": "node scripts/import-endgame-exercises.mjs"
   },
   "dependencies": {
