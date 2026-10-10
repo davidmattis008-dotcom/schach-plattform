@@ -13,6 +13,11 @@ for (const lesson of lessons) {
   assert.ok(lesson.title && lesson.description && lesson.facts.length > 0, `Incomplete lesson: ${lesson.id}`);
   const game = new Chess(lesson.fen);
   assert.ok(game.moves().length > 0 || lesson.id === "stalemate", `Unexpected position without legal moves: ${lesson.id}`);
+  if (lesson.focusSquare) {
+    const focusedPiece = game.get(lesson.focusSquare);
+    assert.ok(focusedPiece && focusedPiece.color === game.turn(), `Invalid focused piece in ${lesson.id}.`);
+    assert.ok(game.moves({ square: lesson.focusSquare }).length > 0, `Focused piece has no legal moves in ${lesson.id}.`);
+  }
   const playedMoves = [];
   for (const [index, demo] of lesson.demo.entries()) {
     const match = demo.move.match(/^([a-h][1-8])([a-h][1-8])([qrbn])?$/);
@@ -34,6 +39,8 @@ for (const lesson of lessons) {
 
 const checkLesson = lessons.find((lesson) => lesson.id === "check");
 assert.ok(new Chess(checkLesson.fen).isCheck(), "The check lesson must start with the king in check.");
+assert.equal(lessons.find((lesson) => lesson.id === "knight").focusSquare, "c1", "The knight lesson should highlight its piece and legal moves.");
+assert.equal(lessons.find((lesson) => lesson.id === "bishop").focusSquare, "c1", "The bishop lesson should highlight its piece and legal moves.");
 
 const mateLesson = lessons.find((lesson) => lesson.id === "checkmate");
 const matePosition = new Chess(mateLesson.fen);

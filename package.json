@@ -10,6 +10,8 @@
     "test:tactics": "node scripts/validate-tactics.mjs",
     "test:endgame-exercises": "node scripts/validate-endgame-exercises.mjs",
     "test:chess-rules": "node scripts/validate-chess-rules.mjs",
+    "test:opening-repertoire": "node scripts/validate-opening-repertoire.mjs",
+    "import:opening-database": "node scripts/import-opening-database.mjs",
     "import:endgame-exercises": "node scripts/import-endgame-exercises.mjs"
   },
   "dependencies": {
