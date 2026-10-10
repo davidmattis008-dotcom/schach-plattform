@@ -1,6 +1,11 @@
 "use client";
+
+import Link from "next/link";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Chess, type Square } from "chess.js";
+import { MiniChessboard } from "@/components/mini-chessboard";
+import { getTacticsDifficulty, getTacticsTheme, tacticsPuzzles, type TacticsPuzzle } from "@/lib/tactics";
+import { createClient } from "@/lib/supabase/client";
 
 const START_FEN = new Chess().fen();
 const PIECES: Record<string, string> = {
@@ -8,6 +13,7 @@ const PIECES: Record<string, string> = {
   bK: "♚", bQ: "♛", bR: "♜", bB: "♝", bN: "♞", bP: "♟",
 };
 type EvalInfo = { score: string; depth: string; line: string };
+type SavedTacticRow = { puzzle_id: string; saved_at: string };
 
 export default function AnalysePage() {
   const [pgn, setPgn] = useState("");
@@ -21,6 +27,10 @@ export default function AnalysePage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [evaluation, setEvaluation] = useState<EvalInfo | null>(null);
   const [engineError, setEngineError] = useState("");
+  const [savedPuzzles, setSavedPuzzles] = useState<TacticsPuzzle[]>([]);
+  const [savedPuzzleMessage, setSavedPuzzleMessage] = useState("");
+  const [savedPuzzlesLoading, setSavedPuzzlesLoading] = useState(true);
+  const [analysisPuzzleId, setAnalysisPuzzleId] = useState<string | null>(null);
   const [sheetName, setSheetName] = useState(""); const [sheetFile, setSheetFile] = useState<File | null>(null); const [ocrStatus, setOcrStatus] = useState(""); const [ocrBusy, setOcrBusy] = useState(false); const [manualMove, setManualMove] = useState<{ index: number; token: string; fen: string } | null>(null); const [manualSan, setManualSan] = useState(""); const [ocrTokens, setOcrTokens] = useState<string[]>([]); const [acceptedOcrMoves, setAcceptedOcrMoves] = useState<string[]>([]);
   const workerRef = useRef<Worker | null>(null);
   const game = useMemo(() => new Chess(positions[moveIndex] ?? START_FEN), [positions, moveIndex]);
@@ -28,6 +38,34 @@ export default function AnalysePage() {
   const legalTargets = selectedSquare
     ? game.moves({ square: selectedSquare, verbose: true }).map((move) => move.to)
     : [];
+
+  function loadTacticsPuzzle(puzzle: TacticsPuzzle) {
+    try {
+      const position = new Chess(puzzle.fen);
+      if (puzzle.setupMove) {
+        position.move({
+          from: puzzle.setupMove.slice(0, 2) as Square,
+          to: puzzle.setupMove.slice(2, 4) as Square,
+          ...(puzzle.setupMove.length === 5 ? { promotion: puzzle.setupMove[4] } : {}),
+        });
+      }
+      setPgn("");
+      setMoves([]);
+      setPositions([position.fen()]);
+      setMoveIndex(0);
+      setSelectedSquare(null);
+      setPromotionPending(null);
+      setEvaluation(null);
+      setAnalyzing(false);
+      setAnalysisPuzzleId(puzzle.id);
+      setMessage(`Taktikaufgabe ${puzzle.id} geladen. Spiele Züge am Brett und analysiere die Stellung mit Stockfish.`);
+      setEngineError("");
+      workerRef.current?.postMessage("stop");
+    } catch (loadError) {
+      console.error("Gespeicherte Taktikaufgabe konnte nicht geladen werden:", loadError);
+      setSavedPuzzleMessage("Diese Taktikaufgabe konnte nicht geladen werden.");
+    }
+  }
 
   useEffect(() => {
     let worker: Worker | undefined;
@@ -72,6 +110,50 @@ export default function AnalysePage() {
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    async function loadSavedTactics() {
+      try {
+        const client = createClient();
+        const { data: { user }, error: authError } = await client.auth.getUser();
+        if (authError) throw authError;
+        if (!user) {
+          if (active) setSavedPuzzleMessage("Melde dich an, um deine gespeicherten Taktikaufgaben zu sehen.");
+          return;
+        }
+        const { data, error: savedError } = await client.rpc("list_my_saved_tactics");
+        if (savedError) throw savedError;
+        if (!active) return;
+        const rows = (data ?? []) as SavedTacticRow[];
+        setSavedPuzzles(rows.flatMap((row) => {
+          const puzzle = tacticsPuzzles.find((item) => item.id === row.puzzle_id);
+          return puzzle ? [puzzle] : [];
+        }));
+        setSavedPuzzleMessage("");
+      } catch (loadError) {
+        console.error("Gespeicherte Taktikaufgaben konnten nicht geladen werden:", loadError);
+        if (active) setSavedPuzzleMessage("Deine gespeicherten Taktikaufgaben konnten nicht geladen werden.");
+      } finally {
+        if (active) setSavedPuzzlesLoading(false);
+      }
+    }
+    void loadSavedTactics();
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      const puzzleId = new URLSearchParams(window.location.search).get("puzzle");
+      if (!puzzleId) return;
+      const puzzle = tacticsPuzzles.find((item) => item.id === puzzleId);
+      if (puzzle) loadTacticsPuzzle(puzzle);
+      else setMessage("Die angeforderte Taktikaufgabe wurde nicht gefunden.");
+    });
+    return () => { active = false; };
+  }, []);
+
   function loadPgn(source: string) {
     try {
       const parsed = new Chess();
@@ -91,6 +173,7 @@ export default function AnalysePage() {
       setSelectedSquare(null);
       setPromotionPending(null);
       setEvaluation(null);
+      setAnalysisPuzzleId(null);
       setMessage(sanMoves.length ? sanMoves.length + " Züge geladen." : "Partie geladen. Noch keine Züge gefunden.");
       setEngineError("");
     } catch {
@@ -176,8 +259,24 @@ export default function AnalysePage() {
     setSelectedSquare(null);
     setPromotionPending(null);
     setEvaluation(null);
+    setAnalysisPuzzleId(null);
     setMessage("Neue Partie bereit. Ziehe eine weiße Figur oder tippe zuerst auf sie.");
     setEngineError("");
+  }
+
+  async function removeSavedPuzzle(puzzle: TacticsPuzzle) {
+    setSavedPuzzleMessage("");
+    try {
+      const { error: removeError } = await createClient().rpc("remove_saved_tactics_puzzle", {
+        p_puzzle_id: puzzle.id,
+      });
+      if (removeError) throw removeError;
+      setSavedPuzzles((current) => current.filter((item) => item.id !== puzzle.id));
+      setSavedPuzzleMessage(`Aufgabe ${puzzle.id} aus deinen gespeicherten Taktiken entfernt.`);
+    } catch (removeError) {
+      console.error("Gespeicherte Taktikaufgabe konnte nicht entfernt werden:", removeError);
+      setSavedPuzzleMessage("Die Aufgabe konnte nicht entfernt werden. Bitte versuche es erneut.");
+    }
   }
 
   function analyzePosition() {
@@ -209,6 +308,47 @@ export default function AnalysePage() {
         <h1 className="mt-2 text-3xl font-bold sm:text-4xl">Analyse</h1>
         <p className="mt-2 text-slate-400">Lade eine Partie oder gib sie direkt am Brett ein und untersuche sie mit Stockfish.</p>
       </header>
+      <section aria-labelledby="saved-tactics-heading" className="mb-5 rounded-2xl border border-amber-300/20 bg-slate-900 p-5">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 id="saved-tactics-heading" className="text-lg font-bold">Gespeicherte Taktikaufgaben</h2>
+            <p className="mt-1 text-sm text-slate-400">Lade eine Aufgabe auf das Brett und analysiere sie mit Stockfish.</p>
+          </div>
+          <Link href="/taktik" className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800">Taktikaufgaben öffnen</Link>
+        </div>
+        {savedPuzzlesLoading ? <p className="mt-4 text-sm text-slate-400" role="status">Gespeicherte Aufgaben werden geladen …</p> : savedPuzzles.length ? (
+          <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {savedPuzzles.map((puzzle) => {
+              const preview = new Chess(puzzle.fen);
+              if (puzzle.setupMove) {
+                preview.move({
+                  from: puzzle.setupMove.slice(0, 2) as Square,
+                  to: puzzle.setupMove.slice(2, 4) as Square,
+                  ...(puzzle.setupMove.length === 5 ? { promotion: puzzle.setupMove[4] } : {}),
+                });
+              }
+              return <li key={puzzle.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+                <MiniChessboard
+                  fen={preview.fen()}
+                  label={`Vorschau der Taktikaufgabe ${puzzle.id}`}
+                  orientation={preview.turn() === "w" ? "white" : "black"}
+                />
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                  <button type="button" onClick={() => loadTacticsPuzzle(puzzle)} className="min-w-0 text-left">
+                    <span className="block truncate text-sm font-semibold text-white">Aufgabe {puzzle.id} · {puzzle.rating} Elo</span>
+                    <span className="mt-1 block text-xs text-slate-400">{getTacticsDifficulty(puzzle.rating)} · {getTacticsTheme(puzzle.themes)}</span>
+                  </button>
+                  <button type="button" onClick={() => void removeSavedPuzzle(puzzle)} className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:bg-slate-800">Entfernen</button>
+                </div>
+              </li>;
+            })}
+          </ul>
+        ) : (
+          <p className="mt-4 text-sm text-slate-400">{savedPuzzleMessage || "Du hast noch keine Taktikaufgaben gespeichert. Speichere Aufgaben im Taktiktraining, um sie hier zu analysieren."}</p>
+        )}
+        {savedPuzzleMessage && savedPuzzles.length > 0 && <p role="status" className="mt-3 text-sm text-slate-400">{savedPuzzleMessage}</p>}
+      </section>
+      {analysisPuzzleId && <p className="mb-4 rounded-lg border border-violet-500/20 bg-violet-500/5 px-4 py-3 text-sm text-violet-100">Taktikaufgabe {analysisPuzzleId} ist geladen. Du kannst die Stellung verändern und analysieren.</p>}
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)]">
         <section className="rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">

@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { Chess, type Square } from "chess.js";
 import { createClient } from "@/lib/supabase/client";
-import { getTacticsDifficulty, getTacticsTheme, tacticsPuzzles } from "@/lib/tactics";
+import { MiniChessboard } from "@/components/mini-chessboard";
+import { getTacticsDifficulty, getTacticsTheme, tacticsPuzzles, type TacticsPuzzle } from "@/lib/tactics";
 import { ONLINE_TIME_CONTROLS } from "@/app/online/protocol";
 import { SelectMenu } from "@/components/select-menu";
 
@@ -73,6 +75,7 @@ type ClubTournament = {
   player_count: number;
   is_joined: boolean;
 };
+type SavedTacticRow = { puzzle_id: string };
 type CreatedClub = { club_id: string; group_id: string; invite_code: string };
 type CreatedGroup = { group_id: string; invite_code: string };
 type GroupSectionErrors = Partial<Record<"members" | "clubMembers" | "plans" | "tasks" | "tournaments", string>>;
@@ -136,6 +139,18 @@ function dateTimeInput(value: string | null) {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
 }
 
+function getPuzzleStartPosition(puzzle: TacticsPuzzle) {
+  const position = new Chess(puzzle.fen);
+  if (puzzle.setupMove) {
+    position.move({
+      from: puzzle.setupMove.slice(0, 2) as Square,
+      to: puzzle.setupMove.slice(2, 4) as Square,
+      ...(puzzle.setupMove.length === 5 ? { promotion: puzzle.setupMove[4] } : {}),
+    });
+  }
+  return position;
+}
+
 export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }) {
   const clientRef = useRef<ReturnType<typeof createClient> | null>(null);
   const getClient = useCallback(() => {
@@ -151,6 +166,9 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
   const [clubMembers, setClubMembers] = useState<ClubMember[]>([]);
   const [plans, setPlans] = useState<TrainingPlan[]>([]);
   const [tasks, setTasks] = useState<TrainingTask[]>([]);
+  const [savedPuzzles, setSavedPuzzles] = useState<TacticsPuzzle[]>([]);
+  const [savedPuzzlesLoading, setSavedPuzzlesLoading] = useState(false);
+  const [savedPuzzlesError, setSavedPuzzlesError] = useState("");
   const [tournaments, setTournaments] = useState<ClubTournament[]>([]);
   const [sectionErrors, setSectionErrors] = useState<GroupSectionErrors>({});
   const [loadingGroup, setLoadingGroup] = useState(false);
@@ -175,7 +193,7 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
   const [planTarget, setPlanTarget] = useState("");
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
-  const [taskPuzzleId, setTaskPuzzleId] = useState(tacticsPuzzles[0]?.id ?? "");
+  const [taskPuzzleId, setTaskPuzzleId] = useState("");
   const [taskPlanId, setTaskPlanId] = useState("");
   const [taskDueAt, setTaskDueAt] = useState("");
   const [tournamentName, setTournamentName] = useState("");
@@ -316,6 +334,36 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
     void initialize();
     return () => { active = false; };
   }, [getClient, loadGroups]);
+
+  useEffect(() => {
+    if (!userId || adminMode) return;
+    let active = true;
+    async function loadSavedPuzzles() {
+      await Promise.resolve();
+      if (!active) return;
+      setSavedPuzzlesError("");
+      setSavedPuzzlesLoading(true);
+      try {
+        const { data, error: savedError } = await getClient().rpc("list_my_saved_tactics");
+        if (savedError) throw savedError;
+        if (!active) return;
+        const rows = (data ?? []) as SavedTacticRow[];
+        const puzzles = rows.flatMap((row) => {
+          const puzzle = tacticsPuzzles.find((item) => item.id === row.puzzle_id);
+          return puzzle ? [puzzle] : [];
+        });
+        setSavedPuzzles(puzzles);
+        setTaskPuzzleId((current) => puzzles.some((puzzle) => puzzle.id === current) ? current : puzzles[0]?.id ?? "");
+      } catch (loadError) {
+        console.error("Gespeicherte Taktikaufgaben für das Vereinstraining konnten nicht geladen werden:", loadError);
+        if (active) setSavedPuzzlesError(errorText(loadError));
+      } finally {
+        if (active) setSavedPuzzlesLoading(false);
+      }
+    }
+    void loadSavedPuzzles();
+    return () => { active = false; };
+  }, [adminMode, getClient, userId]);
 
   useEffect(() => {
     setTaskPlanId("");
@@ -1014,9 +1062,16 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
               </div>
               <input required minLength={3} maxLength={100} value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-sm" placeholder="Titel der Aufgabe" aria-label="Titel der Aufgabe" />
               <textarea maxLength={500} value={taskDescription} onChange={(event) => setTaskDescription(event.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-sm" placeholder="Hinweis für die Gruppe (optional)" aria-label="Beschreibung der Aufgabe" rows={2} />
-              <label className="block text-xs text-slate-400">Aufgabe aus dem Taktiktraining
-                <SelectMenu className="mt-1" aria-label="Aufgabe aus dem Taktiktraining" value={taskPuzzleId} options={tacticsPuzzles.map((puzzle) => ({ value: puzzle.id, label: `${puzzle.id} · ${puzzle.rating} Elo · ${getTacticsDifficulty(puzzle.rating)} · ${getTacticsTheme(puzzle.themes)}` }))} onChange={setTaskPuzzleId} />
-              </label>
+              {savedPuzzlesLoading ? <p role="status" className="text-sm text-slate-400">Deine gespeicherten Aufgaben werden geladen …</p> : savedPuzzles.length ? (
+                <label className="block text-xs text-slate-400">Gespeicherte Taktikaufgabe für die Gruppe
+                  <SelectMenu className="mt-1" aria-label="Gespeicherte Taktikaufgabe für die Gruppe" value={taskPuzzleId} options={savedPuzzles.map((puzzle) => ({ value: puzzle.id, label: `${puzzle.id} · ${puzzle.rating} Elo · ${getTacticsDifficulty(puzzle.rating)} · ${getTacticsTheme(puzzle.themes)}` }))} onChange={setTaskPuzzleId} />
+                </label>
+              ) : (
+                <div className="rounded-xl border border-slate-700 bg-slate-950/60 p-4">
+                  <p className="text-sm text-slate-300">{savedPuzzlesError || "Speichere zuerst Taktikaufgaben, um sie hier für deine Gruppe auszuwählen."}</p>
+                  <Link href="/taktik" className="mt-2 inline-flex text-sm font-medium text-emerald-200 underline underline-offset-4">Taktikaufgaben öffnen →</Link>
+                </div>
+              )}
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="text-xs text-slate-400">Trainingsplan (optional)
                   <SelectMenu className="mt-1" aria-label="Trainingsplan (optional)" value={taskPlanId} options={[
@@ -1028,7 +1083,7 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
                   <input type="datetime-local" value={taskDueAt} onChange={(event) => setTaskDueAt(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-200" />
                 </label>
               </div>
-              <button disabled={busy || tacticsPuzzles.length === 0} className="rounded-lg bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950 disabled:opacity-50">{busy ? "Wird zugewiesen …" : "Aufgabe veröffentlichen"}</button>
+              <button disabled={busy || savedPuzzlesLoading || savedPuzzles.length === 0 || !taskPuzzleId} className="rounded-lg bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950 disabled:opacity-50">{busy ? "Wird zugewiesen …" : "Aufgabe veröffentlichen"}</button>
             </form>
 
             <form onSubmit={(event) => void createTournament(event)} className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-5 xl:col-span-2">
@@ -1118,6 +1173,7 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
               <div className="space-y-3">
                 {tasks.map((task) => {
                   const puzzle = tacticsPuzzles.find((item) => item.id === task.puzzle_id);
+                  const preview = puzzle ? getPuzzleStartPosition(puzzle) : null;
                   return <article key={task.task_id} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
@@ -1127,6 +1183,13 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
                       </div>
                       {task.due_at && <span className="rounded-full border border-slate-700 px-2.5 py-1 text-xs text-slate-400">Frist: {formatDate(task.due_at)}</span>}
                     </div>
+                    {preview && <div className="mt-4 max-w-xs">
+                      <MiniChessboard
+                        fen={preview.fen()}
+                        label={`Vorschau der Vereinsaufgabe ${task.title}`}
+                        orientation={preview.turn() === "w" ? "white" : "black"}
+                      />
+                    </div>}
                     <div className="mt-4 flex flex-wrap items-center gap-3">
                       {puzzle && !adminMode && <Link href={`/taktik?clubTask=${encodeURIComponent(task.task_id)}&puzzle=${encodeURIComponent(task.puzzle_id)}`} className="rounded-lg bg-emerald-400 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-emerald-300">
                         {task.my_solved ? "Noch einmal lösen" : task.my_attempts ? "Weiter üben" : "Aufgabe lösen"} <span aria-hidden="true">→</span>
@@ -1158,7 +1221,10 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
                         <textarea maxLength={500} value={editingTask.description} onChange={(event) => setEditingTask((current) => current ? { ...current, description: event.target.value } : current)} rows={2} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white" />
                       </label>
                       <label className="block text-xs text-slate-400">Taktikaufgabe
-                        <SelectMenu className="mt-1" aria-label="Taktikaufgabe" value={editingTask.puzzle_id} options={tacticsPuzzles.map((item) => ({ value: item.id, label: `${item.id} · ${item.rating} Elo · ${getTacticsDifficulty(item.rating)}` }))} onChange={(puzzle_id) => setEditingTask((current) => current ? { ...current, puzzle_id } : current)} />
+                        <SelectMenu className="mt-1" aria-label="Taktikaufgabe" value={editingTask.puzzle_id} options={Array.from(new Set([editingTask.puzzle_id, ...savedPuzzles.map((item) => item.id)])).flatMap((id) => {
+                          const item = tacticsPuzzles.find((puzzle) => puzzle.id === id);
+                          return item ? [{ value: item.id, label: `${item.id} · ${item.rating} Elo · ${getTacticsDifficulty(item.rating)} · ${getTacticsTheme(item.themes)}` }] : [];
+                        })} onChange={(puzzle_id) => setEditingTask((current) => current ? { ...current, puzzle_id } : current)} />
                       </label>
                       <div className="grid gap-3 sm:grid-cols-2">
                         <label className="text-xs text-slate-400">Trainingsplan
