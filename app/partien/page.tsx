@@ -71,7 +71,7 @@ export default function GameHistoryPage() {
           const merged = new Map(localGames.map((game) => [game.id, game]));
           remoteGames.forEach((game) => merged.set(game.id, game));
           setGames([...merged.values()].sort((a, b) => b.playedAt.localeCompare(a.playedAt)));
-          setSyncMessage("Partien werden mit deinem Konto synchronisiert.");
+          setSyncMessage("");
         } catch (error) {
           console.error("Gespeicherte Online-Partien konnten nicht geladen werden:", error);
           if (active) setSyncMessage("Kontoverlauf konnte nicht geladen werden. Die Synchronisierung ist derzeit nicht verfügbar.");
@@ -95,7 +95,6 @@ export default function GameHistoryPage() {
         <header className="mt-8">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300">Deine Schachreise</p>
           <h1 className="mt-3 text-4xl font-bold sm:text-5xl">Partieverlauf</h1>
-          <p className="mt-3 max-w-2xl leading-7 text-slate-300">Hier findest du deine beendeten Online-Partien mit Ergebnis, Bedenkzeit und Zugfolge.</p>
         </header>
 
         {syncMessage && <p role="status" className="mt-6 rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm leading-6 text-slate-400">{syncMessage}</p>}

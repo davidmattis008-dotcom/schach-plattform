@@ -215,7 +215,6 @@ export function SelfLearningCourse() {
           </article>
         </div>
 
-        <p className="mt-6 text-xs leading-5 text-slate-500">Alle Lektionen und Aufgaben laufen in der Website. Es gibt keine kostenpflichtigen Lerninhalte. Dein Lernfortschritt wird lokal auf diesem Gerät gespeichert und nicht mit einem Konto oder anderen Geräten synchronisiert.</p>
       </div>
     </main>
   );

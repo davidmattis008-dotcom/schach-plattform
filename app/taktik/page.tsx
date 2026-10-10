@@ -242,8 +242,6 @@ export default function TacticsPage() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">Training</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Taktikaufgaben</h1>
-            <p className="mt-2 text-sm text-slate-400">Echte Partiestellungen, passend zu deiner Taktik-Elo.</p>
-            <p className="mt-1 text-xs text-slate-500">{tacticsPuzzles.length} unterschiedliche Aufgaben · Schwierigkeit von ca. {Math.min(...tacticsPuzzles.map((item) => item.rating))} bis {Math.max(...tacticsPuzzles.map((item) => item.rating))} Elo</p>
             {clubTaskId && <p className="mt-2 text-sm text-emerald-200">Vereinsaufgabe · Dein Ergebnis wird mit deiner Trainingsgruppe geteilt.</p>}
             {clubTaskError && <p className="mt-2 text-sm text-amber-200" role="alert">{clubTaskError}</p>}
           </div>
