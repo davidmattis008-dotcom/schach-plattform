@@ -37,6 +37,7 @@ export default function TacticsPage() {
   const [savedPuzzleIds, setSavedPuzzleIds] = useState<string[]>([]);
   const [savedLoading, setSavedLoading] = useState(true);
   const [savedBusy, setSavedBusy] = useState(false);
+  const [removingSavedPuzzleId, setRemovingSavedPuzzleId] = useState<string | null>(null);
   const [savedMessage, setSavedMessage] = useState("");
   const [showSavedPuzzles, setShowSavedPuzzles] = useState(false);
   const [positionState, setPositionState] = useState<{ puzzleId: string; fen: string } | null>(null);
@@ -207,6 +208,24 @@ export default function TacticsPage() {
     setShowSavedPuzzles(false);
   }
 
+  async function removeSavedPuzzle(id: string) {
+    setRemovingSavedPuzzleId(id);
+    setSavedMessage("");
+    try {
+      const { error: removeError } = await createClient().rpc("remove_saved_tactics_puzzle", {
+        p_puzzle_id: id,
+      });
+      if (removeError) throw removeError;
+      setSavedPuzzleIds((current) => current.filter((savedId) => savedId !== id));
+      setSavedMessage(`Aufgabe ${id} aus deinen gespeicherten Taktiken entfernt.`);
+    } catch (removeError) {
+      console.error("Gespeicherte Taktikaufgabe konnte nicht entfernt werden:", removeError);
+      setSavedMessage("Die Aufgabe konnte nicht entfernt werden. Bitte versuche es erneut.");
+    } finally {
+      setRemovingSavedPuzzleId(null);
+    }
+  }
+
   async function toggleSavedPuzzle() {
     if (!userId) {
       setSavedMessage("Melde dich an, um Taktikaufgaben zu speichern.");
@@ -290,11 +309,21 @@ export default function TacticsPage() {
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button type="button" onClick={() => selectSavedPuzzle(savedPuzzle.id)} className="rounded-lg bg-emerald-400 px-3 py-2 text-xs font-semibold text-slate-950 hover:bg-emerald-300">Aufgabe lösen</button>
                     <Link href={`/analyse?puzzle=${encodeURIComponent(savedPuzzle.id)}`} className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800">Analysieren</Link>
+                    <button
+                      type="button"
+                      onClick={() => void removeSavedPuzzle(savedPuzzle.id)}
+                      disabled={removingSavedPuzzleId !== null}
+                      aria-label={`Aufgabe ${savedPuzzle.id} aus gespeicherten Taktiken entfernen`}
+                      className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:bg-slate-800 disabled:cursor-wait disabled:opacity-50"
+                    >
+                      {removingSavedPuzzleId === savedPuzzle.id ? "Wird entfernt …" : "Entfernen"}
+                    </button>
                   </div>
                 </li>];
               })}
             </ul>
-          ) : <p className="text-sm text-slate-400">{savedMessage || "Noch keine Aufgaben gespeichert. Nutze „Aufgabe speichern“ unter dem Schachbrett."}</p>}
+          ) : <p className="text-sm text-slate-400">Noch keine Aufgaben gespeichert. Nutze „Aufgabe speichern“ unter dem Schachbrett.</p>}
+          {savedMessage && <p role="status" className="mt-3 text-sm text-slate-400">{savedMessage}</p>}
         </section>}
 
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
