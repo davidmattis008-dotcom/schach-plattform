@@ -1,5 +1,124 @@
 [
   {
+    "id": "fools-mate",
+    "title": "Narrenmatt",
+    "shortTitle": "Narrenmatt",
+    "material": "Dame gegen den ungeschützten König",
+    "fen": "rnbqkbnr/pppp1ppp/8/4p3/6P1/5P2/PPPPP2P/RNBQKBNR b KQkq - 0 1",
+    "solution": "d8h4",
+    "principle": "Das Narrenmatt ist das kürzeste mögliche Schachmatt. Zwei unvorsichtige Bauernzüge öffnen die Diagonale zum weißen König.",
+    "plan": "Die Stellung zeigt Weiß nach f3 und g4. Schwarz nutzt die offene Diagonale und zieht die Dame nach h4. Die Dame gibt entlang h4–e1 Schach; eigene Figuren und Bauern blockieren die Fluchtfelder des Königs. Die Partie endet sofort.",
+    "forceable": true,
+    "quiz": {
+      "question": "Was ermöglicht das Narrenmatt nach den weißen Bauernzügen f3 und g4?",
+      "answers": ["Die offene Diagonale h4–e1 für die schwarze Dame.", "Ein Springer kann über den König springen.", "Die weiße Dame darf nicht ziehen."],
+      "correctAnswer": 0,
+      "explanation": "Die Bauernzüge öffnen die Diagonale der Dame zum König und schwächen zugleich die Königsstellung."
+    }
+  },
+  {
+    "id": "scholars-mate",
+    "title": "Schäfermatt",
+    "shortTitle": "Schäfermatt",
+    "material": "Dame und Läufer greifen f7 an",
+    "fen": "4k3/2K2ppp/8/7Q/2B5/8/8/8 w - - 0 1",
+    "solution": "h5f7",
+    "principle": "Beim Schäfermatt greifen Dame und Läufer gemeinsam den empfindlichen Punkt f7 an. In dieser Beispielstellung ist die Abwehr bereits versäumt.",
+    "plan": "Die Dame nimmt den Bauern auf f7 und gibt dem König auf e8 Schach. Der Läufer auf c4 schützt die Dame; der weiße König kontrolliert d7 und d8. Lerne das Motiv, aber verlasse dich nicht darauf: Aufmerksame Gegner können den Angriff früh verteidigen.",
+    "forceable": true,
+    "quiz": {
+      "question": "Warum kann der schwarze König nach Dxf7# die Dame nicht schlagen?",
+      "answers": ["Der Läufer auf c4 schützt die Dame auf f7.", "Damen dürfen nicht geschlagen werden.", "Der König darf nie diagonal ziehen."],
+      "correctAnswer": 0,
+      "explanation": "Der Läufer deckt f7. Der König darf nicht auf ein angegriffenes Feld ziehen."
+    }
+  },
+  {
+    "id": "back-rank",
+    "title": "Grundreihenmatt",
+    "shortTitle": "Grundreihenmatt",
+    "material": "Turm gegen König hinter Bauern",
+    "fen": "6k1/5ppp/8/8/8/8/8/4R1K1 w - - 0 1",
+    "solution": "e1e8",
+    "principle": "Ein König, dessen eigene Bauern die Fluchtfelder auf der Grundreihe versperren, kann durch einen Turm oder eine Dame mattgesetzt werden.",
+    "plan": "Der weiße Turm zieht auf die achte Reihe und gibt dem König auf g8 Schach. Die schwarzen Bauern versperren die Felder g7 und h7; der Turm kontrolliert die übrigen Fluchtfelder. Achte in eigenen Partien darauf, rechtzeitig ein Luftloch für den König zu schaffen.",
+    "forceable": true,
+    "quiz": {
+      "question": "Was ist beim Grundreihenmatt die typische Ursache dafür, dass der König nicht entkommen kann?",
+      "answers": ["Die eigenen Bauern blockieren seine Fluchtfelder.", "Der Turm kann über Bauern springen.", "Der König steht am Brettrand und kann nie ziehen."],
+      "correctAnswer": 0,
+      "explanation": "Die eigenen Bauern können dem König die Flucht nehmen. Ein vorsorglicher Bauernzug kann ein Luftloch schaffen."
+    }
+  },
+  {
+    "id": "smothered-mate",
+    "title": "Ersticktes Matt",
+    "shortTitle": "Ersticktes Matt",
+    "material": "Springer gegen eingeschlossenen König",
+    "fen": "6rk/6pp/8/4N3/8/8/8/4K3 w - - 0 1",
+    "solution": "e5f7",
+    "principle": "Beim erstickten Matt setzt ein Springer den König matt, weil eigene Figuren und Bauern alle Fluchtfelder verstellen.",
+    "plan": "Der Springer springt nach f7 und gibt dem König auf h8 Schach. Der König kann weder durch die eigenen Figuren auf g8, g7 und h7 entkommen noch den Springer schlagen. Der Springer kann über alle blockierenden Figuren hinwegziehen.",
+    "forceable": true,
+    "quiz": {
+      "question": "Warum heißt dieses Matt „erstickt“?",
+      "answers": ["Die eigenen Figuren nehmen dem König alle Fluchtfelder.", "Der Springer darf nicht mehr ziehen.", "Der König steht nicht im Schach."],
+      "correctAnswer": 0,
+      "explanation": "Der König ist durch seine eigenen Figuren eingeschlossen und hat keine legale Antwort auf das Springerschach."
+    }
+  },
+  {
+    "id": "arabian-mate",
+    "title": "Arabisches Matt",
+    "shortTitle": "Arabisches Matt",
+    "material": "Turm und Springer am Brettrand",
+    "fen": "7k/8/5NK1/8/8/8/8/6R1 w - - 0 1",
+    "solution": "g1h1",
+    "principle": "Beim arabischen Matt arbeiten Turm und Springer am Rand zusammen: Der Turm gibt das Linienmatt, der Springer deckt wichtige Fluchtfelder.",
+    "plan": "Der Turm zieht nach h1 und greift den König auf h8 entlang der offenen h-Linie an. Der Springer auf f6 kontrolliert g8 und h7; der eigene König nimmt g7. So kann der König dem Turm nicht entkommen.",
+    "forceable": true,
+    "quiz": {
+      "question": "Welche Felder sichert der Springer beim arabischen Matt in diesem Beispiel?",
+      "answers": ["g8 und h7.", "a1 und b2.", "Nur das Feld h8."],
+      "correctAnswer": 0,
+      "explanation": "Der Springer auf f6 kontrolliert g8 und h7; der König schützt zusätzlich g7."
+    }
+  },
+  {
+    "id": "dovetail-mate",
+    "title": "Dovetail-Matt mit der Dame",
+    "shortTitle": "Dovetail-Matt",
+    "material": "Dame gegen König mit blockierten Fluchtfeldern",
+    "fen": "7k/6pp/5Q2/8/8/8/8/4K1R1 w - - 0 1",
+    "solution": "f6g7",
+    "principle": "Beim Dovetail-Matt stehen die Fluchtfelder neben dem König durch eigene Figuren zu; die Dame gibt aus nächster Nähe geschützt Schach.",
+    "plan": "Die Dame schlägt den Bauern auf g7 und setzt den König auf h8 matt. Der schwarze Bauer auf h7 versperrt eine Flucht; die Dame kontrolliert die übrigen Nachbarfelder. Der weiße Turm schützt die Dame auf der g-Linie.",
+    "forceable": true,
+    "quiz": {
+      "question": "Warum kann der König die Dame auf g7 nicht schlagen?",
+      "answers": ["Der weiße Turm auf g1 schützt die Dame entlang der g-Linie.", "Ein König darf keine Dame schlagen.", "Die Dame steht zu weit entfernt."],
+      "correctAnswer": 0,
+      "explanation": "Nach dem Schlag öffnet sich die g-Linie und der Turm deckt die Dame."
+    }
+  },
+  {
+    "id": "rook-corner-mate",
+    "title": "Matt mit gedecktem Turm",
+    "shortTitle": "Gedecktes Randmatt",
+    "material": "Turm und Läufer gegen König am Rand",
+    "fen": "6rk/5B1p/4N3/8/8/8/8/K5R1 w - - 0 1",
+    "solution": "g1g8",
+    "principle": "Ein Turm kann auf der Randlinie mattsetzen, wenn ein Läufer oder eine andere Figur den Turm deckt und die Fluchtfelder kontrolliert.",
+    "plan": "Der Turm schlägt den schwarzen Turm auf g8 und gibt dem König auf h8 Schach. Der Läufer auf f7 schützt den Turm; der Turm kontrolliert g7, und der Bauer auf h7 blockiert das letzte Fluchtfeld.",
+    "forceable": true,
+    "quiz": {
+      "question": "Welche Aufgabe hat der Läufer nach dem Turmschlag auf g8?",
+      "answers": ["Er schützt den Turm, sodass der König ihn nicht schlagen kann.", "Er blockiert die Schachlinie des Turms.", "Er zwingt den eigenen König zum Zug."],
+      "correctAnswer": 0,
+      "explanation": "Der Läufer auf f7 deckt den Turm auf g8 und macht das Randmatt möglich."
+    }
+  },
+  {
     "id": "queen-and-king",
     "title": "Matt mit König und Dame",
     "shortTitle": "König + Dame",

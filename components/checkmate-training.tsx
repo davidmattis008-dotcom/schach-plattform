@@ -338,7 +338,7 @@ export function CheckmateTraining() {
         <header className="mt-7">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200">Selbstständiges Lernen · Mattmethoden</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Mattsetzen lernen</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">Probiere jede Methode zuerst selbst am Brett. Danach erklärt der Kurs jeden einzelnen Zug einer vollständigen Mattvariante und prüft dein Verständnis. Erlerne die grundlegenden erzwungenen Mattführungen gegen den alleinstehenden König; zwei Springer können ein Matt nicht erzwingen.</p>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">Probiere jedes Mattbild zuerst selbst am Brett. Danach erklärt der Kurs die Lösung Zug für Zug und prüft dein Verständnis. Lerne bekannte Mattbilder und alle grundlegenden erzwungenen Mattführungen gegen den alleinstehenden König; zwei Springer können ein Matt nicht erzwingen.</p>
         </header>
 
         <section aria-label="Mattmethode auswählen" className="mt-6">
