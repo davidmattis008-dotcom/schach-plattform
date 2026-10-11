@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Chess, type Square } from "chess.js";
 import { MiniChessboard } from "@/components/mini-chessboard";
 import trainingData from "@/lib/checkmate-training.json";
+import { orderQuizAnswers } from "@/lib/quiz-answer-order";
 
 type CheckmateLesson = {
   id: string;
@@ -72,6 +73,18 @@ function explanationFor(move: ExplainedMove, lesson: CheckmateLesson, moveNumber
   const side = move.color === "w" ? "Weiß" : "Schwarz";
   const respondingSide = move.color === "w" ? "Schwarz" : "Weiß";
   const piece = pieceNames[move.piece] ?? "Figur";
+  if (lesson.id === "scholars-mate") {
+    const explanations: Record<string, string> = {
+      e4: "Weiß zieht den Königsbauern zwei Felder vor. Das besetzt das Zentrum und öffnet die Diagonalen für den Läufer auf f1 und die Dame.",
+      e5: "Schwarz antwortet ebenfalls im Zentrum. Der Zug öffnet den Läufer auf f8 und lässt den Bauern auf f7 als möglichen Angriffspunkt zurück.",
+      Bc4: "Der Läufer entwickelt sich nach c4 und zielt diagonal auf f7. Dort steht zunächst nur der schwarze König als Verteidiger.",
+      Nc6: "Schwarz entwickelt den Springer und verteidigt den Bauern e5, lässt aber f7 weiterhin ungeschützt.",
+      Qh5: "Die Dame kommt nach h5 und greift f7 zusammen mit dem Läufer an. Damit droht unmittelbar Dxf7 matt.",
+      Nf6: "Schwarz greift die Dame an, übersieht aber die Mattdrohung auf f7. Dieser Fehler ermöglicht das Schäfermatt; gegen beste Verteidigung wäre es nicht erzwingbar.",
+      "Qxf7#": "Die Dame schlägt auf f7 und setzt matt. Der Läufer auf c4 schützt sie, während der schwarze König keine legale Antwort hat.",
+    };
+    return explanations[move.san] ?? `${side} spielt ${move.san}.`;
+  }
   if (move.checkmate) return `${side} zieht ${piece} ${move.san} und setzt matt: Der König steht im Schach und hat keinen legalen Zug.`;
   if (move.check) return `${side} zieht ${piece} ${move.san} mit Schach. Die Gegenseite muss den Angriff abwehren und kann ihren Plan nicht frei fortsetzen. Danach hat ${respondingSide} ${move.escapeMoves} legale Antwort${move.escapeMoves === 1 ? "" : "en"}.`;
   if (move.color === "b") return `Schwarz weicht mit dem König ${move.san} aus. In dieser Beispielvariante ist das die beste Verteidigung; Weiß muss den König weiter einschränken.`;
@@ -97,6 +110,10 @@ function CheckmateWorkspace({
   onComplete: () => void;
 }) {
   const line = useMemo(() => buildLine(lesson), [lesson]);
+  const quiz = useMemo(
+    () => orderQuizAnswers(lesson.id, lesson.quiz.answers, lesson.quiz.correctAnswer),
+    [lesson],
+  );
   const [phase, setPhase] = useState<Phase>("try");
   const [attemptFen, setAttemptFen] = useState(lesson.fen);
   const [attemptMoves, setAttemptMoves] = useState<string[]>([]);
@@ -174,7 +191,7 @@ function CheckmateWorkspace({
   function checkAnswer() {
     if (answer === null) return;
     setChecked(true);
-    if (answer === lesson.quiz.correctAnswer) {
+    if (answer === quiz.correctAnswer) {
       onComplete();
       setMessage(`Richtig! ${lesson.quiz.explanation}`);
     } else {
@@ -276,15 +293,15 @@ function CheckmateWorkspace({
             <h3 className="font-semibold text-white">Verständnis-Test</h3>
             <p className="mt-3 rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-sm leading-6 text-slate-200">{lesson.quiz.question}</p>
             <div className="mt-3 space-y-2">
-              {lesson.quiz.answers.map((option, index) => (
-                <button key={option} type="button" aria-pressed={answer === index} onClick={() => { setAnswer(index); setChecked(false); setMessage(""); }} className={`w-full rounded-lg border px-3 py-3 text-left text-sm transition ${checked && index === lesson.quiz.correctAnswer ? "border-emerald-300/40 bg-emerald-300/10 text-emerald-100" : answer === index ? "border-amber-300/40 bg-amber-300/5 text-white" : "border-slate-800 bg-slate-950/60 text-slate-300 hover:border-slate-600"}`}>
+              {quiz.answers.map((option, index) => (
+                <button key={option} type="button" aria-pressed={answer === index} onClick={() => { setAnswer(index); setChecked(false); setMessage(""); }} className={`w-full rounded-lg border px-3 py-3 text-left text-sm transition ${checked && index === quiz.correctAnswer ? "border-emerald-300/40 bg-emerald-300/10 text-emerald-100" : answer === index ? "border-amber-300/40 bg-amber-300/5 text-white" : "border-slate-800 bg-slate-950/60 text-slate-300 hover:border-slate-600"}`}>
                   <span className="mr-2 text-xs text-slate-500">{String.fromCharCode(65 + index)}.</span>{option}
                 </button>
               ))}
             </div>
             <button type="button" disabled={answer === null} onClick={checkAnswer} className="mt-4 rounded-lg bg-amber-300 px-4 py-2.5 text-sm font-semibold text-slate-950 disabled:opacity-40">Antwort prüfen</button>
-            {message && <p role="status" aria-live="polite" className={`mt-3 text-sm leading-6 ${answer === lesson.quiz.correctAnswer ? "text-emerald-200" : "text-rose-200"}`}>{message}</p>}
-            {learned && checked && answer === lesson.quiz.correctAnswer && <p className="mt-3 rounded-lg border border-emerald-300/20 bg-emerald-300/5 p-3 text-sm text-emerald-100">Methode gelernt – du kannst sie jederzeit wiederholen.</p>}
+            {message && <p role="status" aria-live="polite" className={`mt-3 text-sm leading-6 ${answer === quiz.correctAnswer ? "text-emerald-200" : "text-rose-200"}`}>{message}</p>}
+            {learned && checked && answer === quiz.correctAnswer && <p className="mt-3 rounded-lg border border-emerald-300/20 bg-emerald-300/5 p-3 text-sm text-emerald-100">Methode gelernt – du kannst sie jederzeit wiederholen.</p>}
           </>}
         </div>
       </div>

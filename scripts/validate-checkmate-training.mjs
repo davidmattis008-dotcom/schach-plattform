@@ -11,6 +11,10 @@ assert.deepEqual(lessons.map((lesson) => lesson.id), expectedIds, "The course sh
 const ids = new Set();
 let totalPlies = 0;
 
+const scholarsMate = lessons.find((lesson) => lesson.id === "scholars-mate");
+assert.equal(scholarsMate.fen, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "Scholar's Mate must start from the normal initial position.");
+assert.equal(scholarsMate.solution, "e2e4 e7e5 f1c4 b8c6 d1h5 g8f6 h5f7", "Scholar's Mate should show the complete opening sequence.");
+
 for (const lesson of lessons) {
   assert.ok(!ids.has(lesson.id), `Duplicate lesson id: ${lesson.id}`);
   ids.add(lesson.id);
@@ -44,6 +48,9 @@ for (const lesson of lessons) {
     assert.ok(!game.isGameOver() || (index === moves.length - 1 && game.isCheckmate()), `The line ends before checkmate in ${lesson.id}, ply ${index + 1}.`);
   }
   assert.ok(game.isCheckmate(), `The solution does not end in checkmate: ${lesson.id}`);
+  if (lesson.id === "scholars-mate") {
+    assert.deepEqual(game.history(), ["e4", "e5", "Bc4", "Nc6", "Qh5", "Nf6", "Qxf7#"], "Scholar's Mate should show the expected opening moves.");
+  }
 }
 
 assert.ok(lessons.find((lesson) => lesson.id === "bishop-knight").solution.trim().split(/\s+/).length >= 50, "The bishop-and-knight demonstration should show the complete long mating method.");
