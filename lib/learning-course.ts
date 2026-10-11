@@ -181,6 +181,7 @@ export const learningLessons: LearningLesson[] = [
     answers: ["Weil das dann immer ein Matt ist.", "Weil es Patt und damit remis sein kann.", "Weil die Dame nicht allein ziehen darf."],
     correctAnswer: 1,
     explanation: "Ohne Schach und ohne legalen Zug ist es Patt. Sorge dafür, dass der letzte Zug wirklich Schach gibt.",
+    practice: { label: "Alle Mattmethoden mit Übungen lernen", href: "/lernen/mattsetzen" },
   },
   {
     id: "turmmatt",
@@ -199,6 +200,7 @@ export const learningLessons: LearningLesson[] = [
     answers: ["Er unterstützt den Turm und nimmt dem gegnerischen König Felder.", "Er muss den Turm vor dem gegnerischen König verstecken.", "Er darf sich nicht bewegen."],
     correctAnswer: 0,
     explanation: "Der eigene König hilft, den gegnerischen König zurückzudrängen; der Turm setzt die Sperre.",
+    practice: { label: "Alle Mattmethoden mit Übungen lernen", href: "/lernen/mattsetzen" },
   },
   {
     id: "bauernendspiel",

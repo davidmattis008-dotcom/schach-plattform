@@ -11,6 +11,7 @@
     "test:endgame-exercises": "node scripts/validate-endgame-exercises.mjs",
     "test:chess-rules": "node scripts/validate-chess-rules.mjs",
     "test:opening-repertoire": "node scripts/validate-opening-repertoire.mjs",
+    "test:checkmate-training": "node scripts/validate-checkmate-training.mjs",
     "import:opening-database": "node scripts/import-opening-database.mjs",
     "import:endgame-exercises": "node scripts/import-endgame-exercises.mjs"
   },

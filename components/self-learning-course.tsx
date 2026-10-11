@@ -11,7 +11,7 @@ const learningOptions = [
   { label: "Lernpfad", detail: "Arbeite dich Schritt für Schritt durch alle Themen.", href: "#lernplan", mark: "↗" },
   { label: "Schachregeln lernen", detail: "Vom Brett und den Figuren bis zu Sonderzügen, Matt und Remis – mit Schachbrett links und Erklärung rechts.", href: "/lernen/regeln", mark: "♟" },
   { label: "Eröffnungen lernen", detail: "Spiele ausgewählte Varianten Zug für Zug nach.", href: "/repertoire", mark: "⌂" },
-  { label: "Mattsetzen lernen", detail: "Übe Mattführungen mit Dame und Turm.", href: "#matt", mark: "♛" },
+  { label: "Mattsetzen lernen", detail: "Probiere Mattmethoden erst selbst, gehe danach jeden Lösungszug durch und prüfe dein Verständnis.", href: "/lernen/mattsetzen", mark: "♛" },
   { label: "Endspiele lernen", detail: "Verstehe 500 Stellungen Zug für Zug und wende die Pläne selbst an.", href: "/lernen/endspiele", mark: "♜" },
 ];
 

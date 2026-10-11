@@ -1,0 +1,257 @@
+[
+  {
+    "id": "fools-mate",
+    "title": "Narrenmatt",
+    "shortTitle": "Narrenmatt",
+    "material": "Dame gegen den ungeschützten König",
+    "fen": "rnbqkbnr/pppp1ppp/8/4p3/6P1/5P2/PPPPP2P/RNBQKBNR b KQkq - 0 1",
+    "solution": "d8h4",
+    "principle": "Das Narrenmatt ist das kürzeste mögliche Schachmatt. Zwei unvorsichtige Bauernzüge öffnen die Diagonale zum weißen König.",
+    "plan": "Die Stellung zeigt Weiß nach f3 und g4. Schwarz nutzt die offene Diagonale und zieht die Dame nach h4. Die Dame gibt entlang h4–e1 Schach; eigene Figuren und Bauern blockieren die Fluchtfelder des Königs. Die Partie endet sofort.",
+    "forceable": true,
+    "quiz": {
+      "question": "Was ermöglicht das Narrenmatt nach den weißen Bauernzügen f3 und g4?",
+      "answers": ["Die offene Diagonale h4–e1 für die schwarze Dame.", "Ein Springer kann über den König springen.", "Die weiße Dame darf nicht ziehen."],
+      "correctAnswer": 0,
+      "explanation": "Die Bauernzüge öffnen die Diagonale der Dame zum König und schwächen zugleich die Königsstellung."
+    }
+  },
+  {
+    "id": "scholars-mate",
+    "title": "Schäfermatt",
+    "shortTitle": "Schäfermatt",
+    "material": "Dame und Läufer greifen f7 an",
+    "fen": "4k3/2K2ppp/8/7Q/2B5/8/8/8 w - - 0 1",
+    "solution": "h5f7",
+    "principle": "Beim Schäfermatt greifen Dame und Läufer gemeinsam den empfindlichen Punkt f7 an. In dieser Beispielstellung ist die Abwehr bereits versäumt.",
+    "plan": "Die Dame nimmt den Bauern auf f7 und gibt dem König auf e8 Schach. Der Läufer auf c4 schützt die Dame; der weiße König kontrolliert d7 und d8. Lerne das Motiv, aber verlasse dich nicht darauf: Aufmerksame Gegner können den Angriff früh verteidigen.",
+    "forceable": true,
+    "quiz": {
+      "question": "Warum kann der schwarze König nach Dxf7# die Dame nicht schlagen?",
+      "answers": ["Der Läufer auf c4 schützt die Dame auf f7.", "Damen dürfen nicht geschlagen werden.", "Der König darf nie diagonal ziehen."],
+      "correctAnswer": 0,
+      "explanation": "Der Läufer deckt f7. Der König darf nicht auf ein angegriffenes Feld ziehen."
+    }
+  },
+  {
+    "id": "back-rank",
+    "title": "Grundreihenmatt",
+    "shortTitle": "Grundreihenmatt",
+    "material": "Turm gegen König hinter Bauern",
+    "fen": "6k1/5ppp/8/8/8/8/8/4R1K1 w - - 0 1",
+    "solution": "e1e8",
+    "principle": "Ein König, dessen eigene Bauern die Fluchtfelder auf der Grundreihe versperren, kann durch einen Turm oder eine Dame mattgesetzt werden.",
+    "plan": "Der weiße Turm zieht auf die achte Reihe und gibt dem König auf g8 Schach. Die schwarzen Bauern versperren die Felder g7 und h7; der Turm kontrolliert die übrigen Fluchtfelder. Achte in eigenen Partien darauf, rechtzeitig ein Luftloch für den König zu schaffen.",
+    "forceable": true,
+    "quiz": {
+      "question": "Was ist beim Grundreihenmatt die typische Ursache dafür, dass der König nicht entkommen kann?",
+      "answers": ["Die eigenen Bauern blockieren seine Fluchtfelder.", "Der Turm kann über Bauern springen.", "Der König steht am Brettrand und kann nie ziehen."],
+      "correctAnswer": 0,
+      "explanation": "Die eigenen Bauern können dem König die Flucht nehmen. Ein vorsorglicher Bauernzug kann ein Luftloch schaffen."
+    }
+  },
+  {
+    "id": "smothered-mate",
+    "title": "Ersticktes Matt",
+    "shortTitle": "Ersticktes Matt",
+    "material": "Springer gegen eingeschlossenen König",
+    "fen": "6rk/6pp/8/4N3/8/8/8/4K3 w - - 0 1",
+    "solution": "e5f7",
+    "principle": "Beim erstickten Matt setzt ein Springer den König matt, weil eigene Figuren und Bauern alle Fluchtfelder verstellen.",
+    "plan": "Der Springer springt nach f7 und gibt dem König auf h8 Schach. Der König kann weder durch die eigenen Figuren auf g8, g7 und h7 entkommen noch den Springer schlagen. Der Springer kann über alle blockierenden Figuren hinwegziehen.",
+    "forceable": true,
+    "quiz": {
+      "question": "Warum heißt dieses Matt „erstickt“?",
+      "answers": ["Die eigenen Figuren nehmen dem König alle Fluchtfelder.", "Der Springer darf nicht mehr ziehen.", "Der König steht nicht im Schach."],
+      "correctAnswer": 0,
+      "explanation": "Der König ist durch seine eigenen Figuren eingeschlossen und hat keine legale Antwort auf das Springerschach."
+    }
+  },
+  {
+    "id": "arabian-mate",
+    "title": "Arabisches Matt",
+    "shortTitle": "Arabisches Matt",
+    "material": "Turm und Springer am Brettrand",
+    "fen": "7k/8/5NK1/8/8/8/8/6R1 w - - 0 1",
+    "solution": "g1h1",
+    "principle": "Beim arabischen Matt arbeiten Turm und Springer am Rand zusammen: Der Turm gibt das Linienmatt, der Springer deckt wichtige Fluchtfelder.",
+    "plan": "Der Turm zieht nach h1 und greift den König auf h8 entlang der offenen h-Linie an. Der Springer auf f6 kontrolliert g8 und h7; der eigene König nimmt g7. So kann der König dem Turm nicht entkommen.",
+    "forceable": true,
+    "quiz": {
+      "question": "Welche Felder sichert der Springer beim arabischen Matt in diesem Beispiel?",
+      "answers": ["g8 und h7.", "a1 und b2.", "Nur das Feld h8."],
+      "correctAnswer": 0,
+      "explanation": "Der Springer auf f6 kontrolliert g8 und h7; der König schützt zusätzlich g7."
+    }
+  },
+  {
+    "id": "dovetail-mate",
+    "title": "Dovetail-Matt mit der Dame",
+    "shortTitle": "Dovetail-Matt",
+    "material": "Dame gegen König mit blockierten Fluchtfeldern",
+    "fen": "7k/6pp/5Q2/8/8/8/8/4K1R1 w - - 0 1",
+    "solution": "f6g7",
+    "principle": "Beim Dovetail-Matt stehen die Fluchtfelder neben dem König durch eigene Figuren zu; die Dame gibt aus nächster Nähe geschützt Schach.",
+    "plan": "Die Dame schlägt den Bauern auf g7 und setzt den König auf h8 matt. Der schwarze Bauer auf h7 versperrt eine Flucht; die Dame kontrolliert die übrigen Nachbarfelder. Der weiße Turm schützt die Dame auf der g-Linie.",
+    "forceable": true,
+    "quiz": {
+      "question": "Warum kann der König die Dame auf g7 nicht schlagen?",
+      "answers": ["Der weiße Turm auf g1 schützt die Dame entlang der g-Linie.", "Ein König darf keine Dame schlagen.", "Die Dame steht zu weit entfernt."],
+      "correctAnswer": 0,
+      "explanation": "Nach dem Schlag öffnet sich die g-Linie und der Turm deckt die Dame."
+    }
+  },
+  {
+    "id": "rook-corner-mate",
+    "title": "Matt mit gedecktem Turm",
+    "shortTitle": "Gedecktes Randmatt",
+    "material": "Turm und Läufer gegen König am Rand",
+    "fen": "6rk/5B1p/4N3/8/8/8/8/K5R1 w - - 0 1",
+    "solution": "g1g8",
+    "principle": "Ein Turm kann auf der Randlinie mattsetzen, wenn ein Läufer oder eine andere Figur den Turm deckt und die Fluchtfelder kontrolliert.",
+    "plan": "Der Turm schlägt den schwarzen Turm auf g8 und gibt dem König auf h8 Schach. Der Läufer auf f7 schützt den Turm; der Turm kontrolliert g7, und der Bauer auf h7 blockiert das letzte Fluchtfeld.",
+    "forceable": true,
+    "quiz": {
+      "question": "Welche Aufgabe hat der Läufer nach dem Turmschlag auf g8?",
+      "answers": ["Er schützt den Turm, sodass der König ihn nicht schlagen kann.", "Er blockiert die Schachlinie des Turms.", "Er zwingt den eigenen König zum Zug."],
+      "correctAnswer": 0,
+      "explanation": "Der Läufer auf f7 deckt den Turm auf g8 und macht das Randmatt möglich."
+    }
+  },
+  {
+    "id": "queen-and-king",
+    "title": "Matt mit König und Dame",
+    "shortTitle": "König + Dame",
+    "material": "König und Dame gegen König",
+    "fen": "8/8/8/4k3/8/8/8/KQ6 w - - 0 1",
+    "solution": "b1d1 e5e4 a1b2 e4e5 b2c3 e5e6 c3d4 e6f5 d1d3 f5f6 d3e4 f6f7 d4e5 f7g7 e4f5 g7g8 e5f6 g8h8 f5e4 h8g8 e4e7 g8h8 e7g7",
+    "principle": "Die Dame kann große Bereiche abschneiden. Der eigene König muss mithelfen, damit der gegnerische König nicht entkommt und das Ende kein Patt wird.",
+    "plan": "Verkleinere mit der Dame den Bewegungsraum. Nähere den König an, halte den gegnerischen König am Rand und setze erst matt, wenn dein König die Fluchtfelder kontrolliert. Die Beispielvariante zeigt jeden Halbzug bis zum Matt.",
+    "forceable": true,
+    "quiz": {
+      "question": "Warum soll die Dame den König nicht einfach ohne Schach vollständig einsperren?",
+      "answers": ["Das wäre Patt, wenn der König keinen legalen Zug mehr hat, aber nicht im Schach steht.", "Die Dame darf nur drei Felder ziehen.", "Der eigene König darf nicht mithelfen."],
+      "correctAnswer": 0,
+      "explanation": "Ohne Schach und ohne legalen Zug ist es Patt. Der letzte Zug muss den König tatsächlich angreifen."
+    }
+  },
+  {
+    "id": "rook-and-king",
+    "title": "Matt mit König und Turm",
+    "shortTitle": "König + Turm",
+    "material": "König und Turm gegen König",
+    "fen": "8/8/8/4k3/8/8/8/KR6 w - - 0 1",
+    "solution": "b1h1 e5e4 h1h4 e4f5 a1b2 f5e5 b2b3 e5e6 b3c4 e6e5 h4d4 e5e6 d4e4 e6f6 c4d5 f6f5 e4b4 f5f6 b4f4 f6g5 d5e5 g5g6 f4f8 g6g7 f8f6 g7h7 e5e6 h7g8 e6e7 g8g7 f6b6 g7g8 e7f6 g8h8 f6f7 h8h7 b6f6 h7h8 f6h6",
+    "principle": "Der Turm schneidet eine Reihe oder Linie ab; der eigene König rückt vor und nimmt dem gegnerischen König Felder weg.",
+    "plan": "Halte mit dem Turm eine Sperre, nähere den König an und dränge den gegnerischen König schrittweise zum Rand. Wenn der König ausweicht, passe die Turmlinie an. Der Turm gibt das Schlussmatt entlang der Randlinie.",
+    "forceable": true,
+    "quiz": {
+      "question": "Wie arbeiten König und Turm bei dieser Mattmethode zusammen?",
+      "answers": ["Der Turm sperrt Linien ab, während der eigene König Fluchtfelder kontrolliert und vorrückt.", "Der Turm muss sich opfern, bevor der König zieht.", "Nur der eigene König kann den gegnerischen König an den Rand treiben."],
+      "correctAnswer": 0,
+      "explanation": "Der Turm hält die Sperre; der König nimmt dem Gegner Raum und unterstützt so das Matt."
+    }
+  },
+  {
+    "id": "two-rooks",
+    "title": "Matt mit zwei Türmen",
+    "shortTitle": "Zwei Türme",
+    "material": "König und zwei Türme gegen König",
+    "fen": "8/8/8/4k3/8/8/8/KRR5 w - - 0 1",
+    "solution": "c1f1 e5e4 b1e1 e4d4 a1b2 d4d5 b2c3 d5c5 f1f6 c5d5 f6b6 d5c5 b6e6 c5b5 e1e5 b5a4 e6a6",
+    "principle": "Zwei Türme können eine bewegliche Treppe bilden: Einer gibt Schach oder schneidet eine Linie ab, der andere übernimmt die nächste Sperre.",
+    "plan": "Setze die Türme abwechselnd ein, um die Sperrlinie immer näher an den gegnerischen König zu bringen. Der eigene König kann mithelfen, muss aber nicht vor den Türmen stehen. Lass dem König keine Lücke, durch die er zurück in die Brettmitte kommt.",
+    "forceable": true,
+    "quiz": {
+      "question": "Was ist die Grundidee der Treppenmethode mit zwei Türmen?",
+      "answers": ["Die Türme wechseln sich beim Abschneiden von Reihen oder Linien ab und drängen den König zum Rand.", "Beide Türme müssen auf derselben Diagonale stehen.", "Der eigene König darf den gegnerischen König berühren."],
+      "correctAnswer": 0,
+      "explanation": "Die Türme versetzen ihre Sperren abwechselnd und verkleinern so den Raum."
+    }
+  },
+  {
+    "id": "two-bishops",
+    "title": "Matt mit zwei Läufern",
+    "shortTitle": "Zwei Läufer",
+    "material": "König und zwei Läufer gegen König",
+    "fen": "8/8/8/4k3/8/8/8/KBB5 w - - 0 1",
+    "solution": "a1a2 e5d4 a2b3 d4c5 c1e3 c5d5 b3b4 d5d6 b4c4 d6e5 c4c5 e5e6 e3f4 e6e7 c5d5 e7d7 b1f5 d7d8 d5d6 d8e8 f4g5 e8f7 f5c2 f7f8 d6e6 f8e8 c2g6 e8f8 e6f6 f8g8 g5h6 g8h8 g6c2 h8g8 f6g6 g8h8 h6g7 h8g8 c2b3",
+    "principle": "Andersfarbige Läufer kontrollieren beide Feldfarben. Gemeinsam mit dem König schieben sie den gegnerischen König in eine Ecke.",
+    "plan": "Bringe den eigenen König heran. Bewege die Läufer als Diagonalbarriere, statt sie einzeln zu weit wegzuziehen. Die Barriere wird zum Rand verschoben; König und Läufer kontrollieren dort die Fluchtfelder für das Schlussmatt.",
+    "forceable": true,
+    "quiz": {
+      "question": "Warum sind zwei Läufer stärker als ein einzelner Läufer gegen den König?",
+      "answers": ["Sie kontrollieren zusammen Felder beider Farben und können eine Diagonalbarriere bilden.", "Ein Läufer darf dann gerade ziehen.", "Zwei Läufer können über Figuren springen."],
+      "correctAnswer": 0,
+      "explanation": "Die Läufer decken unterschiedliche Feldfarben und sperren gemeinsam mehr Fluchtfelder ab."
+    }
+  },
+  {
+    "id": "bishop-knight",
+    "title": "Matt mit Läufer und Springer",
+    "shortTitle": "Läufer + Springer",
+    "material": "König, Läufer und Springer gegen König",
+    "fen": "8/8/8/4k3/8/8/8/KNB5 w - - 0 1",
+    "solution": "b1c3 e5d4 a1b2 d4e5 c1d2 e5d4 b2c2 d4c5 c2d3 c5b6 d2e3 b6a6 d3c4 a6b7 c3b5 b7c6 e3g1 c6b7 c4c5 b7b8 c5b6 b8a8 b5c7 a8b8 b6c6 b8c8 g1a7 c8d8 c7d5 d8e8 a7d4 e8f7 d5f4 f7e7 c6c7 e7e8 d4f2 e8e7 f2h4 e7e8 h4g5 e8f7 c7d6 f7e8 g5e7 e8f7 d6d7 f7g8 d7e8 g8g7 e7g5 g7g8 f4e6 g8h7 e8f7 h7h8 g5c1 h8h7 e6f8 h7h8 c1b2",
+    "principle": "Diese Mattführung ist möglich, aber technisch am anspruchsvollsten. Läufer, Springer und König müssen zusammenarbeiten.",
+    "plan": "Dränge den gegnerischen König zur Ecke, die dieselbe Feldfarbe wie dein Läufer hat. Der Läufer deckt die Diagonalen, der Springer kontrolliert die übrigen Fluchtfelder, und der König unterstützt das Treiben. Jeder Zug der vollständigen Beispielvariante wird einzeln erklärt.",
+    "forceable": true,
+    "quiz": {
+      "question": "In welche Ecke musst du den gegnerischen König mit Läufer und Springer treiben?",
+      "answers": ["In eine Ecke, deren Feldfarbe der Farbe deines Läufers entspricht.", "Immer in die nächstgelegene Ecke, unabhängig vom Läufer.", "Der König muss in die Brettmitte bleiben."],
+      "correctAnswer": 0,
+      "explanation": "Der Läufer kann nur eine Feldfarbe kontrollieren. Das Matt muss deshalb in einer gleichfarbigen Ecke vorbereitet werden."
+    }
+  },
+  {
+    "id": "bishop-limit",
+    "title": "Matt mit König und einem Läufer",
+    "shortTitle": "Ein Läufer",
+    "material": "König und Läufer gegen König",
+    "fen": "8/8/8/4k3/8/8/8/KB6 w - - 0 1",
+    "solution": "",
+    "principle": "Ein einzelner Läufer kann den alleinstehenden König nicht mattsetzen. Er kontrolliert nur eine Feldfarbe und kann nicht alle nötigen Fluchtfelder abdecken.",
+    "plan": "Auch bei perfektem Spiel ist mit König und Läufer gegen König kein Matt möglich. Lerne, diese Stellung als remis einzuschätzen. Mit zusätzlichen Bauern oder Figuren kann die Lage anders sein.",
+    "forceable": false,
+    "quiz": {
+      "question": "Kann König und ein einzelner Läufer gegen den alleinstehenden König Matt erzwingen?",
+      "answers": ["Ja, wenn der gegnerische König in die Ecke gedrängt wird.", "Nein. Mit einer einzelnen Leichtfigur ist kein Matt möglich.", "Nur mit einem Springer, wenn er Schach gibt."],
+      "correctAnswer": 1,
+      "explanation": "König und ein einzelner Läufer reichen nicht zum Matt gegen den alleinstehenden König."
+    }
+  },
+  {
+    "id": "knight-limit",
+    "title": "Matt mit König und einem Springer",
+    "shortTitle": "Ein Springer",
+    "material": "König und Springer gegen König",
+    "fen": "8/8/8/4k3/8/8/8/KN6 w - - 0 1",
+    "solution": "",
+    "principle": "Ein einzelner Springer kann den alleinstehenden König nicht mattsetzen. Auch mit Hilfe des eigenen Königs kann er nicht genügend Fluchtfelder gleichzeitig kontrollieren.",
+    "plan": "Auch bei perfektem Spiel ist mit König und Springer gegen König kein Matt möglich. Lerne, diese Stellung als remis einzuschätzen. Mit zusätzlichen Bauern oder Figuren kann die Lage anders sein.",
+    "forceable": false,
+    "quiz": {
+      "question": "Kann König und ein einzelner Springer gegen den alleinstehenden König Matt erzwingen?",
+      "answers": ["Ja, wenn der gegnerische König in die Ecke gedrängt wird.", "Nein. Ein einzelner Springer reicht nicht zum Matt.", "Ja, aber nur mit einem sofortigen Springerschach."],
+      "correctAnswer": 1,
+      "explanation": "König und ein einzelner Springer reichen nicht zum Matt gegen den alleinstehenden König."
+    }
+  },
+  {
+    "id": "two-knights",
+    "title": "Warum zwei Springer nicht erzwingen",
+    "shortTitle": "Zwei Springer: Grenze",
+    "material": "König und zwei Springer gegen König",
+    "fen": "8/8/8/4k3/8/8/5NN1/K7 w - - 0 1",
+    "solution": "",
+    "principle": "Gegen den alleinstehenden König können zwei Springer ein Mattbild erreichen, aber sie können Matt nicht erzwingen: Die verteidigende Seite kann eine Stellung wählen, in der kein Matt erzwungen wird.",
+    "plan": "Das ist eine wichtige Grenze der Mattmethoden. Anders als bei Dame, Turm, zwei Türmen, zwei Läufern oder Läufer+Springer gibt es hier keinen garantierten Gewinn gegen beste Verteidigung. Mit gegnerischen Bauern gelten andere Möglichkeiten, weil der verteidigende König manchmal gezwungen wird, den Bauern zu bewegen.",
+    "forceable": false,
+    "quiz": {
+      "question": "Können König und zwei Springer gegen den alleinstehenden König Matt erzwingen?",
+      "answers": ["Ja, immer in weniger als 50 Zügen.", "Nein. Ein Mattbild ist möglich, aber gegen beste Verteidigung nicht erzwingbar.", "Nur wenn beide Springer auf derselben Feldfarbe stehen."],
+      "correctAnswer": 1,
+      "explanation": "Zwei Springer können Matt setzen, wenn die verteidigende Seite Fehler macht, erzwingen können sie es gegen den alleinstehenden König aber nicht."
+    }
+  }
+]
