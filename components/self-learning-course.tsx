@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { MiniChessboard } from "@/components/mini-chessboard";
 import { learningLessons, learningPaths } from "@/lib/learning-course";
+import { orderQuizAnswers } from "@/lib/quiz-answer-order";
 
 const STORAGE_KEY = "schach-selbstlernen-v1";
 
@@ -24,9 +25,10 @@ export function SelfLearningCourse() {
   const [storageAvailable, setStorageAvailable] = useState(true);
   const lessonIndex = learningLessons.findIndex((lesson) => lesson.id === currentLessonId);
   const lesson = learningLessons[lessonIndex] ?? learningLessons[0];
+  const quiz = orderQuizAnswers(lesson.id, lesson.answers, lesson.correctAnswer);
   const nextLesson = learningLessons[lessonIndex + 1];
   const lessonUnlocked = (index: number) => index === 0 || completed.includes(learningLessons[index - 1].id);
-  const isCorrect = submitted && selectedAnswer === lesson.correctAnswer;
+  const isCorrect = submitted && selectedAnswer === quiz.correctAnswer;
   const progressPercent = Math.round((completed.length / learningLessons.length) * 100);
 
   useEffect(() => {
@@ -66,7 +68,7 @@ export function SelfLearningCourse() {
   function checkAnswer() {
     if (selectedAnswer === null) return;
     setSubmitted(true);
-    if (selectedAnswer === lesson.correctAnswer) {
+    if (selectedAnswer === quiz.correctAnswer) {
       setCompleted((current) => current.includes(lesson.id) ? current : [...current, lesson.id]);
     }
   }
@@ -184,8 +186,8 @@ export function SelfLearningCourse() {
                 <h3 id="lesson-question" className="font-semibold text-white">Prüfe dein Wissen</h3>
                 <p className="mt-2 text-sm text-slate-300">{lesson.question}</p>
                 <div className="mt-3 space-y-2">
-                  {lesson.answers.map((answer, index) => {
-                    const isRightAnswer = submitted && index === lesson.correctAnswer;
+                  {quiz.answers.map((answer, index) => {
+                    const isRightAnswer = submitted && index === quiz.correctAnswer;
                     const isWrongSelection = submitted && selectedAnswer === index && !isCorrect;
                     return (
                       <button

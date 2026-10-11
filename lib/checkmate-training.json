@@ -20,17 +20,17 @@
     "id": "scholars-mate",
     "title": "Schäfermatt",
     "shortTitle": "Schäfermatt",
-    "material": "Dame und Läufer greifen f7 an",
-    "fen": "4k3/2K2ppp/8/7Q/2B5/8/8/8 w - - 0 1",
-    "solution": "h5f7",
-    "principle": "Beim Schäfermatt greifen Dame und Läufer gemeinsam den empfindlichen Punkt f7 an. In dieser Beispielstellung ist die Abwehr bereits versäumt.",
-    "plan": "Die Dame nimmt den Bauern auf f7 und gibt dem König auf e8 Schach. Der Läufer auf c4 schützt die Dame; der weiße König kontrolliert d7 und d8. Lerne das Motiv, aber verlasse dich nicht darauf: Aufmerksame Gegner können den Angriff früh verteidigen.",
+    "material": "Voller Figurenaufbau · Angriff auf f7",
+    "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    "solution": "e2e4 e7e5 f1c4 b8c6 d1h5 g8f6 h5f7",
+    "principle": "Das Schäfermatt entsteht aus einer normalen Eröffnung: Dame und Läufer greifen gemeinsam den schwachen Bauern f7 an. Die Beispielpartie zeigt, wie Schwarz durch einen unaufmerksamen Zug das Matt zulässt.",
+    "plan": "Weiß öffnet mit e4 die Diagonalen für Läufer und Dame. Der Läufer auf c4 und die Dame auf h5 greifen gemeinsam f7 an. Nach dem Fehler 4...Sf6 übersieht Schwarz die unmittelbare Drohung; 5.Dxf7# ist matt, weil der Läufer die Dame deckt. Das Schäfermatt ist nicht gegen beste Verteidigung erzwingbar – Schwarz kann den Angriff vorher abwehren.",
     "forceable": true,
     "quiz": {
-      "question": "Warum kann der schwarze König nach Dxf7# die Dame nicht schlagen?",
-      "answers": ["Der Läufer auf c4 schützt die Dame auf f7.", "Damen dürfen nicht geschlagen werden.", "Der König darf nie diagonal ziehen."],
+      "question": "Warum kann der schwarze König nach 5.Dxf7# die Dame nicht schlagen?",
+      "answers": ["Der Läufer auf c4 schützt die Dame auf f7.", "Die Dame darf im Schäfermatt nicht geschlagen werden.", "Der König darf im Schach grundsätzlich nicht ziehen."],
       "correctAnswer": 0,
-      "explanation": "Der Läufer deckt f7. Der König darf nicht auf ein angegriffenes Feld ziehen."
+      "explanation": "Der Läufer auf c4 deckt f7. Der König dürfte die Dame dort nur schlagen, wenn das Feld nicht vom Läufer angegriffen wäre."
     }
   },
   {
