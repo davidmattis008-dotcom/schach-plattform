@@ -12,11 +12,11 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Schach spielen und analysieren",
-  description: "Spiele Schach, trainiere und werde Teil der Schach-Community.",
+  title: "CHESSCAGE – Schachtraining und Partienanalyse",
+  description: "Analysiere deine Partien, trainiere gezielt und organisiere Schachtraining für deinen Verein.",
   icons: {
     icon: "/favicon.ico",
-    apple: [{ url: "/chess-logo-180.png", sizes: "180x180", type: "image/png" }],
+    apple: [{ url: "/chess-logo-180.png?v=9", sizes: "180x180", type: "image/png" }],
   },
 };
 

@@ -8,32 +8,31 @@ import { getTacticsProgress, INITIAL_TACTICS_PROGRESS, subscribeToTacticsProgres
 import { createClient } from "@/lib/supabase/client";
 import { InstallAppLink } from "@/components/install-app-link";
 
-const activities = [
-  { title: "Online spielen", detail: "Finde einen Gegner", href: "/online", tag: "LIVE", mark: "↗" },
-  { title: "Gegen den Bot", detail: "Spiele in deinem Tempo", href: "/bot", tag: "SOLO", mark: "♟" },
+const trainingActions = [
+  { title: "Eigene Partie analysieren", detail: "PGN einfügen oder Partie-Datei laden", href: "/analyse", tag: "ANALYSE", mark: "⌕" },
+  { title: "Taktik trainieren", detail: "Löse Aufgaben und verfolge deinen Trainingsstand", href: "/taktik", tag: "SOLO", mark: "♞" },
+  { title: "Vereinstraining planen", detail: "Gruppen, Pläne und Aufgaben organisieren", href: "/verein", tag: "TEAM", mark: "♙" },
 ];
 
 const dashboardSections = [
   {
     id: "training-analysis",
-    title: "Training & Analyse",
-    description: "Verbessere deine Taktik, lerne Eröffnungen und untersuche Stellungen.",
+    title: "Dein Schachtraining",
+    description: "Analysiere Partien, übe konkrete Motive und baue dein Wissen Schritt für Schritt aus.",
     items: [
       { title: "Selbstständig Schach lernen", detail: "Arbeite dich ohne Vorwissen vom ersten Zug bis zu Endspielen vor.", href: "/lernen", mark: "↗" },
       { title: "Taktikaufgaben", detail: "Trainiere mit Aufgaben passend zu deiner Taktik-Elo.", href: "/taktik", mark: "♞" },
       { title: "Eröffnungen", detail: "Spiele ausgewählte Varianten Zug für Zug nach.", href: "/repertoire", mark: "⌂" },
       { title: "Analysebrett", detail: "Untersuche Stellungen und spiele Züge nach.", href: "/analyse", mark: "⌕" },
+      { title: "Partieverlauf", detail: "Finde deine gespeicherten Partien wieder und arbeite sie nach.", href: "/partien", mark: "↗" },
     ],
   },
   {
-    id: "community",
-    title: "Community",
-    description: "Finde Mitspieler, tritt Turnieren bei und vergleiche Wertungen.",
+    id: "club-training",
+    title: "Training im Verein",
+    description: "Bereite Einheiten vor, teile Aufgaben mit deiner Gruppe und verfolge die Teilnahme.",
     items: [
-      { title: "Verein & Training", detail: "Organisiere Gruppen, gemeinsame Aufgaben und Turniere.", href: "/verein", mark: "♙" },
-      { title: "Turniere", detail: "Erstelle ein Turnier oder spiele in einer Runde mit.", href: "/tournaments", mark: "♜" },
-      { title: "Freunde & Nachrichten", detail: "Finde Spieler und verwalte deine Kontakte.", href: "/freunde", mark: "♙" },
-      { title: "Ranglisten", detail: "Vergleiche Online-Wertungen mit anderen Spielern.", href: "/ranglisten", mark: "↗" },
+      { title: "Vereins- und Gruppentraining", detail: "Erstelle Trainingspläne, weise Aufgaben zu und begleite deine Gruppe.", href: "/verein", mark: "♙" },
     ],
   },
 ];
@@ -71,9 +70,9 @@ export default function Home() {
     <main className="min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto max-w-6xl px-5 pb-16 pt-8 sm:px-8 sm:pt-12">
         <header className="mb-8 flex flex-wrap items-center justify-between gap-5 border-b border-slate-800 pb-7">
-          <Link href="/" aria-label="Schachplattform Startseite" className="flex items-center gap-3 text-xl font-semibold tracking-tight text-white">
-            <img src="/chess-logo-192.png" alt="" className="h-11 w-11 rounded-xl" />
-            <span>Schach<span className="font-normal text-slate-400">plattform</span></span>
+          <Link href="/" aria-label="CHESSCAGE Startseite" className="flex items-center gap-3 text-xl font-semibold tracking-tight text-white">
+            <img src="/logo.png" alt="" className="h-11 w-11 rounded-xl object-cover" />
+            <span className="text-base tracking-[0.12em]"><span>CHESS</span><span className="text-[#d4af37]">CAGE</span></span>
           </Link>
           <div className="flex items-center gap-3">
             {!loading && !username && <Link href="/login" className="rounded-lg bg-emerald-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300">Anmelden</Link>}
@@ -82,6 +81,22 @@ export default function Home() {
             <span aria-hidden="true">↓</span>App installieren
           </InstallAppLink>
         </header>
+
+        <section aria-labelledby="coach-heading" className="mb-9 rounded-2xl border border-emerald-400/20 bg-gradient-to-br from-emerald-400/10 via-slate-900/80 to-slate-900/40 p-6 sm:p-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">Dein Training · allein und im Verein</p>
+          <h1 id="coach-heading" className="mt-3 max-w-3xl text-3xl font-bold tracking-tight text-white sm:text-4xl">Verstehe deine Partien. Trainiere gezielt. Entwickle dich weiter.</h1>
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
+            Analysiere eigene Partien mit Stockfish, übe Taktik und organisiere Trainingsaufgaben für deine Gruppe. Deine Trainingswerte zeigen echte Ergebnisse – keine erfundenen Empfehlungen.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href="/analyse" className="rounded-xl bg-emerald-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200">
+              Eigene Partie analysieren
+            </Link>
+            <Link href="/verein" className="rounded-xl border border-slate-700 bg-slate-950/50 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:border-emerald-400/50 hover:text-emerald-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300">
+              Vereinstraining planen
+            </Link>
+          </div>
+        </section>
 
         <section aria-label="Taktikvorschau" className="mx-auto mb-10 w-full max-w-md">
           <Link href="/taktik" aria-label="Taktikaufgabe öffnen" className="block transition hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
@@ -92,10 +107,10 @@ export default function Home() {
         <section aria-labelledby="progress-heading" className="mb-10">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Training</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Persönlicher Trainingsstand</p>
               <h2 id="progress-heading" className="mt-1 text-xl font-semibold text-white">Dein Taktik-Fortschritt</h2>
             </div>
-            <p className="text-xs text-slate-500">Wird in diesem Browser gespeichert</p>
+            <p className="max-w-sm text-xs leading-5 text-slate-500">Taktikwerte werden aktuell nur in diesem Browser gespeichert. Sie sind keine DWZ- oder Elo-Prognose.</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             {[
@@ -112,19 +127,19 @@ export default function Home() {
           </div>
         </section>
 
-        <section aria-labelledby="spielen-heading">
+        <section aria-labelledby="training-actions-heading">
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Dein nächster Zug</p>
-              <h2 id="spielen-heading" className="mt-1 text-xl font-semibold text-white">Spielen</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Dein nächster Schritt</p>
+              <h2 id="training-actions-heading" className="mt-1 text-xl font-semibold text-white">Training starten</h2>
             </div>
-            <Link href="/partien" className="text-sm text-slate-400 transition hover:text-emerald-300">Partieverlauf <span aria-hidden="true">→</span></Link>
+            <Link href="/partien" className="text-sm text-slate-400 transition hover:text-emerald-300">Meine Partien <span aria-hidden="true">→</span></Link>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {activities.map((activity, index) => (
+            {trainingActions.map((activity) => (
               <Link key={activity.href} href={activity.href} className="group flex min-h-36 flex-col justify-between rounded-xl border border-slate-800 bg-slate-900/70 p-5 transition hover:border-emerald-500/50 hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
                 <div className="flex items-start justify-between">
-                  <span className={index === 0 ? "flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-400/10 text-lg text-emerald-300" : "flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800 text-lg text-slate-300"} aria-hidden="true">{activity.mark}</span>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-400/10 text-lg text-emerald-300" aria-hidden="true">{activity.mark}</span>
                   <span className="rounded-md border border-slate-700/80 px-2 py-1 text-[10px] font-semibold tracking-wider text-slate-500">{activity.tag}</span>
                 </div>
                 <div className="mt-5 flex items-end justify-between gap-2">

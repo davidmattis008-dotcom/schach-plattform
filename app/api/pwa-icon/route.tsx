@@ -1,5 +1,3 @@
-export const runtime = "edge";
-
 export async function GET(request: Request) {
   const size = Number(new URL(request.url).searchParams.get("size"));
   if (size !== 192 && size !== 512) {
