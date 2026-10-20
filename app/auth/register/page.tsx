@@ -27,7 +27,7 @@ export default function RegisterPage() {
   return (
     <main className="flex min-h-screen items-center bg-slate-950 px-5 py-12 text-white">
       <div className="mx-auto w-full max-w-md">
-        <Link href="/" className="mb-7 inline-flex items-center gap-2 text-sm font-medium text-slate-400 transition hover:text-white"><img src="/logo.svg" alt="" className="h-8 w-8 rounded-lg"/> Zur Schachplattform</Link>
+        <Link href="/" aria-label="CHESSCAGE Startseite" className="mb-7 inline-flex items-center gap-2 text-sm font-semibold tracking-[0.12em] text-white transition hover:text-slate-200"><img src="/logo.png" alt="" className="h-8 w-8 rounded-lg object-cover"/><span>CHESS<span className="text-[#d4af37]">CAGE</span></span></Link>
         <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 sm:p-8">
           <h1 className="text-3xl font-semibold tracking-tight">Account erstellen</h1>
           <p className="mt-2 text-slate-400">Erstelle deinen Account für die Schachplattform.</p>

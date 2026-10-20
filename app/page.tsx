@@ -70,9 +70,9 @@ export default function Home() {
     <main className="min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto max-w-6xl px-5 pb-16 pt-8 sm:px-8 sm:pt-12">
         <header className="mb-8 flex flex-wrap items-center justify-between gap-5 border-b border-slate-800 pb-7">
-          <Link href="/" aria-label="Schachcoach Startseite" className="flex items-center gap-3 text-xl font-semibold tracking-tight text-white">
-            <img src="/chess-logo-192.png" alt="" className="h-11 w-11 rounded-xl" />
-            <span>Schach<span className="font-normal text-slate-400">coach</span></span>
+          <Link href="/" aria-label="CHESSCAGE Startseite" className="flex items-center gap-3 text-xl font-semibold tracking-tight text-white">
+            <img src="/logo.png" alt="" className="h-11 w-11 rounded-xl object-cover" />
+            <span className="text-base tracking-[0.12em]"><span>CHESS</span><span className="text-[#d4af37]">CAGE</span></span>
           </Link>
           <div className="flex items-center gap-3">
             {!loading && !username && <Link href="/login" className="rounded-lg bg-emerald-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300">Anmelden</Link>}
