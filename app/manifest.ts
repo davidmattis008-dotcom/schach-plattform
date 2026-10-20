@@ -3,9 +3,9 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "Schachplattform",
-    short_name: "Schach",
-    description: "Deine Schachplattform für Partien und Community.",
+    name: "Schachcoach",
+    short_name: "Schachcoach",
+    description: "Dein Schachtraining und deine Partienanalyse – allein und im Verein.",
     start_url: "/",
     scope: "/",
     display: "standalone",

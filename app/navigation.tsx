@@ -11,39 +11,25 @@ type MenuItem = { label: string; mark: string; href: string };
 
 const sections: { title: string; items: MenuItem[] }[] = [
   {
-    title: "Spielen",
+    title: "Mein Training",
     items: [
-      { label: "Online spielen", mark: "◎", href: "/online" },
-      { label: "Gegen Bot", mark: "♟", href: "/bot" },
-      { label: "Turniere", mark: "♜", href: "/tournaments" },
-    ],
-  },
-  {
-    title: "Lernen",
-    items: [
-      { label: "Selbstständiges Lernen", mark: "↗", href: "/lernen" },
-    ],
-  },
-  {
-    title: "Taktiktraining",
-    items: [
-      { label: "Taktikaufgaben", mark: "♞", href: "/taktik" },
-    ],
-  },
-  {
-    title: "Deine Partien",
-    items: [
+      { label: "Partie analysieren", mark: "⌕", href: "/analyse" },
       { label: "Partieverlauf", mark: "↗", href: "/partien" },
-      { label: "Analyse", mark: "⌕", href: "/analyse" },
+      { label: "Taktikaufgaben", mark: "♞", href: "/taktik" },
+      { label: "Lernpfad", mark: "↗", href: "/lernen" },
+      { label: "Eröffnungen", mark: "⌂", href: "/repertoire" },
+      { label: "Endspiele", mark: "♜", href: "/lernen/endspiele" },
     ],
   },
   {
-    title: "Community",
+    title: "Verein",
     items: [
-      { label: "Vereinstraining", mark: "♙", href: "/verein" },
-      { label: "Freunde", mark: "♙", href: "/freunde" },
-      { label: "Globaler Chat", mark: "◌", href: "/chat" },
-      { label: "Ranglisten", mark: "♜", href: "/ranglisten" },
+      { label: "Vereins- & Gruppentraining", mark: "♙", href: "/verein" },
+    ],
+  },
+  {
+    title: "Konto",
+    items: [
       { label: "Support", mark: "✉", href: "/support" },
     ],
   },
@@ -97,14 +83,14 @@ export default function AppNavigation() {
     <>
       <div className="fixed inset-x-0 top-0 z-30 flex h-14 items-center border-b border-slate-800 bg-slate-950/95 px-4 backdrop-blur md:hidden">
         <button ref={menuButtonRef} type="button" onClick={() => setOpen(true)} aria-label="Menü öffnen" aria-expanded={open} className="flex h-10 w-10 items-center justify-center rounded-lg text-2xl text-slate-300 hover:bg-slate-800">☰</button>
-        <Link href="/" aria-label="Startseite" className="ml-3 flex items-center gap-2 font-semibold tracking-tight text-slate-100"><img src="/chess-logo-192.png" alt="" className="h-8 w-8 rounded-lg" /> Schach</Link>
+        <Link href="/" aria-label="Startseite" className="ml-3 flex items-center gap-2 font-semibold tracking-tight text-slate-100"><img src="/chess-logo-192.png" alt="" className="h-8 w-8 rounded-lg" /> Coach</Link>
         <InstallAppLink className="ml-auto rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-slate-300 transition hover:border-slate-500 hover:text-white">App installieren</InstallAppLink>
       </div>
 
       {open && <button type="button" aria-label="Menü schließen" onClick={() => setOpen(false)} className="fixed inset-0 z-40 bg-black/60 md:hidden" />}
       <aside className={`${open ? "translate-x-0" : "-translate-x-full"} fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-slate-800 bg-slate-950 px-4 py-5 transition-transform duration-200 md:translate-x-0`}>
         <div className="mb-10 flex items-center gap-3 px-2 py-1">
-          <Link href="/" onClick={() => setOpen(false)} aria-label="Schach Startseite" className="flex min-w-0 items-center gap-3 text-base font-semibold tracking-tight text-slate-100"><img src="/chess-logo-192.png" alt="" className="h-9 w-9 rounded-lg" /><span>Schach<span className="font-normal text-slate-400">plattform</span></span></Link>
+          <Link href="/" onClick={() => setOpen(false)} aria-label="Schachcoach Startseite" className="flex min-w-0 items-center gap-3 text-base font-semibold tracking-tight text-slate-100"><img src="/chess-logo-192.png" alt="" className="h-9 w-9 rounded-lg" /><span>Schach<span className="font-normal text-slate-400">coach</span></span></Link>
           <button type="button" onClick={() => setOpen(false)} aria-label="Menü schließen" className="ml-auto rounded-lg px-2 py-1 text-xl text-slate-500 hover:bg-slate-800 md:hidden">×</button>
         </div>
 
