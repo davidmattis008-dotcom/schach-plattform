@@ -284,8 +284,8 @@ export default function TacticsPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-slate-950 px-5 py-8 text-slate-100 sm:px-8 sm:py-10">
-      <div className="mx-auto max-w-6xl">
+    <main className="min-h-screen bg-slate-950 px-3 py-5 text-slate-100 sm:px-8 sm:py-10">
+      <div className="mx-auto max-w-7xl">
         <header className="mb-7 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">Training</p>
@@ -354,8 +354,8 @@ export default function TacticsPage() {
           {savedMessage && <p role="status" className="mt-3 text-sm text-slate-400">{savedMessage}</p>}
         </section>}
 
-        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
-          <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-3 sm:p-5">
+        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(260px,0.5fr)]">
+          <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-2 sm:p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3 px-1">
               <div>
                 <p className="mt-1 text-xs text-slate-400">

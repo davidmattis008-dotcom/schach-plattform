@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import {
   ACCOUNT_PROGRESS_LOCAL_CHANGE_EVENT,
   ACCOUNT_PROGRESS_OWNER_KEY,
@@ -13,12 +13,7 @@ import {
 import { ONLINE_HISTORY_OWNER_KEY, readOnlineHistory } from "@/app/online/history-store";
 import { createClient } from "@/lib/supabase/client";
 
-type SyncState = "idle" | "syncing" | "saved" | "error";
-
 export function AccountProgressSync() {
-  const [state, setState] = useState<SyncState>("idle");
-  const [signedIn, setSignedIn] = useState(false);
-  const [syncError, setSyncError] = useState("");
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -30,7 +25,6 @@ export function AccountProgressSync() {
     let pendingUserId: string | null = null;
     let localRevision = 0;
     let activeUserGameIds = new Set<string>();
-    let showSavedTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const syncGames = async (forUserId: string) => {
       let firstError = "";
@@ -65,11 +59,8 @@ export function AccountProgressSync() {
         return;
       }
       syncing = true;
-      setState("syncing");
-      const errors: string[] = [];
       try {
-        const gameSyncError = await syncGames(forUserId);
-        if (gameSyncError) errors.push(`Partieverlauf: ${gameSyncError}`);
+        await syncGames(forUserId);
         if (!active || userId !== forUserId) return;
         do {
           dirty = false;
@@ -98,20 +89,10 @@ export function AccountProgressSync() {
 
           if (localRevision !== revisionAtStart) dirty = true;
         } while (dirty && active && userId === forUserId);
-
-        if (active && userId === forUserId) {
-          setSyncError(errors.join(" · "));
-          setState(errors.length ? "error" : "saved");
-          if (showSavedTimeout) clearTimeout(showSavedTimeout);
-          if (!errors.length) showSavedTimeout = setTimeout(() => setState("idle"), 4000);
-        }
       } catch (error) {
         console.error("Der Lernfortschritt konnte nicht mit dem Konto synchronisiert werden:", error);
-        errors.push(`Lernfortschritt: ${error instanceof Error ? error.message : String(error)}`);
-        setSyncError(errors.join(" · "));
       } finally {
         syncing = false;
-        if (active && userId === forUserId && errors.length) setState("error");
         const nextUserId = pendingUserId;
         pendingUserId = null;
         if (nextUserId && active && userId === nextUserId) void synchronize(nextUserId);
@@ -139,10 +120,6 @@ export function AccountProgressSync() {
         if (nextUserId === userId) return;
         userId = nextUserId;
         activeUserGameIds = new Set();
-        if (showSavedTimeout) clearTimeout(showSavedTimeout);
-        showSavedTimeout = null;
-        setSignedIn(Boolean(nextUserId));
-        setState("idle");
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         if (nextUserId) void synchronize(nextUserId);
       });
@@ -156,21 +133,8 @@ export function AccountProgressSync() {
       window.removeEventListener(ACCOUNT_PROGRESS_LOCAL_CHANGE_EVENT, handleLocalChange);
       window.removeEventListener("online-history-updated", handleLocalChange);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      if (showSavedTimeout) clearTimeout(showSavedTimeout);
     };
   }, []);
 
-  if (!signedIn || state === "idle") return null;
-
-  const message = state === "syncing"
-    ? "Synchronisiere deinen Lernfortschritt mit dem Konto …"
-    : state === "saved"
-      ? "Lernfortschritt und Online-Partien sind im Konto gespeichert."
-      : `Ein Teil konnte nicht synchronisiert werden${syncError ? `: ${syncError}` : ""}. Lokal bleiben die Daten erhalten.`;
-
-  return (
-    <p role="status" className="fixed bottom-3 left-3 z-50 max-w-sm rounded-lg border border-slate-700 bg-slate-950/95 px-3 py-2 text-xs text-slate-300 shadow-lg md:left-[19rem]">
-      {message}
-    </p>
-  );
+  return null;
 }
