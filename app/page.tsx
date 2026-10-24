@@ -20,7 +20,6 @@ const dashboardSections = [
     title: "Dein Schachtraining",
     description: "Analysiere Partien, übe konkrete Motive und baue dein Wissen Schritt für Schritt aus.",
     items: [
-      { title: "Selbstständig Schach lernen", detail: "Arbeite dich ohne Vorwissen vom ersten Zug bis zu Endspielen vor.", href: "/lernen", mark: "↗" },
       { title: "Taktikaufgaben", detail: "Trainiere mit Aufgaben passend zu deiner Taktik-Elo.", href: "/taktik", mark: "♞" },
       { title: "Eröffnungen", detail: "Spiele ausgewählte Varianten Zug für Zug nach.", href: "/repertoire", mark: "⌂" },
       { title: "Analysebrett", detail: "Untersuche Stellungen und spiele Züge nach.", href: "/analyse", mark: "⌕" },
@@ -81,22 +80,6 @@ export default function Home() {
             <span aria-hidden="true">↓</span>App installieren
           </InstallAppLink>
         </header>
-
-        <section aria-labelledby="coach-heading" className="mb-9 rounded-2xl border border-emerald-400/20 bg-gradient-to-br from-emerald-400/10 via-slate-900/80 to-slate-900/40 p-6 sm:p-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">Dein Training · allein und im Verein</p>
-          <h1 id="coach-heading" className="mt-3 max-w-3xl text-3xl font-bold tracking-tight text-white sm:text-4xl">Verstehe deine Partien. Trainiere gezielt. Entwickle dich weiter.</h1>
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
-            Analysiere eigene Partien mit Stockfish, übe Taktik und organisiere Trainingsaufgaben für deine Gruppe. Deine Trainingswerte zeigen echte Ergebnisse – keine erfundenen Empfehlungen.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/analyse" className="rounded-xl bg-emerald-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200">
-              Eigene Partie analysieren
-            </Link>
-            <Link href="/verein" className="rounded-xl border border-slate-700 bg-slate-950/50 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:border-emerald-400/50 hover:text-emerald-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300">
-              Vereinstraining planen
-            </Link>
-          </div>
-        </section>
 
         <section aria-label="Taktikvorschau" className="mx-auto mb-10 w-full max-w-md">
           <Link href="/taktik" aria-label="Taktikaufgabe öffnen" className="block transition hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
