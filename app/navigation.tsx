@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useAdminCenter } from "@/components/admin-center-provider";
 import { InstallAppLink } from "@/components/install-app-link";
-import { createClient } from "@/lib/supabase/client";
 
 type MenuItem = { label: string; href: string };
 
@@ -26,7 +25,6 @@ const clubItems: MenuItem[] = [
 export default function AppNavigation() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [accountName, setAccountName] = useState("Profil");
   const [currentHash, setCurrentHash] = useState("");
   const [learningExpanded, setLearningExpanded] = useState(() =>
     pathname === "/lernen" || pathname.startsWith("/lernen/") || pathname === "/repertoire",
@@ -34,31 +32,6 @@ export default function AppNavigation() {
   const [clubExpanded, setClubExpanded] = useState(() => pathname.startsWith("/verein"));
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const { role } = useAdminCenter();
-
-  useEffect(() => {
-    let active = true;
-    async function loadAccountName() {
-      setAccountName("Profil");
-      try {
-        const supabase = createClient();
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError) throw authError;
-        if (!user) {
-          if (active) setAccountName("Profil");
-          return;
-        }
-        const { data, error } = await supabase.from("profiles").select("username").eq("id", user.id).maybeSingle();
-        if (error) throw error;
-        if (active && typeof data?.username === "string" && data.username.trim()) {
-          setAccountName(data.username.trim());
-        }
-      } catch (error) {
-        console.error("Profilname in der Navigation konnte nicht geladen werden:", error);
-      }
-    }
-    void loadAccountName();
-    return () => { active = false; };
-  }, [pathname]);
 
   useEffect(() => {
     if (!open) return;
@@ -129,12 +102,9 @@ export default function AppNavigation() {
       {open && <button type="button" aria-label="Menü schließen" onClick={() => setOpen(false)} className="fixed inset-0 z-40 bg-black/60 md:hidden" />}
       <aside className={`${open ? "translate-x-0" : "-translate-x-full"} fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-white/10 bg-black px-4 py-5 shadow-2xl shadow-black/30 transition-transform duration-300 ease-out md:translate-x-0`}>
         <div className="mb-5 flex items-center gap-3 border-b border-white/10 px-2 pb-5 pt-1">
-          <Link href="/profile" onClick={() => setOpen(false)} aria-label="Profil öffnen" className="flex min-w-0 items-center gap-3 text-sm font-semibold text-white">
-            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6 shrink-0 text-[#d4af37]">
-              <rect x="4" y="10" width="16" height="11" rx="2" />
-              <path d="M8 10V7a4 4 0 1 1 8 0v3" />
-            </svg>
-            <span className="truncate">{accountName}</span>
+          <Link href="/" onClick={() => setOpen(false)} aria-label="CHESSCAGE Startseite" className="flex min-w-0 items-center gap-3 text-sm font-semibold tracking-[0.12em] text-white">
+            <img src="/logo.png" alt="" className="h-9 w-9 shrink-0 rounded-lg object-cover" />
+            <span className="truncate">CHESS<span className="text-[#d4af37]">CAGE</span></span>
           </Link>
           <button type="button" onClick={() => setOpen(false)} aria-label="Menü schließen" className="ml-auto rounded-lg px-2 py-1 text-xl text-neutral-500 transition-colors hover:bg-white/10 hover:text-white md:hidden">×</button>
         </div>
