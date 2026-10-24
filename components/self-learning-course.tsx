@@ -10,14 +10,6 @@ import { subscribeToAccountProgressUpdates, writeProgressStorage } from "@/lib/a
 
 const STORAGE_KEY = "schach-selbstlernen-v1";
 
-const learningOptions = [
-  { label: "Lernpfad", detail: "Arbeite dich Schritt für Schritt durch alle Themen.", href: "#lernplan", mark: "↗" },
-  { label: "Schachregeln lernen", detail: "Vom Brett und den Figuren bis zu Sonderzügen, Matt und Remis – mit Schachbrett links und Erklärung rechts.", href: "/lernen/regeln", mark: "♟" },
-  { label: "Eröffnungen lernen", detail: "Spiele ausgewählte Varianten Zug für Zug nach.", href: "/repertoire", mark: "⌂" },
-  { label: "Mattsetzen lernen", detail: "Probiere Mattmethoden erst selbst, gehe danach jeden Lösungszug durch und prüfe dein Verständnis.", href: "/lernen/mattsetzen", mark: "♛" },
-  { label: "Endspiele lernen", detail: "Verstehe 500 Stellungen Zug für Zug und wende die Pläne selbst an.", href: "/lernen/endspiele", mark: "♜" },
-];
-
 export function SelfLearningCourse() {
   const [completed, setCompleted] = useState<string[]>([]);
   const [currentLessonId, setCurrentLessonId] = useState(learningLessons[0].id);
@@ -86,23 +78,6 @@ export function SelfLearningCourse() {
         </header>
 
         <DailyLearningExercise />
-
-        <section aria-labelledby="learning-options-heading" className="mb-8">
-          <h2 id="learning-options-heading" className="mb-3 text-lg font-semibold text-white">Womit möchtest du lernen?</h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {learningOptions.map((option) => (
-              <Link
-                key={option.href}
-                href={option.href}
-                className="group rounded-xl border border-slate-800 bg-slate-900/50 p-4 transition hover:border-amber-300/50 hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
-              >
-                <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-300/10 text-lg text-amber-200">{option.mark}</span>
-                <span className="mt-3 block text-sm font-semibold text-white group-hover:text-amber-100">{option.label}</span>
-                <span className="mt-1 block text-xs leading-5 text-slate-400">{option.detail}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
 
         <section aria-label="Dein Lernfortschritt" className="mb-6 rounded-xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">

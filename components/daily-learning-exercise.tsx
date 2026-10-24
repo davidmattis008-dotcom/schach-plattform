@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { Chess } from "chess.js";
+import { Chess, type Square } from "chess.js";
 import { MiniChessboard } from "@/components/mini-chessboard";
 import { createDailyLearningAssignment, findDailyLearningAssignment, type DailyLearningAssignment, type DailyLearningType } from "@/lib/daily-learning";
-import { getTacticsDifficulty, getTacticsTheme } from "@/lib/tactics";
+import { getTacticsRatingChange, getTacticsTheme, type TacticsPuzzle } from "@/lib/tactics";
 import { getDailyExerciseLevel, getTacticsProgress, INITIAL_TACTICS_PROGRESS, subscribeToTacticsProgress, updateTacticsProgress } from "@/lib/tactics-progress";
+import { clampTacticsRating, TACTICS_PLACEMENT_TASKS } from "@/lib/tactics-rating";
 
 const typeLabels: Record<DailyLearningType, string> = {
   tactics: "Taktik",
@@ -25,11 +26,155 @@ function getLocalDayKey(date: Date) {
 
 function getTacticsPreviewFen(assignment: Extract<DailyLearningAssignment, { type: "tactics" }>) {
   const position = new Chess(assignment.puzzle.fen);
-  if (assignment.puzzle.setupMove) {
-    const [from, to, promotion] = assignment.puzzle.setupMove.match(/.{2}/g) ?? [];
-    if (from && to) position.move({ from, to, ...(promotion ? { promotion } : {}) });
-  }
+  if (assignment.puzzle.setupMove) playUci(position, assignment.puzzle.setupMove);
   return position.fen();
+}
+
+function playUci(position: Chess, uci: string) {
+  const match = uci.match(/^([a-h][1-8])([a-h][1-8])([qrbn])?$/);
+  if (!match) throw new Error(`Ungültiger Zug in der Tagesaufgabe: ${uci}`);
+  return position.move({
+    from: match[1] as Square,
+    to: match[2] as Square,
+    ...(match[3] ? { promotion: match[3] as "q" | "r" | "b" | "n" } : {}),
+  });
+}
+
+function moveToUci(move: { from: Square; to: Square; promotion?: string }) {
+  return move.from + move.to + (move.promotion ?? "");
+}
+
+function DailyTacticsChallenge({
+  puzzle,
+  date,
+  alreadyCompleted,
+}: {
+  puzzle: TacticsPuzzle;
+  date: string;
+  alreadyCompleted: boolean;
+}) {
+  const [fen, setFen] = useState(() => getTacticsPreviewFen({ type: "tactics", id: `tactics:${puzzle.id}`, puzzle }));
+  const [selected, setSelected] = useState<Square | null>(null);
+  const [solutionIndex, setSolutionIndex] = useState(0);
+  const [result, setResult] = useState<"solved" | "missed" | null>(alreadyCompleted ? "solved" : null);
+  const game = new Chess(fen);
+  const playerColor = new Chess(getTacticsPreviewFen({ type: "tactics", id: `tactics:${puzzle.id}`, puzzle })).turn();
+  const targets = selected && !result
+    ? game.moves({ square: selected, verbose: true }).map((move) => move.to)
+    : [];
+
+  function finish(solved: boolean, answer: string) {
+    if (result || alreadyCompleted) return;
+    const current = getTacticsProgress();
+    const isCurrentDailyAssignment = current.dailyAssignmentDate === date
+      && current.dailyAssignmentId === `tactics:${puzzle.id}`
+      && current.dailyLastCompletedDate !== date;
+    if (!isCurrentDailyAssignment) {
+      setResult(solved ? "solved" : "missed");
+      return;
+    }
+
+    const isPlacement = current.placementAttempts < TACTICS_PLACEMENT_TASKS;
+    const isRated = !isPlacement && Math.abs(puzzle.rating - current.rating) <= 100;
+    const ratingChange = isRated ? getTacticsRatingChange(current.rating, puzzle.rating, solved) : 0;
+    updateTacticsProgress((progress) => {
+      if (progress.dailyAssignmentDate !== date
+        || progress.dailyAssignmentId !== `tactics:${puzzle.id}`
+        || progress.dailyLastCompletedDate === date) return progress;
+      return {
+        ...progress,
+        rating: isPlacement
+          ? clampTacticsRating(progress.rating + (solved ? 300 : -300))
+          : isRated ? clampTacticsRating(progress.rating + ratingChange) : progress.rating,
+        solved: progress.solved + (solved ? 1 : 0),
+        attempted: progress.attempted + 1,
+        placementAttempts: isPlacement
+          ? Math.min(TACTICS_PLACEMENT_TASKS, progress.placementAttempts + 1)
+          : progress.placementAttempts,
+        recent: Array.from(new Set([...progress.recent, puzzle.id])),
+        dailyExercisesCompleted: progress.dailyExercisesCompleted + 1,
+        dailyLastCompletedDate: date,
+      };
+    });
+    setResult(solved ? "solved" : "missed");
+    setSelected(null);
+    setMessage(solved ? `${answer} · richtig` : `${answer} · nicht gelöst`);
+  }
+
+  const [message, setMessage] = useState("");
+
+  function selectSquare(squareName: string) {
+    if (result || alreadyCompleted || game.turn() !== playerColor) return;
+    const square = squareName as Square;
+    const piece = game.get(square);
+    if (!selected) {
+      if (piece?.color === playerColor) setSelected(square);
+      return;
+    }
+    if (square === selected) {
+      setSelected(null);
+      return;
+    }
+    if (piece?.color === playerColor) {
+      setSelected(square);
+      return;
+    }
+    if (!targets.includes(square)) {
+      setSelected(null);
+      return;
+    }
+
+    const position = new Chess(fen);
+    const movingPiece = game.get(selected);
+    const expectedMove = puzzle.moves[solutionIndex];
+    const promotes = movingPiece?.type === "p" && (square[1] === "1" || square[1] === "8");
+    const played = position.move({
+      from: selected,
+      to: square,
+      ...(promotes ? { promotion: expectedMove[4] ?? "q" } : {}),
+    });
+    const expectedPosition = new Chess(fen);
+    const expected = playUci(expectedPosition, expectedMove);
+    if (moveToUci(played) !== expectedMove) {
+      finish(false, `Gesucht war ${expected.san}`);
+      return;
+    }
+
+    let nextIndex = solutionIndex + 1;
+    let status = `${played.san}`;
+    if (nextIndex < puzzle.moves.length) {
+      const reply = playUci(position, puzzle.moves[nextIndex]);
+      status += ` · ${reply.san}`;
+      nextIndex++;
+    }
+    setFen(position.fen());
+    setSolutionIndex(nextIndex);
+    setSelected(null);
+    if (nextIndex >= puzzle.moves.length) finish(true, status);
+  }
+
+  return (
+    <div className="mt-4 grid items-start gap-4 sm:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]">
+      <MiniChessboard
+        fen={fen}
+        label="Taktikübung im Lernpfad"
+        onSquareClick={selectSquare}
+        selected={selected}
+        targets={targets}
+        orientation={playerColor === "w" ? "white" : "black"}
+      />
+      <div>
+        <p className="font-medium text-white">{getTacticsTheme(puzzle.themes)} · Elo {puzzle.rating}</p>
+        {alreadyCompleted || result ? (
+          <p role="status" className="mt-3 rounded-xl border border-emerald-300/30 bg-emerald-300/10 p-4 text-sm text-emerald-100">
+            {alreadyCompleted ? "Heute erledigt. Komm morgen wieder." : `${message}. Komm morgen wieder.`}
+          </p>
+        ) : (
+          <p aria-live="polite" className="mt-2 text-sm text-neutral-400">{message || "Finde den besten Zug."}</p>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function DailyLessonChallenge({
@@ -46,12 +191,13 @@ function DailyLessonChallenge({
   const [answer, setAnswer] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const lesson = assignment.lesson;
-  const showResult = submitted || alreadyCompleted;
+  const isCorrect = submitted && answer === lesson.correctAnswer;
+  const showResult = alreadyCompleted || isCorrect;
 
   function submitAnswer() {
     if (answer === null || alreadyCompleted) return;
     setSubmitted(true);
-    onComplete(date);
+    if (answer === lesson.correctAnswer) onComplete(date);
   }
 
   return (
@@ -85,12 +231,7 @@ function DailyLessonChallenge({
       </div>
       {showResult ? (
         <p role="status" className="mt-3 rounded-lg bg-emerald-300/10 px-3 py-2 text-sm text-emerald-100">
-          {submitted && answer === lesson.correctAnswer
-            ? "Richtig. "
-            : submitted && answer !== null
-              ? `Die richtige Antwort ist: ${lesson.answers[lesson.correctAnswer]}. `
-              : "Heute bereits erledigt. "}
-          {lesson.explanation}
+          {alreadyCompleted ? "Heute erledigt. Komm morgen wieder." : `Richtig. ${lesson.explanation}`}
         </p>
       ) : (
         <button
@@ -101,6 +242,12 @@ function DailyLessonChallenge({
         >
           Antwort prüfen
         </button>
+      )}
+      {submitted && !isCorrect && !alreadyCompleted && (
+        <p role="status" className="mt-2 text-sm text-amber-100">
+          Nicht ganz. {lesson.explanation}
+          <button type="button" onClick={() => { setAnswer(null); setSubmitted(false); }} className="ml-2 font-semibold underline underline-offset-2">Nochmal</button>
+        </p>
       )}
       {lesson.practice && (
         <Link
@@ -164,40 +311,34 @@ export function DailyLearningExercise() {
   }
 
   return (
-    <section id="tagesuebung" aria-labelledby="daily-exercise-title" className="mb-8 scroll-mt-20 rounded-2xl border border-amber-300/30 bg-gradient-to-br from-amber-300/[0.09] via-neutral-950 to-neutral-950 p-4 sm:p-6">
-      <div className={`grid items-start gap-5 ${assignment?.type === "tactics" ? "sm:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]" : ""}`}>
-        {assignment?.type === "tactics" && (
-          <div className="mx-auto w-full max-w-[15rem]">
-            <MiniChessboard
-              fen={getTacticsPreviewFen(assignment)}
-              label="Heutige Taktikaufgabe"
-              orientation={new Chess(assignment.puzzle.fen).turn() === "w" ? "white" : "black"}
-            />
-          </div>
-        )}
+    <section id="tagesuebung" aria-labelledby="daily-exercise-title" className="mb-8 scroll-mt-20 rounded-2xl border border-amber-300/30 bg-slate-900/80 p-4 shadow-[0_16px_50px_rgba(0,0,0,0.24)] sm:p-6">
+      <div>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200">
-            Tagesübung{today ? ` · ${today}` : ""}{assignment ? ` · ${typeLabels[assignment.type]}` : ""}
-          </p>
-          <h2 id="daily-exercise-title" className="mt-2 text-2xl font-bold text-white">Level {level.level} · {assignment?.type === "opening" ? "Erklärung und Aufgabe" : "Tagesaufgabe"}</h2>
-          <p className="mt-2 text-sm text-neutral-300">
-            Level-Fortschritt: {level.completedInLevel} von {level.taskCount} Tagesaufgaben
-            {assignment?.type === "tactics" && ` · Taktik-Elo ${progress.rating}`}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200">
+                {today ? `${today} · ` : ""}{assignment ? typeLabels[assignment.type] : "Lädt"}
+              </p>
+              <h2 id="daily-exercise-title" className="mt-1 text-2xl font-bold text-white">Lernpfad</h2>
+            </div>
+            <p className="rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1.5 text-sm font-semibold tabular-nums text-amber-100">
+              Level {level.level} · {level.completedInLevel}/{level.taskCount}
+            </p>
+          </div>
+          <p className="mt-2 text-xs text-neutral-400">
+            {assignment?.type === "tactics" ? `Taktik-Elo ${progress.rating}` : "Tägliche Lerneinheit"}
           </p>
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-neutral-800" role="progressbar" aria-label={`Fortschritt in Level ${level.level}`} aria-valuemin={0} aria-valuemax={level.taskCount} aria-valuenow={level.completedInLevel}>
             <div className="h-full rounded-full bg-amber-300 transition-[width]" style={{ width: `${(level.completedInLevel / level.taskCount) * 100}%` }} />
           </div>
-          <p className="mt-1 text-xs text-neutral-500">Jedes neue Level umfasst 10 Tagesaufgaben mehr. Übersprungene Tage setzen deinen Fortschritt nicht zurück.</p>
           {assignment?.type === "tactics" ? (
             <>
-              <h3 className="mt-4 font-semibold text-white">{getTacticsTheme(assignment.puzzle.themes)}</h3>
-              <p className="mt-1 text-sm text-neutral-300">{getTacticsDifficulty(assignment.puzzle.rating)} · Aufgaben-Elo {assignment.puzzle.rating}. Die Stellung wird passend zu deiner Taktik-Elo ausgewählt.</p>
-              <Link
-                href={`/taktik?puzzle=${encodeURIComponent(assignment.puzzle.id)}&daily=1&day=${today}`}
-                className="mt-4 inline-flex min-h-11 items-center justify-center rounded-lg bg-amber-300 px-5 py-2.5 text-sm font-bold text-black transition hover:bg-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-              >
-                {alreadyCompleted ? "Aufgabe erneut ansehen" : "Tagesaufgabe starten"}
-              </Link>
+              <DailyTacticsChallenge
+                key={`${today}:${assignment.id}`}
+                puzzle={assignment.puzzle}
+                date={today!}
+                alreadyCompleted={alreadyCompleted}
+              />
             </>
           ) : assignment && today ? (
             <DailyLessonChallenge
@@ -210,7 +351,6 @@ export function DailyLearningExercise() {
           ) : (
             <p className="mt-2 text-sm text-neutral-400">Die heutige Übung wird geladen …</p>
           )}
-          {alreadyCompleted && <p className="mt-2 text-sm text-emerald-200">Die heutige Tagesaufgabe ist erledigt.</p>}
         </div>
       </div>
     </section>

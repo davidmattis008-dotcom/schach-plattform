@@ -1,5 +1,5 @@
 import { learningLessons, type LearningLesson } from "@/lib/learning-course";
-import { chooseTacticsPuzzle, tacticsPuzzles, type TacticsPuzzle } from "@/lib/tactics";
+import { getTacticsPuzzleForRating, tacticsPuzzles, type TacticsPuzzle } from "@/lib/tactics";
 
 const lessonIdsByDayType: Record<Exclude<DailyLearningType, "tactics">, string[]> = {
   theory: ["brett", "figuren", "schach-matt", "sonderzuege", "zugpruefung", "taktikmotive", "stellungsplan"],
@@ -15,11 +15,28 @@ export type DailyLearningAssignment =
 
 const dailyTypeOrder: DailyLearningType[] = ["tactics", "theory", "endgame", "checkmate", "opening"];
 
+function stableIndex(seed: string, length: number) {
+  let hash = 2166136261;
+  for (const character of seed) {
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0) % length;
+}
+
 export function createDailyLearningAssignment(date: Date, rating: number, recent: string[]): DailyLearningAssignment {
   const dayNumber = Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86_400_000);
   const type = dailyTypeOrder[((dayNumber % dailyTypeOrder.length) + dailyTypeOrder.length) % dailyTypeOrder.length];
+  const seed = `${dayNumber}:${rating}:${recent.slice(-30).join(",")}`;
   if (type === "tactics") {
-    const puzzle = chooseTacticsPuzzle(rating, recent);
+    const unseen = tacticsPuzzles.filter((puzzle) => !recent.includes(puzzle.id));
+    const available = unseen.length > 0 ? unseen : tacticsPuzzles;
+    const nearby = available.filter((puzzle) => Math.abs(puzzle.rating - rating) <= 100);
+    const closest = getTacticsPuzzleForRating(rating, recent);
+    const candidates = nearby.length > 0
+      ? nearby
+      : available.filter((puzzle) => Math.abs(puzzle.rating - rating) === Math.abs(closest.rating - rating));
+    const puzzle = candidates[stableIndex(seed, candidates.length)];
     return { type, id: `tactics:${puzzle.id}`, puzzle };
   }
 
@@ -28,7 +45,7 @@ export function createDailyLearningAssignment(date: Date, rating: number, recent
     .filter((lesson): lesson is LearningLesson => Boolean(lesson));
   const ratingBand = Math.min(lessons.length - 1, Math.floor(((rating - 400) / 2600) * lessons.length));
   const available = lessons.slice(Math.max(0, ratingBand - 1), Math.min(lessons.length, ratingBand + 2));
-  const lesson = available[Math.floor(Math.random() * available.length)];
+  const lesson = available[stableIndex(seed, available.length)];
   return { type, id: `${type}:${lesson.id}`, lesson };
 }
 
