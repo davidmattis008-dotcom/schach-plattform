@@ -1,24 +1,44 @@
 import Link from "next/link";
 import { MiniChessboard } from "@/components/mini-chessboard";
+import { FIXED_BOTS } from "@/lib/bots";
 import { tacticsPreviewFen } from "@/lib/tactics";
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-black px-5 py-10 text-white">
-      <div className="flex w-full max-w-md flex-col items-center gap-8">
+    <main className="min-h-screen bg-black px-5 pb-10 pt-1 text-white sm:px-8 sm:pt-3 md:pt-5">
+      <div className="mx-auto flex w-full max-w-4xl flex-col items-center gap-5 sm:gap-7">
         <Link
           href="/taktik"
           aria-label="Taktikaufgabe öffnen"
-          className="block w-full rounded-2xl transition duration-300 hover:scale-[1.015] hover:shadow-[0_0_36px_rgba(212,175,55,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+          className="block w-full max-w-md rounded-2xl transition duration-300 hover:scale-[1.015] hover:shadow-[0_0_36px_rgba(212,175,55,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
         >
           <MiniChessboard fen={tacticsPreviewFen} label="Taktikaufgabe" />
         </Link>
-        <Link
-          href="/bot"
-          className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#d4af37]/70 bg-[#d4af37] px-7 py-3 text-sm font-bold text-black shadow-[0_8px_30px_rgba(212,175,55,0.12)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#e7c95c] hover:shadow-[0_12px_34px_rgba(212,175,55,0.22)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-        >
-          Gegen Bot spielen
-        </Link>
+
+        <section aria-label="Gegen Bot spielen" className="w-full">
+          <h1 className="mb-3 text-center text-lg font-bold tracking-tight sm:mb-4 sm:text-xl">Gegen Bot spielen</h1>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5">
+            {FIXED_BOTS.map((bot) => (
+              <Link
+                key={bot.elo}
+                href={`/play?mode=bot&elo=${bot.elo}&time=10&increment=0&color=white&custom=false`}
+                className="group flex min-h-20 items-center gap-3 rounded-xl border border-white/10 bg-neutral-950 px-3 py-3 transition duration-200 hover:-translate-y-0.5 hover:border-[#d4af37]/70 hover:bg-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+              >
+                <span aria-hidden="true" className="text-2xl text-[#d4af37] transition-transform duration-200 group-hover:scale-110">{bot.icon}</span>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold text-white">{bot.name}</span>
+                  <span className="mt-0.5 block text-xs tabular-nums text-neutral-400">{bot.elo} Elo</span>
+                </span>
+              </Link>
+            ))}
+            <Link
+              href="/bot"
+              className="flex min-h-20 items-center justify-center rounded-xl border border-[#d4af37]/40 bg-[#d4af37]/[0.06] px-3 py-3 text-center text-sm font-semibold text-[#e7c95c] transition duration-200 hover:-translate-y-0.5 hover:border-[#d4af37] hover:bg-[#d4af37]/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+            >
+              Eigene Spielstärke
+            </Link>
+          </div>
+        </section>
       </div>
     </main>
   );
