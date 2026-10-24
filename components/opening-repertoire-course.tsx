@@ -6,6 +6,7 @@ import { Chess, type Square } from "chess.js";
 import { MiniChessboard } from "@/components/mini-chessboard";
 import { openingRepertoire, type Opening, type OpeningVariant } from "@/lib/opening-repertoire";
 import openingDatabaseData from "@/lib/opening-database.json";
+import { subscribeToAccountProgressUpdates, writeProgressStorage } from "@/lib/account-progress";
 
 const STORAGE_KEY = "schach-eroeffnungen-gelernt-v1";
 type Mode = "learn" | "replay" | null;
@@ -232,7 +233,7 @@ export function OpeningRepertoireCourse() {
 
   useEffect(() => {
     let active = true;
-    queueMicrotask(() => {
+    const loadProgress = () => {
       if (!active) return;
       try {
         const saved: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]");
@@ -255,14 +256,16 @@ export function OpeningRepertoireCourse() {
         console.error("Der Eröffnungsfortschritt konnte nicht gelesen werden:", error);
       }
       setReady(true);
-    });
-    return () => { active = false; };
+    };
+    queueMicrotask(loadProgress);
+    const unsubscribe = subscribeToAccountProgressUpdates(loadProgress);
+    return () => { active = false; unsubscribe(); };
   }, []);
 
   useEffect(() => {
     if (!ready) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(completed));
+      writeProgressStorage(STORAGE_KEY, JSON.stringify(completed));
     } catch (error) {
       console.error("Der Eröffnungsfortschritt konnte nicht gespeichert werden:", error);
     }
@@ -357,7 +360,7 @@ export function OpeningRepertoireCourse() {
             </>
           )}
         </section>
-        <p className="mt-4 text-xs leading-5 text-slate-500">Ausgewählt: {selectedOpening.name} · {selectedOpening.variants.length} Varianten · Die Datenbank enthält benannte ECO-Eröffnungen und Zugfolgen aus der Lichess Open Database (CC0), aber nicht jede mögliche Zugfolge oder Schach-Transposition. Fortschritt wird lokal in diesem Browser gespeichert.</p>
+        <p className="mt-4 text-xs leading-5 text-slate-500">Ausgewählt: {selectedOpening.name} · {selectedOpening.variants.length} Varianten · Die Datenbank enthält benannte ECO-Eröffnungen und Zugfolgen aus der Lichess Open Database (CC0), aber nicht jede mögliche Zugfolge oder Schach-Transposition. Fortschritt wird lokal gespeichert und bei Anmeldung mit deinem Konto synchronisiert.</p>
       </div>
     </main>
   );

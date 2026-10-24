@@ -80,10 +80,12 @@ export default function GameHistoryPage() {
     };
     refresh();
     window.addEventListener("online-history-updated", refresh);
+    window.addEventListener("account-online-games-updated", refresh);
     window.addEventListener("storage", refresh);
     return () => {
       active = false;
       window.removeEventListener("online-history-updated", refresh);
+      window.removeEventListener("account-online-games-updated", refresh);
       window.removeEventListener("storage", refresh);
     };
   }, []);

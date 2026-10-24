@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Chess, type Square } from "chess.js";
 import { MiniChessboard } from "@/components/mini-chessboard";
 import rulesData from "@/lib/chess-rules.json";
+import { subscribeToAccountProgressUpdates, writeProgressStorage } from "@/lib/account-progress";
 
 type DemoMove = { move: string; explanation: string };
 type RuleLesson = {
@@ -246,7 +247,7 @@ export function ChessRulesCourse() {
 
   useEffect(() => {
     let active = true;
-    queueMicrotask(() => {
+    const loadProgress = () => {
       if (!active) return;
       try {
         const saved: unknown = JSON.parse(localStorage.getItem(storageKey) ?? "[]");
@@ -259,14 +260,16 @@ export function ChessRulesCourse() {
         console.error("Der Fortschritt im Schachregelkurs konnte nicht gelesen werden:", error);
       }
       setReady(true);
-    });
-    return () => { active = false; };
+    };
+    queueMicrotask(loadProgress);
+    const unsubscribe = subscribeToAccountProgressUpdates(loadProgress);
+    return () => { active = false; unsubscribe(); };
   }, []);
 
   useEffect(() => {
     if (!ready) return;
     try {
-      localStorage.setItem(storageKey, JSON.stringify(completed));
+      writeProgressStorage(storageKey, JSON.stringify(completed));
     } catch (error) {
       console.error("Der Fortschritt im Schachregelkurs konnte nicht gespeichert werden:", error);
     }
@@ -337,7 +340,7 @@ export function ChessRulesCourse() {
         </div> : <p role="status" className="mt-5 text-sm text-slate-400">Dein Lernfortschritt wird geladen …</p>}
 
         <aside className="mt-5 rounded-xl border border-slate-800 bg-slate-900/50 p-4 text-xs leading-5 text-slate-400">
-          Die Beispiele vermitteln die allgemeinen Schachregeln. Bei Turnierpartien gelten zusätzlich die Ausschreibung und die jeweils maßgeblichen FIDE-Regeln; Zeitstrafen und Abläufe können je nach Spielart abweichen. Der Fortschritt wird nur in diesem Browser gespeichert.
+          Die Beispiele vermitteln die allgemeinen Schachregeln. Bei Turnierpartien gelten zusätzlich die Ausschreibung und die jeweils maßgeblichen FIDE-Regeln; Zeitstrafen und Abläufe können je nach Spielart abweichen. Der Fortschritt wird lokal gespeichert und bei Anmeldung mit deinem Konto synchronisiert.
         </aside>
       </div>
     </main>

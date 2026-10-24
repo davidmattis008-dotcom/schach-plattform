@@ -93,7 +93,7 @@ export default function Home() {
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Persönlicher Trainingsstand</p>
               <h2 id="progress-heading" className="mt-1 text-xl font-semibold text-white">Dein Taktik-Fortschritt</h2>
             </div>
-            <p className="max-w-sm text-xs leading-5 text-slate-500">Taktikwerte werden aktuell nur in diesem Browser gespeichert. Sie sind keine DWZ- oder Elo-Prognose.</p>
+            <p className="max-w-sm text-xs leading-5 text-slate-500">Taktikwerte werden lokal gespeichert und bei Anmeldung mit deinem Konto synchronisiert. Sie sind keine DWZ- oder Elo-Prognose.</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             {[

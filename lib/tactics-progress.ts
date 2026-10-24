@@ -48,9 +48,11 @@ export function subscribeToTacticsProgress(onChange: () => void): () => void {
 
   window.addEventListener("storage", handleChange);
   window.addEventListener(CHANGE_EVENT, handleChange);
+  window.addEventListener(ACCOUNT_PROGRESS_UPDATED_EVENT, handleChange);
   return () => {
     window.removeEventListener("storage", handleChange);
     window.removeEventListener(CHANGE_EVENT, handleChange);
+    window.removeEventListener(ACCOUNT_PROGRESS_UPDATED_EVENT, handleChange);
   };
 }
 
@@ -58,8 +60,9 @@ export function updateTacticsProgress(
   update: (current: SavedTacticsProgress) => SavedTacticsProgress,
 ): SavedTacticsProgress {
   const next = update(getTacticsProgress());
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  writeProgressStorage(STORAGE_KEY, JSON.stringify(next));
   cachedProgress = next;
   window.dispatchEvent(new Event(CHANGE_EVENT));
   return next;
 }
+import { ACCOUNT_PROGRESS_UPDATED_EVENT, writeProgressStorage } from "@/lib/account-progress";

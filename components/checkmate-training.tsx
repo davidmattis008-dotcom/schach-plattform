@@ -6,6 +6,7 @@ import { Chess, type Square } from "chess.js";
 import { MiniChessboard } from "@/components/mini-chessboard";
 import trainingData from "@/lib/checkmate-training.json";
 import { orderQuizAnswers } from "@/lib/quiz-answer-order";
+import { subscribeToAccountProgressUpdates, writeProgressStorage } from "@/lib/account-progress";
 
 type CheckmateLesson = {
   id: string;
@@ -318,7 +319,7 @@ export function CheckmateTraining() {
 
   useEffect(() => {
     let active = true;
-    queueMicrotask(() => {
+    const loadProgress = () => {
       if (!active) return;
       try {
         const stored: unknown = JSON.parse(localStorage.getItem(storageKey) ?? "[]");
@@ -331,14 +332,16 @@ export function CheckmateTraining() {
         console.error("Der Mattkurs-Fortschritt konnte nicht gelesen werden:", error);
       }
       setReady(true);
-    });
-    return () => { active = false; };
+    };
+    queueMicrotask(loadProgress);
+    const unsubscribe = subscribeToAccountProgressUpdates(loadProgress);
+    return () => { active = false; unsubscribe(); };
   }, []);
 
   useEffect(() => {
     if (!ready) return;
     try {
-      localStorage.setItem(storageKey, JSON.stringify(completed));
+      writeProgressStorage(storageKey, JSON.stringify(completed));
     } catch (error) {
       console.error("Der Mattkurs-Fortschritt konnte nicht gespeichert werden:", error);
     }
