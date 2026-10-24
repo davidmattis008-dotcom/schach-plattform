@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { ChessPieceIcon } from '@/components/chess-piece';
+import { BOT_ELO_MAX, BOT_ELO_MIN, FIXED_BOTS } from '@/lib/bots';
 
 
 const clockOptions = [
@@ -21,19 +22,16 @@ const colorOptions = [
   { id: 'random', label: 'Zufall', color: null, description: 'Die Farbe wird für dich ausgelost.' },
 ];
 
-const bots = [
-  { elo: 500, name: 'Anfänger', description: 'Ein ruhiger Einstieg zum Üben der Grundlagen.', icon: '♟' },
-  { elo: 1000, name: 'Gelegenheitsspieler', description: 'Ein entspannter Gegner für die ersten Partien.', icon: '♞' },
-  { elo: 1500, name: 'Taktiker', description: 'Fordert dich mit taktischen Ideen.', icon: '♜' },
-  { elo: 2000, name: 'Stratege', description: 'Plant voraus und nutzt kleine Fehler.', icon: '♛' },
-  { elo: 2500, name: 'Meister', description: 'Die stärkste Herausforderung.', icon: '♚' },
-];
-
 export default function BotPage() {
   const [selectedElo, setSelectedElo] = useState<number | null>(null);
+  const [selectedCustomElo, setSelectedCustomElo] = useState(false);
+  const [customElo, setCustomElo] = useState(1500);
   const [selectedClock, setSelectedClock] = useState('10+0');
   const [selectedColor, setSelectedColor] = useState('white');
   const clock = clockOptions.find((option) => option.id === selectedClock) ?? clockOptions[4];
+  const selectedBotName = selectedCustomElo
+    ? 'Eigener Bot'
+    : FIXED_BOTS.find((bot) => bot.elo === selectedElo)?.name;
 
   return (
     <main className="min-h-screen bg-black px-4 py-5 text-white sm:px-8 sm:py-8">
@@ -42,11 +40,7 @@ export default function BotPage() {
           ← Zur Startseite
         </Link>
         <header className="mt-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-300">Spielen · Bot</p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Gegen einen Bot spielen</h1>
-          <p className="mt-2 max-w-2xl text-sm text-slate-400">
-            Wähle die Spielstärke deines Gegners. Die Bots laufen kostenlos direkt in deinem Browser.
-          </p>
         </header>
         <div className="mt-5 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
           <section aria-label="Bot auswählen" className="rounded-2xl border border-neutral-800 bg-neutral-950 p-3 sm:p-4">
@@ -54,16 +48,18 @@ export default function BotPage() {
               <h2 className="text-sm font-semibold text-white">1 · Spielstärke</h2>
               <span className="text-xs text-slate-500">Bot wählen</span>
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {bots.map((bot) => {
-                const isSelected = selectedElo === bot.elo;
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+              {FIXED_BOTS.map((bot) => {
+                const isSelected = !selectedCustomElo && selectedElo === bot.elo;
                 return (
                   <button
                     key={bot.elo}
                     type="button"
                     aria-pressed={isSelected}
-                    title={bot.description}
-                    onClick={() => setSelectedElo(bot.elo)}
+                    onClick={() => {
+                      setSelectedElo(bot.elo);
+                      setSelectedCustomElo(false);
+                    }}
                     className={`min-h-20 rounded-xl border px-3 py-2.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 ${
                       isSelected
                         ? 'border-amber-300 bg-amber-300/10 text-amber-100 shadow-[inset_0_0_0_1px_rgba(252,211,77,0.2)]'
@@ -75,10 +71,34 @@ export default function BotPage() {
                       <span className="text-[11px] font-semibold text-amber-200">{isSelected ? "✓ " : ""}{bot.elo} Elo</span>
                     </span>
                     <span className="mt-1 block truncate text-xs font-semibold sm:text-sm">{bot.name}</span>
-                    <span className="mt-0.5 block truncate text-[10px] text-neutral-500">{bot.description}</span>
                   </button>
                 );
               })}
+            </div>
+            <div className={`mt-3 rounded-xl border p-3 ${selectedCustomElo ? 'border-amber-300 bg-amber-300/10' : 'border-neutral-800 bg-black'}`}>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <label htmlFor="custom-bot-elo" className="text-sm font-semibold text-neutral-200">Eigene Spielstärke</label>
+                <span className="text-sm font-bold tabular-nums text-amber-200">{customElo} Elo</span>
+              </div>
+              <input
+                id="custom-bot-elo"
+                type="range"
+                min={BOT_ELO_MIN}
+                max={BOT_ELO_MAX}
+                step="50"
+                value={customElo}
+                aria-label="Eigene Bot-Spielstärke"
+                onChange={(event) => {
+                  const elo = Number(event.target.value);
+                  setCustomElo(elo);
+                  setSelectedElo(elo);
+                  setSelectedCustomElo(true);
+                }}
+                className="w-full accent-amber-300"
+              />
+              <div className="flex justify-between text-[11px] tabular-nums text-neutral-500">
+                <span>{BOT_ELO_MIN}</span><span>{BOT_ELO_MAX}</span>
+              </div>
             </div>
           </section>
 
@@ -144,15 +164,15 @@ export default function BotPage() {
             <div className="mb-3 min-w-0 sm:mb-0">
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-300">Deine Partie</p>
               <p className="mt-1 truncate text-sm text-neutral-200">
-                {bots.find((bot) => bot.elo === selectedElo)?.name} · {selectedColor === 'random' ? 'Zufallsfarbe' : selectedColor === 'white' ? 'Weiß' : 'Schwarz'} · {clock.label} {clock.category}
+                {selectedBotName} · {selectedColor === 'random' ? 'Zufallsfarbe' : selectedColor === 'white' ? 'Weiß' : 'Schwarz'} · {clock.label} {clock.category}
               </p>
             </div>
           )}
           <div className="flex flex-wrap items-center gap-3">
             {selectedElo !== null ? (
-              <a href={'/play?mode=bot&elo=' + selectedElo + '&time=' + clock.minutes + '&increment=' + clock.increment + '&color=' + selectedColor} className="inline-flex min-h-11 items-center justify-center rounded-lg bg-amber-300 px-4 py-2.5 text-sm font-bold text-black transition hover:bg-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-100">
+              <Link href={`/play?mode=bot&elo=${selectedElo}&time=${clock.minutes}&increment=${clock.increment}&color=${selectedColor}&custom=${selectedCustomElo}`} className="inline-flex min-h-11 items-center justify-center rounded-lg bg-amber-300 px-4 py-2.5 text-sm font-bold text-black transition hover:bg-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-100">
                 Spiel starten →
-              </a>
+              </Link>
             ) : null}
           </div>
         </div>

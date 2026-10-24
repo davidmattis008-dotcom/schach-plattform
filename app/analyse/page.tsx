@@ -145,11 +145,18 @@ export default function AnalysePage() {
     let active = true;
     queueMicrotask(() => {
       if (!active) return;
-      const puzzleId = new URLSearchParams(window.location.search).get("puzzle");
-      if (!puzzleId) return;
-      const puzzle = tacticsPuzzles.find((item) => item.id === puzzleId);
-      if (puzzle) loadTacticsPuzzle(puzzle);
-      else setMessage("Die angeforderte Taktikaufgabe wurde nicht gefunden.");
+      const params = new URLSearchParams(window.location.search);
+      const sharedPgn = params.get("pgn");
+      if (sharedPgn) {
+        loadPgn(sharedPgn);
+        return;
+      }
+      const puzzleId = params.get("puzzle");
+      if (puzzleId) {
+        const puzzle = tacticsPuzzles.find((item) => item.id === puzzleId);
+        if (puzzle) loadTacticsPuzzle(puzzle);
+        else setMessage("Die angeforderte Taktikaufgabe wurde nicht gefunden.");
+      }
     });
     return () => { active = false; };
   }, []);

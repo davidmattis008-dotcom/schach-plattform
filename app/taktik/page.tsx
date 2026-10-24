@@ -6,6 +6,7 @@ import { Chess, type Color, type Square } from "chess.js";
 import { MiniChessboard } from "@/components/mini-chessboard";
 import { chooseTacticsPuzzle, getTacticsDifficulty, getTacticsPuzzleForRating, getTacticsRatingChange, getTacticsTheme, tacticsPuzzles } from "@/lib/tactics";
 import { getTacticsProgress, INITIAL_TACTICS_PROGRESS, subscribeToTacticsProgress, updateTacticsProgress } from "@/lib/tactics-progress";
+import { clampTacticsRating, isTacticsDifficultyOffset, TACTICS_PLACEMENT_TASKS } from "@/lib/tactics-rating";
 import { createClient } from "@/lib/supabase/client";
 
 type Outcome = "solved" | "missed" | null;
@@ -86,9 +87,13 @@ export default function TacticsPage() {
     return () => { active = false; };
   }, []);
 
+  const isPlacement = progress.placementAttempts < TACTICS_PLACEMENT_TASKS;
+  const targetRating = isPlacement
+    ? progress.rating
+    : clampTacticsRating(progress.rating + progress.difficultyOffset);
   const puzzle = puzzleId
-    ? tacticsPuzzles.find((candidate) => candidate.id === puzzleId) ?? getTacticsPuzzleForRating(progress.rating, progress.recent)
-    : getTacticsPuzzleForRating(progress.rating, progress.recent);
+    ? tacticsPuzzles.find((candidate) => candidate.id === puzzleId) ?? getTacticsPuzzleForRating(targetRating, progress.recent)
+    : getTacticsPuzzleForRating(targetRating, progress.recent);
   const puzzleStart = new Chess(puzzle.fen);
   if (puzzle.setupMove) playUci(puzzleStart, puzzle.setupMove);
   const puzzleStartFen = puzzleStart.fen();
@@ -103,20 +108,40 @@ export default function TacticsPage() {
     if (outcome) return;
 
     const isPractice = practicePuzzleId === puzzle.id;
-    const ratingChange = isPractice ? 0 : getTacticsRatingChange(progress.rating, puzzle.rating, correct);
+    const isPlacementTask = !isPractice && !clubTaskId && isPlacement;
+    const isRated = !isPractice && !isPlacement && Math.abs(puzzle.rating - progress.rating) <= 100;
+    const placementAttempts = isPlacementTask
+      ? Math.min(TACTICS_PLACEMENT_TASKS, progress.placementAttempts + 1)
+      : progress.placementAttempts;
+    const placementRating = clampTacticsRating(progress.rating + (correct ? 300 : -300));
+    const ratingChange = isRated ? getTacticsRatingChange(progress.rating, puzzle.rating, correct) : 0;
     updateTacticsProgress((current) => ({
       ...current,
-      rating: isPractice ? current.rating : Math.max(400, Math.min(2400, current.rating + ratingChange)),
+      rating: isPlacementTask
+        ? clampTacticsRating(current.rating + (correct ? 300 : -300))
+        : isRated ? clampTacticsRating(current.rating + ratingChange) : current.rating,
       solved: current.solved + (correct ? 1 : 0),
       attempted: current.attempted + 1,
+      placementAttempts,
       recent: Array.from(new Set([...current.recent, puzzle.id])),
     }));
     setPuzzleId(puzzle.id);
     setOutcome(correct ? "solved" : "missed");
     setSelected(null);
+    const ratingResult = isPlacementTask
+      ? placementAttempts === TACTICS_PLACEMENT_TASKS
+        ? ` Einstufung abgeschlossen: ${placementRating} Taktik-Elo.`
+        : ` Einstufung ${placementAttempts}/${TACTICS_PLACEMENT_TASKS}.`
+      : isPractice
+        ? " Wiederholung ohne Elo-Wertung."
+        : isRated
+          ? ` Deine Taktik-Elo ${ratingChange >= 0 ? "+" : ""}${ratingChange}.`
+          : progress.placementAttempts < TACTICS_PLACEMENT_TASKS
+            ? " Keine Elo-Wertung während der Einstufung."
+            : " Keine Elo-Wertung bei mehr als 100 Elo Abstand.";
     setMessage(correct
-      ? `Richtig! ${answer}${isPractice ? " Wiederholungen verändern deine Taktik-Elo nicht." : ` Deine Taktik-Elo ${ratingChange >= 0 ? "+" : ""}${ratingChange}.`}`
-      : `Noch nicht. Gesucht war ${answer}${isPractice ? " Wiederholungen verändern deine Taktik-Elo nicht." : ` Deine Taktik-Elo ${ratingChange >= 0 ? "+" : ""}${ratingChange}.`}`);
+      ? `Richtig! ${answer}${ratingResult}`
+      : `Noch nicht. Gesucht war ${answer}${ratingResult}`);
     if (clubTaskId) {
       void (async () => {
         try {
@@ -187,7 +212,7 @@ export default function TacticsPage() {
   }
 
   function nextPuzzle() {
-    const next = chooseTacticsPuzzle(progress.rating, progress.recent);
+    const next = chooseTacticsPuzzle(targetRating, progress.recent);
     setPuzzleId(next.id);
     setPracticePuzzleId(null);
     setPositionState(null);
@@ -278,8 +303,12 @@ export default function TacticsPage() {
             Gespeicherte Aufgaben ({savedPuzzleIds.length})
           </button>
           <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/5 px-5 py-3">
-            <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Deine Taktik-Elo</p>
-            <p className="mt-1 text-3xl font-bold tabular-nums text-emerald-300">{progress.rating}</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+              {isPlacement ? "Elo-Einstufung" : "Deine Taktik-Elo"}
+            </p>
+            <p className="mt-1 text-3xl font-bold tabular-nums text-emerald-300">
+              {isPlacement ? `${progress.placementAttempts}/${TACTICS_PLACEMENT_TASKS}` : progress.rating}
+            </p>
           </div>
         </header>
 
@@ -287,7 +316,6 @@ export default function TacticsPage() {
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 id="saved-tactics-title" className="font-semibold text-white">Deine gespeicherten Taktikaufgaben</h2>
-              <p className="mt-1 text-sm text-slate-400">Sieh dir die Stellungen an oder wähle eine Aufgabe zum Lösen.</p>
             </div>
             {!userId && <Link href="/login" className="text-sm text-amber-200 underline underline-offset-4">Anmelden zum Speichern</Link>}
           </div>
@@ -322,7 +350,7 @@ export default function TacticsPage() {
                 </li>];
               })}
             </ul>
-          ) : <p className="text-sm text-slate-400">Noch keine Aufgaben gespeichert. Nutze „Aufgabe speichern“ unter dem Schachbrett.</p>}
+          ) : <p className="text-sm text-slate-400">Keine gespeicherten Aufgaben.</p>}
           {savedMessage && <p role="status" className="mt-3 text-sm text-slate-400">{savedMessage}</p>}
         </section>}
 
@@ -330,7 +358,6 @@ export default function TacticsPage() {
           <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-3 sm:p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3 px-1">
               <div>
-                <p className="text-sm font-semibold text-white">Finde die beste Fortsetzung.</p>
                 <p className="mt-1 text-xs text-slate-400">
                   Am Zug: {chess.turn() === "w" ? "Weiß" : "Schwarz"} · {puzzle.rating} Aufgaben-Elo · {getTacticsDifficulty(puzzle.rating)}
                 </p>
@@ -351,7 +378,7 @@ export default function TacticsPage() {
               aria-live="polite"
               className={"mt-4 min-h-12 rounded-lg px-4 py-3 text-sm " + (outcome === "solved" ? "bg-emerald-400/10 text-emerald-200" : outcome === "missed" ? "bg-amber-400/10 text-amber-100" : "bg-slate-800/70 text-slate-400")}
             >
-              {message || "Wähle eine Figur und danach das Zielfeld."}
+              {message}
             </div>
             {clubTaskMessage && <p className="mt-2 text-sm text-slate-400" role="status">{clubTaskMessage}</p>}
             <div className="mt-3 flex flex-wrap gap-2">
@@ -396,6 +423,31 @@ export default function TacticsPage() {
                 </div>
               </div>
             </section>
+
+            {!isPlacement && <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
+              <label htmlFor="tactics-difficulty" className="font-semibold">Aufgabenniveau</label>
+              <select
+                id="tactics-difficulty"
+                value={progress.difficultyOffset}
+                onChange={(event) => {
+                  const difficultyOffset = Number(event.target.value);
+                  if (!isTacticsDifficultyOffset(difficultyOffset)) return;
+                  updateTacticsProgress((current) => ({
+                    ...current,
+                    difficultyOffset,
+                  }));
+                }}
+                className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100"
+              >
+                <option value={-300}>300 Elo leichter</option>
+                <option value={-200}>200 Elo leichter</option>
+                <option value={-100}>100 Elo leichter</option>
+                <option value={0}>Gleiches Niveau</option>
+                <option value={100}>100 Elo schwerer</option>
+                <option value={200}>200 Elo schwerer</option>
+                <option value={300}>300 Elo schwerer</option>
+              </select>
+            </section>}
 
             <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
               <h2 className="font-semibold">Abzeichen</h2>

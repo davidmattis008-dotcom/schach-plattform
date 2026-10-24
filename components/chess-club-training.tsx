@@ -5,8 +5,8 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { Chess, type Square } from "chess.js";
 import { createClient } from "@/lib/supabase/client";
 import { MiniChessboard } from "@/components/mini-chessboard";
+import { ClubCommunication } from "@/components/club-communication";
 import { getTacticsDifficulty, getTacticsTheme, tacticsPuzzles, type TacticsPuzzle } from "@/lib/tactics";
-import { ONLINE_TIME_CONTROLS } from "@/app/online/protocol";
 import { SelectMenu } from "@/components/select-menu";
 
 type ClubGroup = {
@@ -65,20 +65,10 @@ type Participation = {
   solved: boolean;
   last_attempt_at: string | null;
 };
-type ClubTournament = {
-  tournament_id: string;
-  name: string;
-  initial_seconds: number;
-  increment_seconds: number;
-  max_players: number;
-  status: "open" | "running" | "completed";
-  player_count: number;
-  is_joined: boolean;
-};
 type SavedTacticRow = { puzzle_id: string };
 type CreatedClub = { club_id: string; group_id: string; invite_code: string };
 type CreatedGroup = { group_id: string; invite_code: string };
-type GroupSectionErrors = Partial<Record<"members" | "clubMembers" | "plans" | "tasks" | "tournaments", string>>;
+type GroupSectionErrors = Partial<Record<"members" | "clubMembers" | "plans" | "tasks", string>>;
 type PlanDraft = {
   plan_id: string;
   name: string;
@@ -93,13 +83,6 @@ type TaskDraft = {
   puzzle_id: string;
   plan_id: string;
   due_at: string;
-};
-type TournamentDraft = {
-  tournament_id: string;
-  name: string;
-  initial_seconds: number;
-  increment_seconds: number;
-  max_players: number;
 };
 type ClubConfirmation = {
   title: string;
@@ -169,7 +152,6 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
   const [savedPuzzles, setSavedPuzzles] = useState<TacticsPuzzle[]>([]);
   const [savedPuzzlesLoading, setSavedPuzzlesLoading] = useState(false);
   const [savedPuzzlesError, setSavedPuzzlesError] = useState("");
-  const [tournaments, setTournaments] = useState<ClubTournament[]>([]);
   const [sectionErrors, setSectionErrors] = useState<GroupSectionErrors>({});
   const [loadingGroup, setLoadingGroup] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -180,7 +162,6 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
   const [groupNameDraft, setGroupNameDraft] = useState("");
   const [editingPlan, setEditingPlan] = useState<PlanDraft | null>(null);
   const [editingTask, setEditingTask] = useState<TaskDraft | null>(null);
-  const [editingTournament, setEditingTournament] = useState<TournamentDraft | null>(null);
   const [confirmation, setConfirmation] = useState<(ClubConfirmation & { resolve: (confirmed: boolean) => void }) | null>(null);
   const [confirmationInput, setConfirmationInput] = useState("");
   const confirmationCancelRef = useRef<HTMLButtonElement>(null);
@@ -196,12 +177,9 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
   const [taskPuzzleId, setTaskPuzzleId] = useState("");
   const [taskPlanId, setTaskPlanId] = useState("");
   const [taskDueAt, setTaskDueAt] = useState("");
-  const [tournamentName, setTournamentName] = useState("");
-  const [tournamentControlId, setTournamentControlId] = useState("5+3");
   const [openParticipationId, setOpenParticipationId] = useState<string | null>(null);
   const [participation, setParticipation] = useState<Record<string, Participation[]>>({});
   const groupRequestId = useRef(0);
-  const tournamentControls = ONLINE_TIME_CONTROLS.filter((control) => control.initialSeconds >= 60);
   const selectedGroup = groups.find((group) => group.group_id === groupId) ?? null;
   const isTrainer = !adminMode && selectedGroup?.role === "trainer";
   const isClubOwner = selectedGroup?.is_club_owner === true;
@@ -251,12 +229,11 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
     setLoadingGroup(true);
     setSectionErrors({});
     try {
-      const [membersResult, clubMembersResult, plansResult, tasksResult, tournamentsResult] = await Promise.all([
+      const [membersResult, clubMembersResult, plansResult, tasksResult] = await Promise.all([
         getClient().rpc("list_chess_club_group_members", { p_group_id: selectedGroupId }),
         getClient().rpc("list_chess_club_members", { p_club_id: clubId }),
         getClient().rpc("list_chess_club_training_plans", { p_group_id: selectedGroupId }),
         getClient().rpc("list_chess_club_training_tasks", { p_group_id: selectedGroupId }),
-        getClient().rpc("list_chess_club_group_tournaments", { p_group_id: selectedGroupId }),
       ]);
       if (requestId !== groupRequestId.current) return;
 
@@ -289,13 +266,6 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
       } else {
         setTasks((tasksResult.data ?? []) as TrainingTask[]);
       }
-      if (tournamentsResult.error) {
-        console.error("Vereinsturniere konnten nicht geladen werden:", tournamentsResult.error);
-        errors.tournaments = errorText(tournamentsResult.error);
-        setTournaments([]);
-      } else {
-        setTournaments((tournamentsResult.data ?? []) as ClubTournament[]);
-      }
       setSectionErrors(errors);
     } catch (loadError) {
       if (requestId === groupRequestId.current) {
@@ -305,7 +275,6 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
           clubMembers: errorText(loadError),
           plans: errorText(loadError),
           tasks: errorText(loadError),
-          tournaments: errorText(loadError),
         });
       }
     } finally {
@@ -370,7 +339,6 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
     setOpenParticipationId(null);
     setEditingPlan(null);
     setEditingTask(null);
-    setEditingTournament(null);
     if (groupId && selectedGroup) void refreshGroup(groupId, selectedGroup.club_id);
     else {
       if (!groupId) {
@@ -381,7 +349,6 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
         setClubMembers([]);
         setPlans([]);
         setTasks([]);
-        setTournaments([]);
       }
     }
   }, [groupId, groups, refreshGroup, selectedGroup]);
@@ -558,37 +525,6 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
     }
   }
 
-  async function createTournament(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!groupId) return;
-    const control = tournamentControls.find((item) => item.id === tournamentControlId);
-    if (!control) {
-      setError("Bitte wähle eine gültige Bedenkzeit.");
-      return;
-    }
-    setBusy(true);
-    setError("");
-    setNotice("");
-    try {
-      const { error: createError } = await getClient().rpc("create_chess_club_group_tournament", {
-        p_group_id: groupId,
-        p_name: tournamentName,
-        p_initial_seconds: control.initialSeconds,
-        p_increment_seconds: control.incrementSeconds,
-        p_max_players: 8,
-      });
-      if (createError) throw createError;
-      setTournamentName("");
-      setNotice("Internes Vereinsturnier angelegt. Gruppenmitglieder finden es unter Turniere.");
-      if (selectedGroup) await refreshGroup(groupId, selectedGroup.club_id);
-    } catch (createError) {
-      console.error("Vereinsturnier konnte nicht angelegt werden:", createError);
-      setError(errorText(createError));
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function toggleParticipation(taskId: string) {
     if (openParticipationId === taskId) {
       setOpenParticipationId(null);
@@ -612,7 +548,7 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
     if (!selectedGroup || !isClubOwner || member.user_id === userId || (member.role === "Vereinsgründer" && !adminMode)) return;
     if (!await askConfirmation({
       title: "Mitglied aus dem Verein entfernen?",
-      message: `${member.username} verliert den Zugang zu allen Vereinsgruppen und internen Turnieren.`,
+      message: `${member.username} verliert den Zugang zu allen Vereinsgruppen.`,
       confirmLabel: "Mitglied entfernen",
     })) return;
     setBusy(true);
@@ -646,7 +582,7 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
     if (!selectedGroup || !userId || isClubOwner || adminMode) return;
     if (!await askConfirmation({
       title: "Verein verlassen?",
-      message: `Du verlierst den Zugang zu „${selectedGroup.club_name}“, allen Vereinsgruppen und internen Turnieren.`,
+      message: `Du verlierst den Zugang zu „${selectedGroup.club_name}“ und allen Vereinsgruppen.`,
       confirmLabel: "Verein verlassen",
     })) return;
     setBusy(true);
@@ -698,7 +634,7 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
     if (!selectedGroup || !isClubOwner) return;
     if (!await askConfirmation({
       title: "Verein dauerhaft löschen?",
-      message: `Der Verein und alle Gruppen, Mitglieder, Trainingspläne, Aufgaben und Vereinsturniere werden gelöscht. Bereits verbuchte Online-Wertungen bleiben bestehen. Gib zur Bestätigung exakt „${selectedGroup.club_name}“ ein.`,
+      message: `Der Verein und alle Gruppen, Mitglieder, Trainingspläne und Aufgaben werden gelöscht. Bereits verbuchte Online-Wertungen bleiben bestehen. Gib zur Bestätigung exakt „${selectedGroup.club_name}“ ein.`,
       confirmLabel: "Verein dauerhaft löschen",
       requiredText: selectedGroup.club_name,
     })) return;
@@ -758,7 +694,7 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
     }
     if (!await askConfirmation({
       title: "Trainingsgruppe dauerhaft löschen?",
-      message: `„${selectedGroup.group_name}“ und ihre Pläne, Aufgaben, Mitglieder und Turniere werden gelöscht. Bereits verbuchte Online-Wertungen bleiben bestehen.`,
+      message: `„${selectedGroup.group_name}“ und ihre Pläne, Aufgaben und Mitglieder werden gelöscht. Bereits verbuchte Online-Wertungen bleiben bestehen.`,
       confirmLabel: "Gruppe löschen",
     })) return;
     setBusy(true);
@@ -884,58 +820,6 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
     }
   }
 
-  async function saveTournament(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!editingTournament || !isClubOwner || !selectedGroup) return;
-    setBusy(true);
-    setError("");
-    setNotice("");
-    try {
-      const { error: updateError } = await getClient().rpc("update_chess_club_group_tournament", {
-        p_tournament_id: editingTournament.tournament_id,
-        p_name: editingTournament.name,
-        p_initial_seconds: editingTournament.initial_seconds,
-        p_increment_seconds: editingTournament.increment_seconds,
-        p_max_players: editingTournament.max_players,
-      });
-      if (updateError) throw updateError;
-      setEditingTournament(null);
-      setNotice("Vereinsturnier wurde aktualisiert.");
-      await refreshGroup(groupId, selectedGroup.club_id);
-    } catch (updateError) {
-      console.error("Vereinsturnier konnte nicht geändert werden:", updateError);
-      setError(errorText(updateError));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function deleteTournament(tournament: ClubTournament) {
-    if (!isClubOwner || !selectedGroup || tournament.status !== "open") return;
-    if (!await askConfirmation({
-      title: "Vereinsturnier löschen?",
-      message: `Das offene Turnier „${tournament.name}“ wird samt Anmeldungen gelöscht.`,
-      confirmLabel: "Turnier löschen",
-    })) return;
-    setBusy(true);
-    setError("");
-    setNotice("");
-    try {
-      const { error: deleteError } = await getClient().rpc("delete_chess_club_group_tournament", {
-        p_tournament_id: tournament.tournament_id,
-      });
-      if (deleteError) throw deleteError;
-      setEditingTournament(null);
-      setNotice(`Vereinsturnier „${tournament.name}“ wurde gelöscht.`);
-      await refreshGroup(groupId, selectedGroup.club_id);
-    } catch (deleteError) {
-      console.error("Vereinsturnier konnte nicht gelöscht werden:", deleteError);
-      setError(errorText(deleteError));
-    } finally {
-      setBusy(false);
-    }
-  }
-
   if (authLoading) {
     return <p className="rounded-xl border border-slate-800 bg-slate-900/50 p-5 text-sm text-slate-400" role="status">Vereinsbereich wird geladen …</p>;
   }
@@ -1028,7 +912,7 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
               </div>
               <div className="mt-4 rounded-xl border border-red-900/50 bg-red-950/20 p-4">
                 <p className="text-sm font-semibold text-red-200">Verein dauerhaft löschen</p>
-                <p className="mt-1 text-xs text-slate-400">Alle Gruppen, Mitgliedschaften, Trainingspläne, Aufgaben und internen Turniere werden entfernt. Bereits verbuchte Online-Wertungen bleiben bestehen.</p>
+                <p className="mt-1 text-xs text-slate-400">Alle Gruppen, Mitgliedschaften, Trainingspläne, Aufgaben und gespeicherten Vereinsturniere werden entfernt. Bereits verbuchte Online-Wertungen bleiben bestehen.</p>
                 <button type="button" disabled={busy} onClick={() => void deleteClub()} className="mt-3 rounded-lg border border-red-800 px-3 py-2 text-xs font-semibold text-red-200 hover:bg-red-950/50 disabled:opacity-50">Verein löschen …</button>
               </div>
             </details>}
@@ -1086,19 +970,9 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
               <button disabled={busy || savedPuzzlesLoading || savedPuzzles.length === 0 || !taskPuzzleId} className="rounded-lg bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950 disabled:opacity-50">{busy ? "Wird zugewiesen …" : "Aufgabe veröffentlichen"}</button>
             </form>
 
-            <form onSubmit={(event) => void createTournament(event)} className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-5 xl:col-span-2">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">Team-Wettkampf</p>
-                <h2 className="mt-1 text-lg font-semibold">Internes Vereinsturnier</h2>
-                <p className="mt-1 text-sm text-slate-400">Das Turnier ist nur für Mitglieder dieser Trainingsgruppe sichtbar und beitretbar.</p>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
-                <input required minLength={3} maxLength={80} value={tournamentName} onChange={(event) => setTournamentName(event.target.value)} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-sm" placeholder="Turniername" aria-label="Turniername" />
-                <SelectMenu aria-label="Bedenkzeit" value={tournamentControlId} options={tournamentControls.map((control) => ({ value: control.id, label: `${control.label} · ${control.group}` }))} onChange={setTournamentControlId} />
-                <button disabled={busy} className="rounded-lg border border-emerald-400/50 px-4 py-3 text-sm font-semibold text-emerald-200 hover:bg-emerald-400/10 disabled:opacity-50">{busy ? "Wird erstellt …" : "Vereinsturnier erstellen"}</button>
-              </div>
-            </form>
           </div>}
+
+          {!adminMode && selectedGroup && <ClubCommunication clubId={selectedGroup.club_id} canPublishNews={isTrainer || isClubOwner} />}
 
           <section aria-labelledby="plans-heading" className="space-y-3">
             <div className="flex flex-wrap items-end justify-between gap-3">
@@ -1279,58 +1153,6 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
               </div>)}
               {!loadingGroup && !sectionErrors.clubMembers && clubMembers.length === 0 && <p className="p-5 text-sm text-slate-400">Noch keine Vereinsmitglieder.</p>}
             </div>
-          </section>
-
-          <section aria-labelledby="club-tournaments-heading" className="space-y-3">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Wettkampf</p>
-                <h2 id="club-tournaments-heading" className="mt-1 text-xl font-semibold">Interne Vereinsturniere</h2>
-              </div>
-              <Link href="/tournaments" className="text-sm text-emerald-200 underline underline-offset-4">Turnierübersicht öffnen</Link>
-            </div>
-            {loadingGroup ? <p className="text-sm text-slate-400">Vereinsturniere werden geladen …</p> : tournaments.length ? <div className="grid gap-3 md:grid-cols-2">
-              {tournaments.map((tournament) => <article key={tournament.tournament_id} className="border-b border-slate-800 p-4 last:border-b-0">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div><h3 className="font-semibold text-white">{tournament.name}</h3><p className="mt-1 text-xs text-slate-400">{tournament.player_count}/{tournament.max_players} Spieler · {tournament.initial_seconds / 60}+{tournament.increment_seconds} · {tournament.status === "open" ? "Anmeldung offen" : tournament.status === "running" ? "Läuft" : "Beendet"}</p></div>
-                  <div className="flex items-center gap-3">
-                    <p className="text-xs text-slate-500">{tournament.is_joined ? "Du bist angemeldet" : "Nur Gruppenmitglieder"}</p>
-                    {!adminMode && <Link href={`/tournaments?clubTournament=${encodeURIComponent(tournament.tournament_id)}`} className="rounded-lg border border-amber-300/40 px-3 py-2 text-xs font-semibold text-amber-200 hover:border-amber-300/80 hover:bg-amber-300/10">Turnier öffnen</Link>}
-                    {isClubOwner && tournament.status === "open" && <>
-                      <button type="button" onClick={() => setEditingTournament({
-                        tournament_id: tournament.tournament_id,
-                        name: tournament.name,
-                        initial_seconds: tournament.initial_seconds,
-                        increment_seconds: tournament.increment_seconds,
-                        max_players: tournament.max_players,
-                      })} className="rounded-lg border border-amber-300/40 px-3 py-2 text-xs font-semibold text-amber-200">Bearbeiten</button>
-                      <button type="button" disabled={busy} onClick={() => void deleteTournament(tournament)} className="rounded-lg border border-red-900/70 px-3 py-2 text-xs font-semibold text-red-200 disabled:opacity-50">Löschen</button>
-                    </>}
-                  </div>
-                </div>
-                {editingTournament?.tournament_id === tournament.tournament_id && <form onSubmit={(event) => void saveTournament(event)} className="mt-4 grid gap-3 border-t border-slate-800 pt-4 sm:grid-cols-2">
-                  <label className="text-xs text-slate-400">Turniername
-                    <input required minLength={3} maxLength={80} value={editingTournament.name} onChange={(event) => setEditingTournament((current) => current ? { ...current, name: event.target.value } : current)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white" />
-                  </label>
-                  <label className="text-xs text-slate-400">Bedenkzeit
-                    <SelectMenu className="mt-1" aria-label="Bedenkzeit" value={tournamentControls.find((control) => control.initialSeconds === editingTournament.initial_seconds && control.incrementSeconds === editingTournament.increment_seconds)?.id ?? ""} options={tournamentControls.map((control) => ({ value: control.id, label: `${control.label} · ${control.group}` }))} onChange={(id) => {
-                      const selectedControl = tournamentControls.find((control) => control.id === id);
-                      if (selectedControl) setEditingTournament((current) => current ? { ...current, initial_seconds: selectedControl.initialSeconds, increment_seconds: selectedControl.incrementSeconds } : current);
-                    }} />
-                  </label>
-                  <label className="text-xs text-slate-400">Maximale Spielerzahl
-                    <input type="number" min={2} max={16} value={editingTournament.max_players} onChange={(event) => setEditingTournament((current) => current ? { ...current, max_players: Number(event.target.value) } : current)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white" />
-                  </label>
-                  <div className="flex items-end gap-2">
-                    <button type="submit" disabled={busy} className="rounded-lg bg-emerald-400 px-3 py-2 text-xs font-semibold text-slate-950 disabled:opacity-50">Änderungen speichern</button>
-                    <button type="button" onClick={() => setEditingTournament(null)} className="rounded-lg border border-slate-700 px-3 py-2 text-xs">Abbrechen</button>
-                  </div>
-                </form>}
-                {isClubOwner && tournament.status !== "open" && <p className="mt-3 text-xs text-slate-500">Laufende oder beendete Turniere sind gesperrt, damit Ergebnisse erhalten bleiben.</p>}
-              </article>)}
-            </div> : sectionErrors.tournaments
-              ? <p className="rounded-xl border border-red-900/70 bg-red-950/30 p-5 text-sm text-red-200" role="alert">Vereinsturniere konnten nicht geladen werden: {sectionErrors.tournaments}</p>
-              : <p className="rounded-xl border border-dashed border-slate-700 p-5 text-sm text-slate-400">{isTrainer ? "Noch kein Vereinsturnier. Erstelle oben das erste." : "Für diese Gruppe wurde noch kein Vereinsturnier angelegt."}</p>}
           </section>
 
           {!adminMode && <details className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">

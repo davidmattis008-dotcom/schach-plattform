@@ -28,6 +28,14 @@ function isOnlineGameRecord(value: unknown): value is OnlineGameRecord {
       && typeof move.from === "string" && typeof move.to === "string");
 }
 
+function getGamePgn(game: OnlineGameRecord) {
+  const replay = new Chess();
+  game.moves.forEach((move) => {
+    replay.move({ from: move.from as Square, to: move.to as Square, ...(move.promotion ? { promotion: move.promotion } : {}) });
+  });
+  return replay.pgn();
+}
+
 export default function GameHistoryPage() {
   const [games, setGames] = useState<OnlineGameRecord[]>([]);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
@@ -99,8 +107,7 @@ export default function GameHistoryPage() {
       <div className="mx-auto max-w-4xl">
         <Link href="/" className="text-sm text-slate-400 underline underline-offset-4 hover:text-white">← Zur Startseite</Link>
         <header className="mt-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300">Deine Schachreise</p>
-          <h1 className="mt-3 text-4xl font-bold sm:text-5xl">Partieverlauf</h1>
+          <h1 className="text-4xl font-bold sm:text-5xl">Partieverlauf</h1>
         </header>
 
         {syncMessage && <p role="status" className="mt-6 rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm leading-6 text-slate-400">{syncMessage}</p>}
@@ -113,9 +120,8 @@ export default function GameHistoryPage() {
         {games.length === 0 ? (
           <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/50 p-8 text-center sm:p-12">
             <div className="text-5xl" aria-hidden="true">♟</div>
-            <h2 className="mt-4 text-xl font-bold">Noch keine Online-Partien</h2>
-            <p className="mt-2 text-slate-400">Deine abgeschlossenen Partien erscheinen nach dem ersten Spiel hier.</p>
-            <Link href="/online" className="mt-6 inline-flex min-h-12 items-center justify-center rounded-xl bg-emerald-400 px-5 font-semibold text-slate-950 transition hover:bg-emerald-300">Online-Partie starten</Link>
+            <h2 className="mt-4 text-xl font-bold">Noch keine Partien</h2>
+            <Link href="/freunde" className="mt-6 inline-flex min-h-12 items-center justify-center rounded-xl bg-emerald-400 px-5 font-semibold text-slate-950 transition hover:bg-emerald-300">Freunde</Link>
           </section>
         ) : (
           <section className="mt-6 space-y-3" aria-label="Beendete Partien">
@@ -137,6 +143,7 @@ export default function GameHistoryPage() {
                   <div className="border-t border-slate-800 px-4 py-4 sm:px-5">
                     <p className="text-sm text-slate-400">{game.reason} · Weiß: {game.whiteName ?? "Gast"} · Schwarz: {game.blackName ?? "Gast"}</p>
                     <button type="button" onClick={() => { setSelectedGameId(game.id); setReplayPly(0); }} className="mt-3 rounded-lg border border-emerald-400/40 px-3 py-2 text-xs font-semibold text-emerald-200">Partie nachspielen</button>
+                    {game.moves.length > 0 && <Link href={`/analyse?pgn=${encodeURIComponent(getGamePgn(game))}`} className="ml-2 mt-3 inline-flex rounded-lg border border-emerald-400/40 px-3 py-2 text-xs font-semibold text-emerald-200">Analyse öffnen</Link>}
                     {game.moves.length === 0 ? (
                       <p className="mt-3 text-sm text-slate-500">In dieser Partie wurden keine Züge gespeichert.</p>
                     ) : (

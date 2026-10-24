@@ -192,7 +192,6 @@ export function PlayerProfileView({ requestedUsername }: { requestedUsername?: s
               <Link href="/freunde" className="text-sm text-slate-300 underline underline-offset-4">Freunde & Nachrichten</Link>
               {friendMessage && <p role="status" className="text-sm text-slate-300">{friendMessage}</p>}
             </div>}
-          <p className="mt-3 text-slate-300">Online-Elo nach Bedenkzeit. Jede Zeitkontrolle hat eine eigene Wertung.</p>
         </header>
 
         {!requestedUsername && viewerId && (
@@ -224,9 +223,13 @@ export function PlayerProfileView({ requestedUsername }: { requestedUsername?: s
           <div className="mb-3 flex items-end justify-between gap-3">
             <div>
               <h2 id="ratings-heading" className="text-2xl font-bold">Online-Elo</h2>
-              <p className="mt-1 text-sm text-slate-400">Der Startwert beruht auf deiner Selbsteinschätzung. In den ersten fünf gewerteten Partien je Modus ist die Wertung vorläufig und reagiert stärker.</p>
             </div>
-            <Link href="/online" className="text-sm font-semibold text-emerald-300 underline underline-offset-4">Online spielen</Link>
+            <Link
+              href="/freunde"
+              className="text-sm font-semibold text-emerald-300 underline underline-offset-4"
+            >
+              Freunde
+            </Link>
           </div>
 
           {loading ? (

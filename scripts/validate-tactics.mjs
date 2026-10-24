@@ -3,25 +3,39 @@ import { readFile } from "node:fs/promises";
 import { Chess } from "chess.js";
 
 const puzzles = JSON.parse(await readFile(new URL("../lib/tactics-data.json", import.meta.url), "utf8"));
+const ratingConfig = JSON.parse(await readFile(new URL("../lib/tactics-rating-config.json", import.meta.url), "utf8"));
 const ids = new Set();
 const positions = new Set();
 const playerColors = new Set();
 
-assert.ok(puzzles.length >= 1000, "The tactics library should have at least 1,000 puzzles.");
+assert.equal(puzzles.length, 10000, "The tactics library should contain 10,000 puzzles.");
 const ratings = puzzles.map((puzzle) => puzzle.rating);
+assert.equal(Math.min(...ratings), 0, "The internal puzzle rating should start at 0.");
+assert.equal(Math.max(...ratings), 3000, "The internal puzzle rating should reach 3,000.");
+assert.equal(ratingConfig.ratingMin, 0, "The internal rating scale should start at 0.");
+assert.equal(ratingConfig.ratingMax, 3000, "The internal rating scale should reach 3,000.");
+assert.equal(ratingConfig.ratingScaleVersion, 2, "The tactics rating scale version should be recorded.");
+assert.equal(ratingConfig.license, "CC0-1.0", "The puzzle source should be recorded as CC0.");
 assert.ok(Math.min(...ratings) <= 900, "Include beginner-friendly tasks.");
-assert.ok(Math.max(...ratings) >= 2000, "Include advanced tasks.");
-assert.ok(Math.max(...ratings) - Math.min(...ratings) >= 1000, "Cover a broad puzzle rating range.");
+assert.ok(Math.max(...ratings) >= 2900, "Include advanced tasks.");
+assert.ok(Math.max(...ratings) - Math.min(...ratings) >= 2900, "Cover the full internal rating range.");
 assert.ok(puzzles.some((puzzle) => puzzle.moves.length >= 5), "Include multi-move combinations.");
 
 for (const puzzle of puzzles) {
   assert.ok(!ids.has(puzzle.id), `Duplicate puzzle id: ${puzzle.id}`);
-  assert.match(puzzle.id, /^tactics-\d{2,4}$/, `Puzzle id should not expose a source identifier: ${puzzle.id}`);
+  assert.match(puzzle.id, /^tactics-(?:\d{2,4}|extra-\d{5})$/, `Puzzle id should not expose a source identifier: ${puzzle.id}`);
   ids.add(puzzle.id);
   const positionKey = `${puzzle.fen}:${puzzle.setupMove ?? ""}:${puzzle.moves.join(" ")}`;
   assert.ok(!positions.has(positionKey), `Duplicate puzzle position and solution: ${puzzle.id}`);
   positions.add(positionKey);
-  assert.ok(Number.isInteger(puzzle.rating) && puzzle.rating >= 400 && puzzle.rating <= 2600, `Invalid rating: ${puzzle.id}`);
+  assert.ok(Number.isInteger(puzzle.rating) && puzzle.rating >= 0 && puzzle.rating <= 3000, `Invalid rating: ${puzzle.id}`);
+  assert.ok(Number.isInteger(puzzle.sourceRating) && puzzle.sourceRating >= 400 && puzzle.sourceRating <= 3000, `Invalid source rating: ${puzzle.id}`);
+  assert.equal(
+    puzzle.rating,
+    Math.round(((puzzle.sourceRating - ratingConfig.sourceRatingMin)
+      / (ratingConfig.sourceRatingMax - ratingConfig.sourceRatingMin)) * 3000),
+    `Rating scale mismatch: ${puzzle.id}`,
+  );
   assert.ok(!("sourceGame" in puzzle), `Puzzle data should not expose source game IDs: ${puzzle.id}`);
   assert.ok(puzzle.moves.length > 0 && puzzle.moves.length % 2 === 1, `Puzzle should end on the player's move: ${puzzle.id}`);
 

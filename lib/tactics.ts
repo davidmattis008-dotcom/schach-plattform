@@ -23,7 +23,7 @@ export function getTacticsPuzzleForRating(rating: number, recent: string[]): Tac
 export function chooseTacticsPuzzle(rating: number, recent: string[]): TacticsPuzzle {
   const unseen = tacticsPuzzles.filter((puzzle) => !recent.includes(puzzle.id));
   const available = unseen.length > 0 ? unseen : tacticsPuzzles;
-  const nearby = available.filter((puzzle) => Math.abs(puzzle.rating - rating) <= 200);
+  const nearby = available.filter((puzzle) => Math.abs(puzzle.rating - rating) <= 100);
   const candidates = nearby.length > 0
     ? nearby
     : available.filter((puzzle) => Math.abs(puzzle.rating - rating) === Math.abs(getTacticsPuzzleForRating(rating, recent).rating - rating));
@@ -32,6 +32,7 @@ export function chooseTacticsPuzzle(rating: number, recent: string[]): TacticsPu
 }
 
 export function getTacticsRatingChange(userRating: number, puzzleRating: number, solved: boolean): number {
+  if (Math.abs(puzzleRating - userRating) > 100) return 0;
   const expectedScore = 1 / (1 + 10 ** ((puzzleRating - userRating) / 400));
   return Math.round(24 * ((solved ? 1 : 0) - expectedScore));
 }
@@ -68,9 +69,9 @@ export function getTacticsTheme(themes: string[]): string {
 }
 
 export function getTacticsDifficulty(rating: number): string {
-  if (rating < 1300) return "Grundlagen";
-  if (rating < 1500) return "Leicht";
-  if (rating < 1700) return "Mittel";
-  if (rating < 1900) return "Anspruchsvoll";
+  if (rating < 600) return "Grundlagen";
+  if (rating < 1200) return "Leicht";
+  if (rating < 1800) return "Mittel";
+  if (rating < 2400) return "Anspruchsvoll";
   return "Schwer";
 }

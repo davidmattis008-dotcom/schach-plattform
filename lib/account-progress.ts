@@ -1,3 +1,12 @@
+import {
+  clampTacticsRating,
+  isTacticsDifficultyOffset,
+  normalizeLegacyTacticsRating,
+  TACTICS_PLACEMENT_TASKS,
+  TACTICS_RATING_SCALE_VERSION,
+  type TacticsDifficultyOffset,
+} from "@/lib/tactics-rating";
+
 export const ACCOUNT_PROGRESS_STORAGE_KEYS = [
   "schach-selbstlernen-v1",
   "schach-regeln-lernen-v1",
@@ -31,14 +40,8 @@ export function readAccountProgress(): AccountProgressPayload {
     try {
       const value: unknown = JSON.parse(raw);
       if (key === "schach-taktik-progress-v1") {
-        if (!value || typeof value !== "object" || Array.isArray(value)) continue;
-        const saved = value as Record<string, unknown>;
-        progress[key] = {
-          rating: boundedInteger(saved.rating, 1000, 400, 2400),
-          solved: boundedInteger(saved.solved, 0, 0, 100000),
-          attempted: boundedInteger(saved.attempted, 0, 0, 100000),
-          recent: stringList(saved.recent, 2000),
-        };
+        const tactics = normalizeTacticsProgress(value, false);
+        if (tactics) progress[key] = tactics;
       } else if (Array.isArray(value)) {
         progress[key] = stringList(value, 2000);
       }
@@ -63,14 +66,9 @@ export function applyAccountProgress(value: unknown) {
     }
     const entry = progress[key];
     if (key === "schach-taktik-progress-v1") {
-      if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
-      const saved = entry as Record<string, unknown>;
-      const serialized = JSON.stringify({
-        rating: boundedInteger(saved.rating, 1000, 400, 2400),
-        solved: boundedInteger(saved.solved, 0, 0, 100000),
-        attempted: boundedInteger(saved.attempted, 0, 0, 100000),
-        recent: stringList(saved.recent, 2000),
-      });
+      const tactics = normalizeTacticsProgress(entry, true);
+      if (!tactics) continue;
+      const serialized = JSON.stringify(tactics);
       if (localStorage.getItem(key) !== serialized) {
         localStorage.setItem(key, serialized);
         changed = true;
@@ -100,10 +98,13 @@ export function mergeAccountProgress(
       if (!a && !b) continue;
       const primary = (b?.attempted ?? 0) >= (a?.attempted ?? 0) ? b : a;
       merged[key] = {
-        rating: primary?.rating ?? 1000,
+        rating: primary?.rating ?? 1500,
         solved: Math.max(a?.solved ?? 0, b?.solved ?? 0),
         attempted: Math.max(a?.attempted ?? 0, b?.attempted ?? 0),
         recent: stringList([...(a?.recent ?? []), ...(b?.recent ?? [])], 2000),
+        placementAttempts: Math.max(a?.placementAttempts ?? 0, b?.placementAttempts ?? 0),
+        difficultyOffset: b?.difficultyOffset ?? a?.difficultyOffset ?? 0,
+        ratingScaleVersion: TACTICS_RATING_SCALE_VERSION,
       };
     } else {
       const values = [...stringList(first, 2000), ...stringList(second, 2000)];
@@ -114,14 +115,38 @@ export function mergeAccountProgress(
 }
 
 function asTacticsProgress(value: unknown) {
+  return normalizeTacticsProgress(value, false);
+}
+
+function normalizeTacticsProgress(value: unknown, defaultOffset: boolean) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const saved = value as Record<string, unknown>;
-  return {
-    rating: boundedInteger(saved.rating, 1000, 400, 2400),
+  const hasRating = typeof saved.rating === "number" && Number.isFinite(saved.rating);
+  const rawRating = hasRating ? saved.rating as number : 1500;
+  const attempted = boundedInteger(saved.attempted, 0, 0, 100000);
+  const tactics: {
+    rating: number;
+    solved: number;
+    attempted: number;
+    recent: string[];
+    placementAttempts: number;
+    difficultyOffset?: TacticsDifficultyOffset;
+    ratingScaleVersion: number;
+  } = {
+    rating: saved.ratingScaleVersion === TACTICS_RATING_SCALE_VERSION
+      ? clampTacticsRating(rawRating)
+      : hasRating ? normalizeLegacyTacticsRating(rawRating) : 1500,
     solved: boundedInteger(saved.solved, 0, 0, 100000),
-    attempted: boundedInteger(saved.attempted, 0, 0, 100000),
+    attempted,
     recent: stringList(saved.recent, 2000),
+    placementAttempts: Number.isInteger(saved.placementAttempts)
+      ? boundedInteger(saved.placementAttempts, 0, 0, TACTICS_PLACEMENT_TASKS)
+      : attempted > 0 ? TACTICS_PLACEMENT_TASKS : 0,
+    ratingScaleVersion: TACTICS_RATING_SCALE_VERSION,
   };
+  if (isTacticsDifficultyOffset(saved.difficultyOffset)) tactics.difficultyOffset = saved.difficultyOffset;
+  else if (defaultOffset) tactics.difficultyOffset = 0;
+  return tactics;
 }
 
 function stringList(value: unknown, limit: number) {
