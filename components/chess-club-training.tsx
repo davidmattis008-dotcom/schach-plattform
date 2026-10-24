@@ -835,7 +835,7 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
   }
 
   return (
-    <div className="space-y-8">
+    <div id="vereine" className="space-y-8">
       {error && <p className="rounded-xl border border-red-900/70 bg-red-950/30 px-4 py-3 text-sm text-red-200" role="alert">{error}</p>}
       {notice && <p className="rounded-xl border border-emerald-900 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-200" role="status">{notice}</p>}
 
@@ -972,7 +972,7 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
 
           </div>}
 
-          {!adminMode && selectedGroup && <ClubCommunication clubId={selectedGroup.club_id} canPublishNews={isTrainer || isClubOwner} />}
+          {!adminMode && selectedGroup && <div id="vereinschat"><ClubCommunication clubId={selectedGroup.club_id} canPublishNews={isTrainer || isClubOwner} /></div>}
 
           <section aria-labelledby="plans-heading" className="space-y-3">
             <div className="flex flex-wrap items-end justify-between gap-3">
@@ -1038,7 +1038,7 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
               : <p className="rounded-xl border border-dashed border-slate-700 p-5 text-sm text-slate-400">Noch keine Trainingspläne. Ein Trainer kann oben den ersten Plan erstellen.</p>}
           </section>
 
-          <section aria-labelledby="tasks-heading" className="space-y-3">
+          <section id="training" aria-labelledby="tasks-heading" className="scroll-mt-6 space-y-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Aufgaben</p>
               <h2 id="tasks-heading" className="mt-1 text-xl font-semibold">Gruppentraining</h2>
