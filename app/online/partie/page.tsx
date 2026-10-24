@@ -9,7 +9,7 @@ import { ChessPieceIcon } from "@/components/chess-piece";
 import { describeMaterialAdvantage, getMaterialAdvantage } from "@/lib/chess/material";
 import { formatClock, getOnlineRatingMode, getOnlineRatingModeLabel, type OnlineRatingMode } from "../protocol";
 import { saveOnlineGame, type OnlineGameRecord, type SavedMove } from "../history-store";
-type MatchConfig = { room: string; player: string; opponent: string; tournamentGameId: string | null; white: boolean; initialSeconds: number; incrementSeconds: number; ratingMode: OnlineRatingMode; rated: boolean; whiteName: string; blackName: string };
+type MatchConfig = { room: string; player: string; opponent: string; white: boolean; initialSeconds: number; incrementSeconds: number; ratingMode: OnlineRatingMode; rated: boolean; whiteName: string; blackName: string };
 type ClockState = { whiteMs: number; blackMs: number; lastTick: number };
 type MovePayload = { from: string; to: string; promotion?: string; by: string; whiteMs: number; blackMs: number };
 type MatchEnd = { result: "1-0" | "0-1" | "1/2-1/2"; reason: string };
@@ -71,7 +71,6 @@ export default function OnlineGamePage() {
     const room = params.get("room") ?? "";
     const player = params.get("player") ?? "";
     const opponent = params.get("opponent") ?? "";
-    const tournamentGameId = params.get("tournamentGameId");
     const white = params.get("white") === "true";
     const initialSeconds = Number(params.get("initial"));
     const incrementSeconds = Number(params.get("increment"));
@@ -81,15 +80,15 @@ export default function OnlineGamePage() {
     const blackName = safeName(params.get("blackName"));
     const expectedRoom = [player, opponent].sort().join("_");
 
-    if (!player || !opponent || !room || room !== expectedRoom || !Number.isFinite(initialSeconds) || initialSeconds < 30 || !Number.isFinite(incrementSeconds) || incrementSeconds < 0 || incrementSeconds > 60 || (tournamentGameId !== null && !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(tournamentGameId))) {
+    if (!player || !opponent || !room || room !== expectedRoom || !Number.isFinite(initialSeconds) || initialSeconds < 30 || !Number.isFinite(incrementSeconds) || incrementSeconds < 0 || incrementSeconds > 60) {
       queueMicrotask(() => {
-        if (active) setPageError("Diese Partie-Adresse ist ungültig. Bitte öffne die Partie erneut über die Turnierübersicht oder suche erneut nach einem Gegner.");
+        if (active) setPageError("Diese Partie-Adresse ist ungültig. Öffne eine neue Partie über Freunde.");
       });
       return;
     }
 
     const ratingMode = getOnlineRatingMode(initialSeconds, incrementSeconds);
-    const matchConfig = { room, player, opponent, tournamentGameId, white, initialSeconds, incrementSeconds, ratingMode, rated, whiteName, blackName };
+    const matchConfig = { room, player, opponent, white, initialSeconds, incrementSeconds, ratingMode, rated, whiteName, blackName };
     queueMicrotask(() => {
       if (!active) return;
       setConfig(matchConfig);
@@ -147,34 +146,8 @@ export default function OnlineGamePage() {
   }
 
   async function saveOnlineRating(end: MatchEnd, match: MatchConfig) {
-    if (match.tournamentGameId) {
-      try {
-        const supabase = createClient();
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError) throw authError;
-        if (!user) {
-          setRatingMessage("Melde dich an, damit deine Turnierergebnis-Bestätigung gespeichert wird.");
-          return;
-        }
-        const result = end.result === "1-0" ? "white" : end.result === "0-1" ? "black" : "draw";
-        const { data: status, error } = await supabase.rpc("report_chess_tournament_result", {
-          p_game_id: match.tournamentGameId,
-          p_result: result,
-        });
-        if (error) throw error;
-        setRatingMessage(status === "finished"
-          ? "Beide Spieler haben das Ergebnis bestätigt. Turniertabelle und Elo wurden aktualisiert."
-          : status === "disputed"
-            ? "Die Ergebnisangaben der Spieler stimmen nicht überein. Bitte klärt das Ergebnis im Turnier."
-            : "Deine Ergebnis-Bestätigung ist gespeichert. Turniertabelle und Elo werden nach der Bestätigung deines Gegners aktualisiert.");
-      } catch (error) {
-        console.error("Turnierergebnis konnte nicht bestätigt werden:", error);
-        setRatingMessage("Die automatische Turnier-Bestätigung ist fehlgeschlagen. Öffne das Turnier und bestätige das Ergebnis dort manuell.");
-      }
-      return;
-    }
     if (!match.rated) {
-      setRatingMessage("Turnierpartie · Elo wird nach beidseitiger Ergebnisbestätigung verbucht.");
+      setRatingMessage("Ungewertete Partie");
       return;
     }
     try {
@@ -474,7 +447,7 @@ function finishGame(end: MatchEnd, broadcast = false) {
     ? finished.result === "1/2-1/2" ? `Remis · ${finished.reason}` : (finished.result === (config?.white ? "1-0" : "0-1") ? "Du gewinnst" : "Dein Gegner gewinnt") + ` · ${finished.reason}`
     : null;
 
-  if (pageError) return <main className="min-h-screen bg-slate-950 px-5 py-16 text-white"><div className="mx-auto max-w-xl rounded-2xl border border-slate-800 bg-slate-900 p-6"><h1 className="text-2xl font-bold">Partie nicht verfügbar</h1><p className="mt-3 text-slate-300">{pageError}</p><Link href="/online" className="mt-6 inline-flex rounded-xl bg-emerald-400 px-5 py-3 font-semibold text-slate-950">Neue Suche starten</Link></div></main>;
+  if (pageError) return <main className="min-h-screen bg-slate-950 px-5 py-16 text-white"><div className="mx-auto max-w-xl rounded-2xl border border-slate-800 bg-slate-900 p-6"><h1 className="text-2xl font-bold">Partie nicht verfügbar</h1><p className="mt-3 text-slate-300">{pageError}</p><Link href="/freunde" className="mt-6 inline-flex rounded-xl bg-emerald-400 px-5 py-3 font-semibold text-slate-950">Freunde</Link></div></main>;
   if (!config) return <main className="min-h-screen bg-slate-950 p-10 text-center text-slate-300">Partie wird vorbereitet …</main>;
 
   const whiteClock = config.initialSeconds === 0 ? "∞" : formatClock(clocks.whiteMs);
@@ -485,7 +458,7 @@ function finishGame(end: MatchEnd, broadcast = false) {
     <main className="min-h-screen bg-slate-950 px-3 py-6 text-white sm:px-6 sm:py-10">
       <div className="mx-auto max-w-5xl">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <Link href="/online" className="text-sm text-slate-400 underline underline-offset-4 hover:text-white">← Neue Partie</Link>
+          <Link href="/freunde" className="text-sm text-slate-400 underline underline-offset-4 hover:text-white">← Freunde</Link>
           <span className="rounded-full border border-slate-800 px-3 py-1 text-xs font-medium text-slate-400">Ungewertete Online-Partie</span>
         </div>
         <div className="mb-5 rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-center font-semibold" role="status" aria-live="polite">{gameStatus}</div>
@@ -555,7 +528,7 @@ function finishGame(end: MatchEnd, broadcast = false) {
                 <button type="button" onClick={resign} disabled={!started} className="w-full rounded-xl border border-rose-950 px-4 py-3 text-sm font-semibold text-rose-300 hover:bg-rose-950/40 disabled:cursor-not-allowed disabled:opacity-50">Aufgeben</button>
               </section>
             ) : (
-              <div className="rounded-2xl border border-emerald-900 bg-emerald-950/30 p-4"><p className="font-bold text-emerald-200">Partie beendet</p>{ratingMessage && <p className="mt-1 text-sm text-emerald-200">{ratingMessage}</p>}<p className="mt-1 text-sm text-slate-300">{archiveMessage || "Partie auf diesem Gerät gespeichert …"}</p><div className="mt-4 flex flex-wrap gap-4"><Link href="/partien" className="font-semibold text-emerald-300 underline underline-offset-4">Zum Partieverlauf</Link>{config.tournamentGameId && <Link href="/tournaments" className="font-semibold text-emerald-300 underline underline-offset-4">Zum Turnier</Link>}</div></div>
+              <div className="rounded-2xl border border-emerald-900 bg-emerald-950/30 p-4"><p className="font-bold text-emerald-200">Partie beendet</p>{ratingMessage && <p className="mt-1 text-sm text-emerald-200">{ratingMessage}</p>}<p className="mt-1 text-sm text-slate-300">{archiveMessage || "Partie auf diesem Gerät gespeichert …"}</p><div className="mt-4 flex flex-wrap gap-4"><Link href="/partien" className="font-semibold text-emerald-300 underline underline-offset-4">Zum Partieverlauf</Link></div></div>
             )}
           </aside>
         </div>

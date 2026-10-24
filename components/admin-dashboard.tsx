@@ -342,7 +342,7 @@ export function AdminDashboard() {
         {view === "support" && (role === "owner" || role === "admin") && <AdminSupportInbox />}
         {view === "clubs" && canManageClubs && <section className="mt-5">
           <h2 className="mb-3 text-lg font-semibold">Vereinsverwaltung</h2>
-          <p className="mb-4 text-sm text-slate-400">Verwalte Vereine, Gruppen, Mitglieder, Trainingspläne, Aufgaben und interne Turniere.</p>
+          <p className="mb-4 text-sm text-slate-400">Verwalte Vereine, Gruppen, Mitglieder, Trainingspläne und Aufgaben.</p>
           <ChessClubTraining adminMode />
         </section>}
       </div>

@@ -1,8 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chess } from 'chess.js';import { ChessPieceIcon } from '@/components/chess-piece';
 import { getMaterialAdvantage } from '@/lib/chess/material';
+import { BOT_ELO_MAX, BOT_ELO_MIN, FIXED_BOTS } from '@/lib/bots';
 import { createClient } from '@/lib/supabase/client';
 
 function formatTime(seconds: number) {
@@ -23,6 +25,7 @@ export default function Home() {
   const [moves, setMoves] = useState<string[]>([]);
   const [viewedPly, setViewedPly] = useState<number | null>(null);
   const [botElo, setBotElo] = useState<number | null>(null);
+  const [customBot, setCustomBot] = useState(false);
   const [botColor, setBotColor] = useState<'w' | 'b'>('b');
   const [botThinking, setBotThinking] = useState(false);
   const [engineReady, setEngineReady] = useState(false);
@@ -55,12 +58,13 @@ export default function Home() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const elo = Number(params.get('elo'));
-    if (params.get('mode') !== 'bot' || ![500, 1000, 1500, 2000, 2500].includes(elo)) {
+    if (params.get('mode') !== 'bot' || !Number.isInteger(elo) || elo < BOT_ELO_MIN || elo > BOT_ELO_MAX) {
       window.location.replace('/bot');
       return;
     }
 
     setBotElo(elo);
+    setCustomBot(params.get('custom') === 'true');
     const color = params.get('color');
     if (color === 'black') setBotColor('w');
     else if (color === 'random') setBotColor(Math.random() < 0.5 ? 'w' : 'b');
@@ -162,7 +166,7 @@ export default function Home() {
     setEngineError('');
     const engine = workerRef.current;
     const targetElo = Math.max(1320, botElo);
-    const depth = botElo === 500 ? 1 : botElo === 1000 ? 4 : botElo === 1500 ? 8 : botElo === 2000 ? 9 : 10;
+    const depth = Math.max(1, Math.min(10, Math.ceil(botElo / 300)));
     const thinkDelay = 650 + Math.floor(Math.random() * 850);
     botDelayRef.current = window.setTimeout(() => {
       botDelayRef.current = null;
@@ -172,7 +176,7 @@ export default function Home() {
       engine.postMessage('position fen ' + fen);
       engine.postMessage('go depth ' + depth);
     }, thinkDelay);
-  }, [game, botElo, botColor, whiteTime, blackTime, engineReady]);
+  }, [game, botElo, botColor, whiteTime, blackTime, clockMinutes, engineReady]);
 
   function animateMove(from: string, to: string) {
     if (animationTimerRef.current !== null) window.clearTimeout(animationTimerRef.current);
@@ -272,13 +276,12 @@ export default function Home() {
       <style>{`@keyframes chess-piece-move { from { transform: translate(var(--move-from-x), var(--move-from-y)); } to { transform: translate(0, 0); } } .animate-chess-piece-move { animation: chess-piece-move 220ms ease-out both; }`}</style>
       <div className="mx-auto flex min-h-screen max-w-6xl flex-col items-center px-4 py-10">
         <div className="mb-6 w-full max-w-2xl">
-          <a href="/" className="text-sm text-slate-300 underline underline-offset-4 hover:text-white">← Zur Startseite</a>
-          {botElo !== null && <p className="mt-3 text-sm text-emerald-300">Spiel gegen den {botElo}-Elo-Bot · {playerName} · {clockMinutes === 0 ? 'ohne Zeit' : clockMinutes + '+' + incrementSeconds}</p>}
+          <Link href="/bot" className="text-sm text-slate-300 underline underline-offset-4 hover:text-white">← Bot-Auswahl</Link>
+          {botElo !== null && <p className="mt-3 text-sm text-emerald-300">Spiel gegen {customBot ? 'Eigener Bot' : (FIXED_BOTS.find((bot) => bot.elo === botElo)?.name ?? 'Eigener Bot')} · {botElo} Elo · {playerName} · {clockMinutes === 0 ? 'ohne Zeit' : clockMinutes + '+' + incrementSeconds}</p>}
         </div>
         <div className="mb-6 text-center">
           <div className="mb-2 text-5xl">♟️</div>
-          <h1 className="text-4xl font-bold">Deine Schachplattform</h1>
-          <p className="mt-2 text-slate-300">Schach. Community. Creator. Deine persönliche Schachreise.</p>
+          <h1 className="text-4xl font-bold">Schachpartie</h1>
         </div>
         <div className="mb-4 rounded-xl border border-slate-700 bg-slate-900 px-6 py-3 text-center font-semibold" role="status">{status}</div>
         {promotionPending && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-labelledby="promotion-title"><div className="w-full max-w-sm rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl"><h2 id="promotion-title" className="text-xl font-bold">Wähle eine Figur</h2><p className="mt-1 text-sm text-slate-400">Dein Bauer kann umgewandelt werden in:</p><div className="mt-4 grid grid-cols-4 gap-2">{([{ piece: 'q', label: 'Dame' }, { piece: 'r', label: 'Turm' }, { piece: 'b', label: 'Läufer' }, { piece: 'n', label: 'Springer' }] as const).map(({ piece, label }) => <button key={piece} type="button" onClick={() => choosePromotion(piece)} className="flex flex-col items-center rounded-xl border border-slate-700 bg-slate-950 p-3 hover:border-emerald-400 hover:bg-slate-800"><ChessPieceIcon color={game.get(promotionPending.from as never)?.color ?? 'w'} type={piece} /><span className="mt-1 text-xs">{label}</span></button>)}</div><button type="button" onClick={() => setPromotionPending(null)} className="mt-4 w-full rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">Abbrechen</button></div></div>} {engineError && <p role="alert" className="mb-4 max-w-2xl rounded-xl border border-red-800 bg-red-950/50 px-4 py-3 text-sm text-red-200">{engineError}</p>}
