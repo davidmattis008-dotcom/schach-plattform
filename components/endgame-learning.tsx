@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Chess, type Square } from "chess.js";
 import { MiniChessboard } from "@/components/mini-chessboard";
 import exercisesData from "@/lib/endgame-exercises.json";
+import { subscribeToAccountProgressUpdates, writeProgressStorage } from "@/lib/account-progress";
 
 type CategoryId = "pawn" | "rook" | "minor" | "queen";
 type Exercise = {
@@ -271,7 +272,7 @@ export function EndgameLearning() {
 
   useEffect(() => {
     let active = true;
-    queueMicrotask(() => {
+    const loadProgress = () => {
       if (!active) return;
       try {
         const saved: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]");
@@ -282,14 +283,16 @@ export function EndgameLearning() {
         setStorageAvailable(false);
       }
       setReady(true);
-    });
-    return () => { active = false; };
+    };
+    queueMicrotask(loadProgress);
+    const unsubscribe = subscribeToAccountProgressUpdates(loadProgress);
+    return () => { active = false; unsubscribe(); };
   }, []);
 
   useEffect(() => {
     if (!ready || !storageAvailable) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(completed));
+      writeProgressStorage(STORAGE_KEY, JSON.stringify(completed));
     } catch {
       queueMicrotask(() => setStorageAvailable(false));
     }

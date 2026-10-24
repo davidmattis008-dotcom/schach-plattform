@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { MiniChessboard } from "@/components/mini-chessboard";
 import { learningLessons, learningPaths } from "@/lib/learning-course";
 import { orderQuizAnswers } from "@/lib/quiz-answer-order";
+import { subscribeToAccountProgressUpdates, writeProgressStorage } from "@/lib/account-progress";
 
 const STORAGE_KEY = "schach-selbstlernen-v1";
 
@@ -33,7 +34,7 @@ export function SelfLearningCourse() {
 
   useEffect(() => {
     let active = true;
-    queueMicrotask(() => {
+    const loadProgress = () => {
       if (!active) return;
       try {
         const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]");
@@ -46,14 +47,16 @@ export function SelfLearningCourse() {
         setStorageAvailable(false);
       }
       setReady(true);
-    });
-    return () => { active = false; };
+    };
+    queueMicrotask(loadProgress);
+    const unsubscribe = subscribeToAccountProgressUpdates(loadProgress);
+    return () => { active = false; unsubscribe(); };
   }, []);
 
   useEffect(() => {
     if (!ready || !storageAvailable) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(completed));
+      writeProgressStorage(STORAGE_KEY, JSON.stringify(completed));
     } catch {
       queueMicrotask(() => setStorageAvailable(false));
     }
@@ -102,7 +105,7 @@ export function SelfLearningCourse() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="font-semibold">Dein Lernpfad</h2>
-              <p className="mt-1 text-xs text-slate-400">{completed.length} von {learningLessons.length} Lektionen geschafft · wird nur in diesem Browser gespeichert</p>
+              <p className="mt-1 text-xs text-slate-400">{completed.length} von {learningLessons.length} Lektionen geschafft · lokal gespeichert und bei Anmeldung mit deinem Konto synchronisiert</p>
             </div>
             <span className="text-sm font-semibold tabular-nums text-amber-200">{progressPercent}%</span>
           </div>

@@ -20,6 +20,7 @@ export type OnlineGameRecord = {
 };
 
 const STORAGE_KEY = "schach-plattform-online-history-v1";
+export const ONLINE_HISTORY_OWNER_KEY = "chesscage-online-history-owner-v1";
 
 export function readOnlineHistory(): OnlineGameRecord[] {
   if (typeof window === "undefined") return [];
