@@ -1,13 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export default function ForgotPasswordPage() {
+function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const error = searchParams.get("error");
+  const notice = message || (
+    error === "invalid-link"
+      ? "Der Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Link zum Zurücksetzen an."
+      : error === "configuration"
+        ? "Der Passwort-Reset ist gerade nicht verfügbar. Bitte versuche es später erneut."
+        : ""
+  );
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,10 +44,14 @@ export default function ForgotPasswordPage() {
             <div><label htmlFor="email" className="mb-2 block text-sm font-medium text-slate-200">E-Mail</label><input id="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="email" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-emerald-400" placeholder="deine@email.de" /></div>
             <button type="submit" disabled={loading} className="w-full rounded-lg bg-emerald-400 px-4 py-3 font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:opacity-50">{loading ? "Sende Link..." : "Link per E-Mail senden"}</button>
           </form>
-          {message && <p role="status" className="mt-6 rounded-xl border border-slate-700 bg-slate-900 p-4 text-sm text-slate-300">{message}</p>}
+          {notice && <p role="status" className="mt-6 rounded-xl border border-slate-700 bg-slate-900 p-4 text-sm text-slate-300">{notice}</p>}
           <p className="mt-6 text-sm text-slate-400"><Link className="underline hover:text-white" href="/login">Zurück zum Einloggen</Link></p>
         </section>
       </div>
     </main>
   );
+}
+
+export default function ForgotPasswordPage() {
+  return <Suspense fallback={null}><ForgotPasswordForm /></Suspense>;
 }

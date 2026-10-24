@@ -20,6 +20,18 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 Community, Profilbearbeitung, Avatare und Ranglisten benötigen die SQL-Migrationen in `supabase/migrations`. Verknüpfe das Supabase-Projekt mit der CLI (`supabase link --project-ref <project-ref>`) und führe `supabase db push` aus. Alternativ können alle noch nicht angewendeten Migrationsdateien der Reihe nach im Supabase SQL Editor ausgeführt werden. Ohne diese Migrationen funktionieren Suche, Chat, Profiländerungen und Ranglisten nicht.
 
+### Passwort-Reset
+
+Damit Reset-Links auch dann funktionieren, wenn der E-Mail-Link in einem anderen Browser geöffnet wird, unterstützt `/auth/callback` sowohl PKCE-Codes als auch Supabase-Token-Hashes. Setze in Supabase unter **Authentication → URL Configuration** die Site URL auf `https://www.chesscage.com` und füge `https://www.chesscage.com/auth/callback` zur Redirect URL Allow List hinzu. Verwende unter **Authentication → Email Templates → Reset Password** diesen Link:
+
+```html
+<h2>Passwort zurücksetzen</h2>
+<p>Du hast angefordert, dein CHESSCAGE-Passwort zurückzusetzen. Über den folgenden Link kannst du ein neues Passwort festlegen:</p>
+<p><a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=recovery">Passwort zurücksetzen</a></p>
+```
+
+Die App tauscht den einmaligen Recovery-Token gegen eine Sitzung aus und leitet danach auf `/update-password` weiter. Teile Reset-Links oder Token niemals mit anderen.
+
 ## Lizenz- und Herkunftshinweise
 
 Die in `lib/tactics-data.json` verwendeten Schachtaktik-Datensätze stammen aus der Lichess Open Database und stehen laut [Lichess-Datenbankhinweisen](https://database.lichess.org/) unter CC0. Die Erweiterung basiert auf dem 1.000-Aufgaben-Sample von [kagisearch/llm-chess-puzzles](https://github.com/kagisearch/llm-chess-puzzles), dessen README die Lichess-Puzzledatenbank als Quelle nennt; 997 Aufgaben ohne nicht unterstützte Unterverwandlungen wurden übernommen. Bei diesen Stellungen wird der erste Zug der Quelldaten automatisch ausgespielt, bevor die eigentliche Lösung beginnt. Die lokal bereitgestellte Stockfish.js-Engine in `public/stockfish/` steht unter GPLv3; Lizenztext und Versions-/Quellcodeangaben befinden sich neben den Dateien in `Copying.txt` und `README.txt`. Vor einer Weiterverteilung geänderter Engine-Dateien müssen die GPLv3-Pflichten, insbesondere zu Lizenzhinweisen und korrespondierendem Quellcode, eingehalten werden.
