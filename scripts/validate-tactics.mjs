@@ -15,6 +15,8 @@ assert.equal(Math.max(...ratings), 3000, "The internal puzzle rating should reac
 assert.equal(ratingConfig.ratingMin, 0, "The internal rating scale should start at 0.");
 assert.equal(ratingConfig.ratingMax, 3000, "The internal rating scale should reach 3,000.");
 assert.equal(ratingConfig.ratingScaleVersion, 2, "The tactics rating scale version should be recorded.");
+assert.equal(ratingConfig.legacyRatingMin, 400, "The legacy user rating should start at 400 Elo.");
+assert.equal(ratingConfig.legacyRatingMax, 2400, "The legacy user rating should end at 2,400 Elo.");
 assert.equal(ratingConfig.license, "CC0-1.0", "The puzzle source should be recorded as CC0.");
 assert.ok(Math.min(...ratings) <= 900, "Include beginner-friendly tasks.");
 assert.ok(Math.max(...ratings) >= 2900, "Include advanced tasks.");
