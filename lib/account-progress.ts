@@ -104,6 +104,12 @@ export function mergeAccountProgress(
         recent: stringList([...(a?.recent ?? []), ...(b?.recent ?? [])], 2000),
         placementAttempts: Math.max(a?.placementAttempts ?? 0, b?.placementAttempts ?? 0),
         difficultyOffset: b?.difficultyOffset ?? a?.difficultyOffset ?? 0,
+        dailyExercisesCompleted: Math.max(a?.dailyExercisesCompleted ?? 0, b?.dailyExercisesCompleted ?? 0),
+        dailyLastCompletedDate: laterDate(a?.dailyLastCompletedDate, b?.dailyLastCompletedDate),
+        dailyAssignmentDate: laterDate(a?.dailyAssignmentDate, b?.dailyAssignmentDate),
+        dailyAssignmentId: (b?.dailyAssignmentDate ?? "") >= (a?.dailyAssignmentDate ?? "")
+          ? b?.dailyAssignmentId ?? null
+          : a?.dailyAssignmentId ?? null,
         ratingScaleVersion: TACTICS_RATING_SCALE_VERSION,
       };
     } else {
@@ -131,6 +137,10 @@ function normalizeTacticsProgress(value: unknown, defaultOffset: boolean) {
     recent: string[];
     placementAttempts: number;
     difficultyOffset?: TacticsDifficultyOffset;
+    dailyExercisesCompleted: number;
+    dailyLastCompletedDate: string | null;
+    dailyAssignmentDate: string | null;
+    dailyAssignmentId: string | null;
     ratingScaleVersion: number;
   } = {
     rating: saved.ratingScaleVersion === TACTICS_RATING_SCALE_VERSION
@@ -142,6 +152,10 @@ function normalizeTacticsProgress(value: unknown, defaultOffset: boolean) {
     placementAttempts: Number.isInteger(saved.placementAttempts)
       ? boundedInteger(saved.placementAttempts, 0, 0, TACTICS_PLACEMENT_TASKS)
       : attempted > 0 ? TACTICS_PLACEMENT_TASKS : 0,
+    dailyExercisesCompleted: boundedInteger(saved.dailyExercisesCompleted, 0, 0, 100000),
+    dailyLastCompletedDate: dateKey(saved.dailyLastCompletedDate),
+    dailyAssignmentDate: dateKey(saved.dailyAssignmentDate),
+    dailyAssignmentId: typeof saved.dailyAssignmentId === "string" ? saved.dailyAssignmentId.slice(0, 128) : null,
     ratingScaleVersion: TACTICS_RATING_SCALE_VERSION,
   };
   if (isTacticsDifficultyOffset(saved.difficultyOffset)) tactics.difficultyOffset = saved.difficultyOffset;
@@ -157,4 +171,14 @@ function stringList(value: unknown, limit: number) {
 function boundedInteger(value: unknown, fallback: number, minimum: number, maximum: number) {
   if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
   return Math.min(maximum, Math.max(minimum, Math.trunc(value)));
+}
+
+function dateKey(value: unknown) {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
+}
+
+function laterDate(first: string | null | undefined, second: string | null | undefined) {
+  if (!first) return second ?? null;
+  if (!second) return first;
+  return first >= second ? first : second;
 }

@@ -13,6 +13,7 @@ const learningItems: MenuItem[] = [
   { label: "Mattsetzen", href: "/lernen/mattsetzen" },
   { label: "Endspiele", href: "/lernen/endspiele" },
   { label: "Schachregeln", href: "/lernen/regeln" },
+  { label: "Tagesübung", href: "/lernen#tagesuebung" },
   { label: "Lernpfad", href: "/lernen" },
 ];
 

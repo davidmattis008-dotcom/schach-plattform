@@ -5,7 +5,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { Chess, type Color, type Square } from "chess.js";
 import { MiniChessboard } from "@/components/mini-chessboard";
 import { chooseTacticsPuzzle, getTacticsDifficulty, getTacticsPuzzleForRating, getTacticsRatingChange, getTacticsTheme, tacticsPuzzles } from "@/lib/tactics";
-import { getTacticsProgress, INITIAL_TACTICS_PROGRESS, subscribeToTacticsProgress, updateTacticsProgress } from "@/lib/tactics-progress";
+import { getDailyExerciseLevel, getTacticsProgress, INITIAL_TACTICS_PROGRESS, subscribeToTacticsProgress, updateTacticsProgress } from "@/lib/tactics-progress";
 import { clampTacticsRating, isTacticsDifficultyOffset, TACTICS_PLACEMENT_TASKS } from "@/lib/tactics-rating";
 import { createClient } from "@/lib/supabase/client";
 
@@ -31,6 +31,8 @@ export default function TacticsPage() {
   const progress = useSyncExternalStore(subscribeToTacticsProgress, getTacticsProgress, () => INITIAL_TACTICS_PROGRESS);
   const [puzzleId, setPuzzleId] = useState<string | null>(null);
   const [practicePuzzleId, setPracticePuzzleId] = useState<string | null>(null);
+  const [dailyExercise, setDailyExercise] = useState(false);
+  const [dailyExerciseDate, setDailyExerciseDate] = useState<string | null>(null);
   const [clubTaskId, setClubTaskId] = useState<string | null>(null);
   const [clubTaskMessage, setClubTaskMessage] = useState("");
   const [clubTaskError, setClubTaskError] = useState("");
@@ -55,13 +57,36 @@ export default function TacticsPage() {
     const assignedPuzzle = requestedPuzzleId
       ? tacticsPuzzles.find((candidate) => candidate.id === requestedPuzzleId)
       : null;
-    if (!requestedTaskId || !assignedPuzzle) {
-      setClubTaskError("Die Vereinsaufgabe konnte nicht geladen werden. Öffne sie bitte erneut über deine Trainingsgruppe.");
+    if (requestedTaskId && !assignedPuzzle) {
+      queueMicrotask(() => setClubTaskError("Die Vereinsaufgabe konnte nicht geladen werden. Öffne sie bitte erneut über deine Trainingsgruppe."));
       return;
     }
-    setClubTaskId(requestedTaskId);
-    setPuzzleId(assignedPuzzle.id);
-  }, []);
+    if (requestedPuzzleId && !assignedPuzzle) {
+      queueMicrotask(() => setClubTaskError("Die ausgewählte Taktikaufgabe konnte nicht geladen werden."));
+      return;
+    }
+    const isDailyExercise = params.get("daily") === "1";
+    const requestedDay = params.get("day");
+    if (isDailyExercise && assignedPuzzle && (
+      requestedDay !== progress.dailyAssignmentDate
+      || progress.dailyAssignmentId !== `tactics:${assignedPuzzle.id}`
+    )) {
+      queueMicrotask(() => setClubTaskError("Diese Tagesaufgabe ist nicht mehr aktuell. Öffne bitte die heutige Übung im Lernpfad."));
+      return;
+    }
+    queueMicrotask(() => {
+      if (requestedTaskId) setClubTaskId(requestedTaskId);
+      if (assignedPuzzle) {
+        setPuzzleId(assignedPuzzle.id);
+      }
+      if (assignedPuzzle && isDailyExercise) {
+        setDailyExercise(true);
+        setDailyExerciseDate(requestedDay && /^\d{4}-\d{2}-\d{2}$/.test(requestedDay)
+          ? requestedDay
+          : null);
+      }
+    });
+  }, [progress.dailyAssignmentDate, progress.dailyAssignmentId]);
 
   useEffect(() => {
     let active = true;
@@ -108,13 +133,17 @@ export default function TacticsPage() {
     if (outcome) return;
 
     const isPractice = practicePuzzleId === puzzle.id;
-    const isPlacementTask = !isPractice && !clubTaskId && isPlacement;
-    const isRated = !isPractice && !isPlacement && Math.abs(puzzle.rating - progress.rating) <= 100;
+    const alreadyCompletedDaily = dailyExercise
+      && dailyExerciseDate !== null
+      && progress.dailyLastCompletedDate === dailyExerciseDate;
+    const isPlacementTask = !isPractice && !clubTaskId && !alreadyCompletedDaily && isPlacement;
+    const isRated = !isPractice && !alreadyCompletedDaily && !isPlacement && Math.abs(puzzle.rating - progress.rating) <= 100;
     const placementAttempts = isPlacementTask
       ? Math.min(TACTICS_PLACEMENT_TASKS, progress.placementAttempts + 1)
       : progress.placementAttempts;
     const placementRating = clampTacticsRating(progress.rating + (correct ? 300 : -300));
     const ratingChange = isRated ? getTacticsRatingChange(progress.rating, puzzle.rating, correct) : 0;
+    const nextDailyLevel = getDailyExerciseLevel(progress.dailyExercisesCompleted + 1);
     updateTacticsProgress((current) => ({
       ...current,
       rating: isPlacementTask
@@ -124,21 +153,45 @@ export default function TacticsPage() {
       attempted: current.attempted + 1,
       placementAttempts,
       recent: Array.from(new Set([...current.recent, puzzle.id])),
+      dailyExercisesCompleted: dailyExerciseDate
+        && current.dailyAssignmentDate === dailyExerciseDate
+        && current.dailyAssignmentId === `tactics:${puzzle.id}`
+        && current.dailyLastCompletedDate !== dailyExerciseDate
+        ? current.dailyExercisesCompleted + 1
+        : current.dailyExercisesCompleted,
+      dailyLastCompletedDate: dailyExerciseDate
+        && current.dailyAssignmentDate === dailyExerciseDate
+        && current.dailyAssignmentId === `tactics:${puzzle.id}`
+        && current.dailyLastCompletedDate !== dailyExerciseDate
+        ? dailyExerciseDate
+        : current.dailyLastCompletedDate,
     }));
     setPuzzleId(puzzle.id);
     setOutcome(correct ? "solved" : "missed");
     setSelected(null);
-    const ratingResult = isPlacementTask
-      ? placementAttempts === TACTICS_PLACEMENT_TASKS
-        ? ` Einstufung abgeschlossen: ${placementRating} Taktik-Elo.`
-        : ` Einstufung ${placementAttempts}/${TACTICS_PLACEMENT_TASKS}.`
-      : isPractice
-        ? " Wiederholung ohne Elo-Wertung."
+    const dailyProgressResult = ` Tagesaufgabe erledigt: Level ${nextDailyLevel.level}, ${nextDailyLevel.completedInLevel}/${nextDailyLevel.taskCount}.`;
+    let ratingResult: string;
+    if (alreadyCompletedDaily) {
+      ratingResult = " Die heutige Tagesaufgabe wurde bereits gewertet; diese Wiederholung verändert deine Elo nicht.";
+    } else if (dailyExercise) {
+      ratingResult = isPlacementTask
+        ? ` Einstufung ${placementAttempts}/${TACTICS_PLACEMENT_TASKS}.${dailyProgressResult}`
         : isRated
-          ? ` Deine Taktik-Elo ${ratingChange >= 0 ? "+" : ""}${ratingChange}.`
-          : progress.placementAttempts < TACTICS_PLACEMENT_TASKS
-            ? " Keine Elo-Wertung während der Einstufung."
-            : " Keine Elo-Wertung bei mehr als 100 Elo Abstand.";
+          ? ` Deine Taktik-Elo ${ratingChange >= 0 ? "+" : ""}${ratingChange}.${dailyProgressResult}`
+          : ` Keine Elo-Wertung bei mehr als 100 Elo Abstand.${dailyProgressResult}`;
+    } else if (isPlacementTask) {
+      ratingResult = placementAttempts === TACTICS_PLACEMENT_TASKS
+        ? ` Einstufung abgeschlossen: ${placementRating} Taktik-Elo.`
+        : ` Einstufung ${placementAttempts}/${TACTICS_PLACEMENT_TASKS}.`;
+    } else if (isPractice) {
+      ratingResult = " Wiederholung ohne Elo-Wertung.";
+    } else if (isRated) {
+      ratingResult = ` Deine Taktik-Elo ${ratingChange >= 0 ? "+" : ""}${ratingChange}.`;
+    } else {
+      ratingResult = progress.placementAttempts < TACTICS_PLACEMENT_TASKS
+        ? " Keine Elo-Wertung während der Einstufung."
+        : " Keine Elo-Wertung bei mehr als 100 Elo Abstand.";
+    }
     setMessage(correct
       ? `Richtig! ${answer}${ratingResult}`
       : `Noch nicht. Gesucht war ${answer}${ratingResult}`);
@@ -399,6 +452,8 @@ export default function TacticsPage() {
             {outcome && (
               clubTaskId
                 ? <Link href="/verein" className="mt-3 block w-full rounded-lg bg-emerald-400 px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-emerald-300">Zur Vereinsgruppe →</Link>
+                : dailyExercise
+                  ? <Link href="/lernen#tagesuebung" className="mt-3 block w-full rounded-lg bg-emerald-400 px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-emerald-300">Zurück zum Lernpfad →</Link>
                 : <button
                     type="button"
                     onClick={nextPuzzle}
