@@ -18,13 +18,13 @@ export function clampTacticsRating(rating: number): number {
 }
 
 export function normalizeLegacyTacticsRating(rating: number): number {
-  const sourceRating = Math.max(
-    ratingConfig.sourceRatingMin,
-    Math.min(ratingConfig.sourceRatingMax, Math.round(rating)),
+  const legacyRating = Math.max(
+    ratingConfig.legacyRatingMin,
+    Math.min(ratingConfig.legacyRatingMax, Math.round(rating)),
   );
   return Math.round(
-    ((sourceRating - ratingConfig.sourceRatingMin)
-      / (ratingConfig.sourceRatingMax - ratingConfig.sourceRatingMin))
+    ((legacyRating - ratingConfig.legacyRatingMin)
+      / (ratingConfig.legacyRatingMax - ratingConfig.legacyRatingMin))
       * (TACTICS_RATING_MAX - TACTICS_RATING_MIN),
   );
 }
