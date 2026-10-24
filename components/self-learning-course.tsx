@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { MiniChessboard } from "@/components/mini-chessboard";
+import { DailyLearningExercise } from "@/components/daily-learning-exercise";
 import { learningLessons, learningPaths } from "@/lib/learning-course";
 import { orderQuizAnswers } from "@/lib/quiz-answer-order";
 import { subscribeToAccountProgressUpdates, writeProgressStorage } from "@/lib/account-progress";
@@ -83,6 +84,8 @@ export function SelfLearningCourse() {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Kostenloser Schachkurs</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Selbstständig Schach lernen</h1>
         </header>
+
+        <DailyLearningExercise />
 
         <section aria-labelledby="learning-options-heading" className="mb-8">
           <h2 id="learning-options-heading" className="mb-3 text-lg font-semibold text-white">Womit möchtest du lernen?</h2>

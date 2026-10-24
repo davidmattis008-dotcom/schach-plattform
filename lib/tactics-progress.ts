@@ -15,6 +15,10 @@ export type SavedTacticsProgress = {
   recent: string[];
   placementAttempts: number;
   difficultyOffset: TacticsDifficultyOffset;
+  dailyExercisesCompleted: number;
+  dailyLastCompletedDate: string | null;
+  dailyAssignmentDate: string | null;
+  dailyAssignmentId: string | null;
   ratingScaleVersion: number;
 };
 
@@ -25,6 +29,10 @@ export const INITIAL_TACTICS_PROGRESS: SavedTacticsProgress = {
   recent: [],
   placementAttempts: 0,
   difficultyOffset: 0,
+  dailyExercisesCompleted: 0,
+  dailyLastCompletedDate: null,
+  dailyAssignmentDate: null,
+  dailyAssignmentId: null,
   ratingScaleVersion: TACTICS_RATING_SCALE_VERSION,
 };
 
@@ -55,11 +63,31 @@ function readProgress(): SavedTacticsProgress {
         ? Math.max(0, Math.min(TACTICS_PLACEMENT_TASKS, Number(saved.placementAttempts)))
         : attempted > 0 ? TACTICS_PLACEMENT_TASKS : 0,
       difficultyOffset: isTacticsDifficultyOffset(saved.difficultyOffset) ? saved.difficultyOffset : 0,
+      dailyExercisesCompleted: Math.max(0, Math.min(100000, Math.trunc(Number(saved.dailyExercisesCompleted) || 0))),
+      dailyLastCompletedDate: isDateKey(saved.dailyLastCompletedDate) ? saved.dailyLastCompletedDate : null,
+      dailyAssignmentDate: isDateKey(saved.dailyAssignmentDate) ? saved.dailyAssignmentDate : null,
+      dailyAssignmentId: typeof saved.dailyAssignmentId === "string" ? saved.dailyAssignmentId : null,
       ratingScaleVersion: TACTICS_RATING_SCALE_VERSION,
     };
   } catch {
     return INITIAL_TACTICS_PROGRESS;
   }
+}
+
+export function getDailyExerciseLevel(completed: number) {
+  let remaining = Math.max(0, Math.trunc(completed));
+  let level = 1;
+  let taskCount = 10;
+  while (remaining >= taskCount) {
+    remaining -= taskCount;
+    level += 1;
+    taskCount += 10;
+  }
+  return { level, completedInLevel: remaining, taskCount };
+}
+
+function isDateKey(value: unknown): value is string {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
 export function getTacticsProgress(): SavedTacticsProgress {
