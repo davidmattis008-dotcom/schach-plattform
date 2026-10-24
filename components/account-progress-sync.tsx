@@ -10,7 +10,7 @@ import {
   mergeAccountProgress,
   readAccountProgress,
 } from "@/lib/account-progress";
-import { readOnlineHistory } from "@/app/online/history-store";
+import { ONLINE_HISTORY_OWNER_KEY, readOnlineHistory } from "@/app/online/history-store";
 import { createClient } from "@/lib/supabase/client";
 
 type SyncState = "idle" | "syncing" | "saved" | "error";
@@ -33,6 +33,11 @@ export function AccountProgressSync() {
 
     const syncGames = async (forUserId: string) => {
       let failed = false;
+      const owner = localStorage.getItem(ONLINE_HISTORY_OWNER_KEY);
+      if (owner && owner !== forUserId) {
+        window.dispatchEvent(new Event("account-online-games-updated"));
+        return false;
+      }
       for (const game of readOnlineHistory()) {
         if (!active || userId !== forUserId) return false;
         if (activeUserGameIds.has(game.id)) continue;
@@ -45,7 +50,10 @@ export function AccountProgressSync() {
           failed = true;
         }
       }
-      if (!failed) window.dispatchEvent(new Event("account-online-games-updated"));
+      if (!failed) {
+        localStorage.setItem(ONLINE_HISTORY_OWNER_KEY, forUserId);
+        window.dispatchEvent(new Event("account-online-games-updated"));
+      }
       return failed;
     };
 

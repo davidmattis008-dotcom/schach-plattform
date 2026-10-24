@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Chess, type Square } from "chess.js";
-import { readOnlineHistory, type OnlineGameRecord } from "@/app/online/history-store";
+import { ONLINE_HISTORY_OWNER_KEY, readOnlineHistory, type OnlineGameRecord } from "@/app/online/history-store";
 import { createClient } from "@/lib/supabase/client";
 import { MiniChessboard } from "@/components/mini-chessboard";
 
@@ -50,17 +50,18 @@ export default function GameHistoryPage() {
   useEffect(() => {
     let active = true;
     const refresh = () => {
-      const localGames = readOnlineHistory();
-      setGames(localGames);
       void (async () => {
         try {
           const supabase = createClient();
           const { data: { user }, error: authError } = await supabase.auth.getUser();
           if (authError) throw authError;
           if (!user) {
+            setGames(readOnlineHistory());
             if (active) setSyncMessage("Melde dich an, um deine Partien kontoübergreifend zu synchronisieren.");
             return;
           }
+          const owner = localStorage.getItem(ONLINE_HISTORY_OWNER_KEY);
+          const localGames = owner && owner !== user.id ? [] : readOnlineHistory();
           const { data, error } = await supabase.rpc("list_my_online_games");
           if (error) throw error;
           if (!active) return;
@@ -74,7 +75,10 @@ export default function GameHistoryPage() {
           setSyncMessage("");
         } catch (error) {
           console.error("Gespeicherte Online-Partien konnten nicht geladen werden:", error);
-          if (active) setSyncMessage("Kontoverlauf konnte nicht geladen werden. Die Synchronisierung ist derzeit nicht verfügbar.");
+          if (active) {
+            setSyncMessage("Kontoverlauf konnte nicht geladen werden. Die Synchronisierung ist derzeit nicht verfügbar.");
+            setGames(readOnlineHistory());
+          }
         }
       })();
     };
