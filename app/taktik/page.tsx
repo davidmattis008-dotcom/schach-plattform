@@ -338,35 +338,17 @@ export default function TacticsPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-slate-950 px-3 py-5 text-slate-100 sm:px-8 sm:py-10">
+    <main className="min-h-screen bg-slate-950 px-3 py-3 text-slate-100 sm:px-8 sm:py-6">
       <div className="mx-auto max-w-7xl">
-        <header className="mb-7 flex flex-wrap items-end justify-between gap-4">
+        <header className="mb-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">Training</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Taktikaufgaben</h1>
-            {clubTaskId && <p className="mt-2 text-sm text-emerald-200">Vereinsaufgabe · Dein Ergebnis wird mit deiner Trainingsgruppe geteilt.</p>}
-            {clubTaskError && <p className="mt-2 text-sm text-amber-200" role="alert">{clubTaskError}</p>}
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowSavedPuzzles((current) => !current)}
-            aria-expanded={showSavedPuzzles}
-            aria-controls="saved-tactics-list"
-            className="rounded-xl border border-amber-300/40 px-4 py-3 text-sm font-semibold text-amber-200 transition hover:bg-amber-300/10"
-          >
-            Gespeicherte Aufgaben ({savedPuzzleIds.length})
-          </button>
-          <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/5 px-5 py-3">
-            <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
-              {isPlacement ? "Elo-Einstufung" : "Deine Taktik-Elo"}
-            </p>
-            <p className="mt-1 text-3xl font-bold tabular-nums text-emerald-300">
-              {isPlacement ? `${progress.placementAttempts}/${TACTICS_PLACEMENT_TASKS}` : progress.rating}
-            </p>
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Taktikaufgaben</h1>
+            {clubTaskId && <p className="mt-1 text-xs text-emerald-200">Vereinsaufgabe · Ergebnis wird geteilt</p>}
+            {clubTaskError && <p className="mt-1 text-xs text-amber-200" role="alert">{clubTaskError}</p>}
           </div>
         </header>
 
-        {showSavedPuzzles && <section id="saved-tactics-list" aria-labelledby="saved-tactics-title" className="mb-5 rounded-2xl border border-amber-300/20 bg-slate-900/70 p-4 sm:p-5">
+        {showSavedPuzzles && <section id="saved-tactics-list" aria-labelledby="saved-tactics-title" className="mb-3 rounded-xl border border-amber-300/20 bg-slate-900/70 p-3">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 id="saved-tactics-title" className="font-semibold text-white">Deine gespeicherten Taktikaufgaben</h2>
@@ -409,14 +391,31 @@ export default function TacticsPage() {
         </section>}
 
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(260px,0.5fr)]">
-          <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-2 sm:p-5">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 px-1">
+          <section className="rounded-xl border border-slate-800 bg-slate-900/50 p-2 sm:p-4">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => setShowSavedPuzzles((current) => !current)}
+                aria-expanded={showSavedPuzzles}
+                aria-controls="saved-tactics-list"
+                className="rounded-lg border border-amber-300/30 px-2.5 py-1.5 text-xs font-medium text-amber-200 transition hover:bg-amber-300/10"
+              >
+                Gespeichert ({savedPuzzleIds.length})
+              </button>
+              <div className="flex items-center gap-2 rounded-lg border border-emerald-400/20 bg-emerald-400/5 px-2.5 py-1.5">
+                <span className="text-xs text-slate-400">{isPlacement ? "Einstufung" : "Taktik-Elo"}</span>
+                <span className="text-sm font-semibold tabular-nums text-emerald-300">
+                  {isPlacement ? `${progress.placementAttempts}/${TACTICS_PLACEMENT_TASKS}` : progress.rating}
+                </span>
+              </div>
+            </div>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-1">
               <div>
-                <p className="mt-1 text-xs text-slate-400">
-                  Am Zug: {chess.turn() === "w" ? "Weiß" : "Schwarz"} · {puzzle.rating} Aufgaben-Elo · {getTacticsDifficulty(puzzle.rating)}
+                <p className="text-[11px] text-slate-400">
+                  {chess.turn() === "w" ? "Weiß" : "Schwarz"} am Zug · {puzzle.rating} Elo · {getTacticsDifficulty(puzzle.rating)}
                 </p>
               </div>
-              <span className="shrink-0 rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-slate-300">
+              <span className="shrink-0 rounded-lg border border-slate-700 px-2 py-1 text-[11px] text-slate-300">
                 {getTacticsTheme(puzzle.themes)}
               </span>
             </div>

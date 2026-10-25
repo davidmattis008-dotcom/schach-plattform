@@ -1,28 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { ProfileEditor } from "@/components/profile-editor";
 import { createClient } from "@/lib/supabase/client";
+import { getDailyExerciseLevel, getTacticsProgress, INITIAL_TACTICS_PROGRESS, subscribeToTacticsProgress } from "@/lib/tactics-progress";
 
 type PublicProfile = { id: string; username: string; bio: string; avatar_url: string | null };
 type RelationshipStatus = "checking" | "none" | "friend" | "incoming" | "outgoing" | "unavailable";
-type PlayerRating = {
-  username: string;
-  game_mode: "bullet" | "blitz" | "rapid" | "classical";
-  rating: number;
-  rated_games: number;
-  wins: number;
-  draws: number;
-  losses: number;
-};
-
-const modeLabels: Record<PlayerRating["game_mode"], string> = {
-  bullet: "Bullet",
-  blitz: "Blitz",
-  rapid: "Rapid",
-  classical: "Klassisch",
-};
 
 function isMissingSocialRpc(error: { code?: string; message?: string }) {
   return error.code === "PGRST202" || /could not find the function/i.test(error.message ?? "");
@@ -51,13 +36,19 @@ async function getRelationshipStatus(
 export function PlayerProfileView({ requestedUsername }: { requestedUsername?: string }) {
   const [username, setUsername] = useState(requestedUsername ?? "");
   const [profile, setProfile] = useState<PublicProfile | null>(null);
-  const [ratings, setRatings] = useState<PlayerRating[]>([]);
   const [viewerId, setViewerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editingProfile, setEditingProfile] = useState(false);
   const [message, setMessage] = useState("");
   const [friendMessage, setFriendMessage] = useState("");
   const [addingFriend, setAddingFriend] = useState(false);
   const [relationshipStatus, setRelationshipStatus] = useState<RelationshipStatus>("checking");
+  const tacticsProgress = useSyncExternalStore(
+    subscribeToTacticsProgress,
+    getTacticsProgress,
+    () => INITIAL_TACTICS_PROGRESS,
+  );
+  const learningLevel = getDailyExerciseLevel(tacticsProgress.dailyExercisesCompleted);
   const handleOwnProfileSaved = useCallback((savedProfile: PublicProfile) => {
     setUsername(savedProfile.username);
     setProfile(savedProfile);
@@ -103,7 +94,6 @@ export function PlayerProfileView({ requestedUsername }: { requestedUsername?: s
             : "Dieses Spielerprofil wurde nicht gefunden.");
           return;
         }
-        const { data: ratingData } = await supabase.rpc("get_public_player_ratings", { p_username: name });
         let currentRelationship: RelationshipStatus = "none";
         if (user && user.id !== publicProfile.id) {
           try {
@@ -115,7 +105,6 @@ export function PlayerProfileView({ requestedUsername }: { requestedUsername?: s
         if (active) {
           setUsername(name);
           setProfile(publicProfile);
-          setRatings(Array.isArray(ratingData) ? ratingData as PlayerRating[] : []);
           setRelationshipStatus(currentRelationship);
         }
       } catch {
@@ -157,14 +146,6 @@ export function PlayerProfileView({ requestedUsername }: { requestedUsername?: s
     }
   }
 
-  const profileTotals = ratings.reduce((totals, rating) => ({
-    games: totals.games + rating.rated_games,
-    wins: totals.wins + rating.wins,
-    draws: totals.draws + rating.draws,
-    losses: totals.losses + rating.losses,
-  }), { games: 0, wins: 0, draws: 0, losses: 0 });
-  const winRate = profileTotals.games > 0 ? Math.round(profileTotals.wins / profileTotals.games * 100) : 0;
-
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-8 text-white sm:px-8 sm:py-12">
       <div className="mx-auto max-w-4xl">
@@ -181,7 +162,15 @@ export function PlayerProfileView({ requestedUsername }: { requestedUsername?: s
             </div>
           </div>
           {profile && viewerId === profile.id
-            ? <a href="#profile-settings" className="mt-4 inline-flex text-sm font-semibold text-emerald-300 underline underline-offset-4">Profil bearbeiten</a>
+            ? <button
+                type="button"
+                onClick={() => setEditingProfile((current) => !current)}
+                aria-expanded={editingProfile}
+                aria-controls="profile-settings"
+                className="mt-4 inline-flex text-sm font-semibold text-emerald-300 underline underline-offset-4"
+              >
+                {editingProfile ? "Bearbeitung schließen" : "Profil bearbeiten"}
+              </button>
             : profile && viewerId && <div className="mt-4 flex flex-wrap items-center gap-3">
               {relationshipStatus === "checking" && <span role="status" className="text-sm text-slate-400">Freundschaftsstatus wird geprüft …</span>}
               {relationshipStatus === "none" && <button type="button" onClick={() => void addFriend()} disabled={addingFriend} className="rounded-lg bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">{addingFriend ? "Wird gesendet …" : "Als Freund hinzufügen"}</button>}
@@ -194,68 +183,32 @@ export function PlayerProfileView({ requestedUsername }: { requestedUsername?: s
             </div>}
         </header>
 
-        {!requestedUsername && viewerId && (
-          <section id="profile-settings" className="mt-6 scroll-mt-6 rounded-2xl border border-slate-800 bg-slate-900/60 p-5 sm:p-6" aria-labelledby="profile-settings-heading">
-            <h2 id="profile-settings-heading" className="text-2xl font-bold">Profileinstellungen</h2>
-            <p className="mb-5 mt-1 text-sm text-slate-400">Verwalte deinen Benutzernamen, dein Profilbild und deine Biografie.</p>
+        {!requestedUsername && viewerId && editingProfile && (
+          <section id="profile-settings" className="mt-5 rounded-xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5" aria-labelledby="profile-settings-heading">
+            <h2 id="profile-settings-heading" className="mb-4 text-lg font-semibold">Profil bearbeiten</h2>
             <ProfileEditor onProfileSaved={handleOwnProfileSaved} />
           </section>
         )}
 
-        {!loading && profileTotals.games > 0 && (
-          <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-5" aria-label="Spielstatistik">
-            {[
-              { label: "Gewertete Partien", value: profileTotals.games },
-              { label: "Siege", value: profileTotals.wins },
-              { label: "Remis", value: profileTotals.draws },
-              { label: "Niederlagen", value: profileTotals.losses },
-              { label: "Siegquote", value: `${winRate}%` },
-            ].map((stat) => (
-              <article key={stat.label} className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-                <p className="text-xs text-slate-400">{stat.label}</p>
-                <p className="mt-1 text-2xl font-bold tabular-nums text-emerald-300">{stat.value}</p>
-              </article>
-            ))}
+        {!requestedUsername && profile && viewerId === profile.id && !loading && (
+          <section className="mt-5 grid grid-cols-2 gap-3" aria-label="Lernfortschritt">
+            <article className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
+              <p className="text-xs text-slate-400">Taktik-Elo</p>
+              <p className="mt-1 text-2xl font-bold tabular-nums text-emerald-300">{tacticsProgress.rating}</p>
+            </article>
+            <article className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
+              <p className="text-xs text-slate-400">Lernpfad</p>
+              <p className="mt-1 text-2xl font-bold tabular-nums text-emerald-300">Level {learningLevel.level}</p>
+            </article>
           </section>
         )}
 
-        <section className="mt-6" aria-labelledby="ratings-heading">
-          <div className="mb-3 flex items-end justify-between gap-3">
-            <div>
-              <h2 id="ratings-heading" className="text-2xl font-bold">Online-Elo</h2>
-            </div>
-            <Link
-              href="/freunde"
-              className="text-sm font-semibold text-emerald-300 underline underline-offset-4"
-            >
-              Freunde
-            </Link>
+        {message && !loading && !profile && (
+          <div className="mt-5 rounded-xl border border-slate-800 bg-slate-900 p-4">
+            <p className="text-sm text-slate-300">{message}</p>
+            {message.includes("Benutzernamen") && <Link href="/profile/setup" className="mt-3 inline-flex rounded-lg bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950">Profil einrichten</Link>}
           </div>
-
-          {loading ? (
-            <p className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-slate-300" role="status">Wertungen werden geladen …</p>
-          ) : message ? (
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-              <p className="text-slate-300">{message}</p>
-              {message.includes("Benutzernamen") && <Link href="/profile/setup" className="mt-4 inline-flex rounded-lg bg-emerald-400 px-4 py-2 font-semibold text-slate-950">Profil einrichten</Link>}
-            </div>
-          ) : ratings.length === 0 ? (
-            <p className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-sm text-slate-400">Für dieses Profil sind noch keine Online-Wertungen verfügbar.</p>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {ratings.map((rating) => (
-                <article key={rating.game_mode} className="rounded-xl border border-slate-800 bg-slate-900/70 p-5">
-                  <div className="flex items-center justify-between gap-4">
-                    <h3 className="text-lg font-semibold">{modeLabels[rating.game_mode]}</h3>
-                    <p className="text-3xl font-bold tabular-nums text-emerald-300">{rating.rating}</p>
-                  </div>
-                  <p className="mt-3 text-sm text-slate-400">{rating.rated_games < 5 ? "Vorläufig · noch " + (5 - rating.rated_games) + " Partien bis zur stabileren Wertung" : "Einstufungsphase abgeschlossen"}</p>
-                  <p className="mt-1 text-sm text-slate-400">{rating.wins} Siege · {rating.draws} Remis · {rating.losses} Niederlagen</p>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
+        )}
       </div>
     </main>
   );
