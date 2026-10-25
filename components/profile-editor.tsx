@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getProfileAvatarSrc } from "@/lib/profile-avatar";
 
 type SocialProfile = { username: string; bio: string; avatar_url: string | null };
 type ProfileEditorProps = { onProfileSaved?: (profile: SocialProfile & { id: string }) => void };
@@ -124,7 +125,7 @@ export function ProfileEditor({ onProfileSaved }: ProfileEditorProps) {
   if (loading) return <p role="status" className="text-sm text-slate-400">Profil wird geladen …</p>;
   if (!userId) return <p className="text-sm text-slate-400">{message}</p>;
 
-  const preview = previewUrl ?? profile.avatar_url;
+  const preview = previewUrl ?? getProfileAvatarSrc(userId, profile.avatar_url);
   return (
     <form onSubmit={save} className="space-y-5">
       <div className="flex flex-wrap items-center gap-4">
