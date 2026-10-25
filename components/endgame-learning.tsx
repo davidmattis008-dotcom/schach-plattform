@@ -16,7 +16,6 @@ type Exercise = {
   themes: string[];
   categoryId: CategoryId;
   categoryLabel: string;
-  categoryDescription: string;
   number: number;
 };
 type ExplainedMove = { fen: string; san: string; color: "w" | "b"; captured?: string; check: boolean; checkmate: boolean };
@@ -28,16 +27,9 @@ const allExercises: Exercise[] = categories.flatMap((category) =>
     ...puzzle,
     categoryId: category.id as CategoryId,
     categoryLabel: category.label,
-    categoryDescription: category.description,
     number: index + 1,
   })),
 );
-const categoryMotifs: Record<CategoryId, string> = {
-  pawn: "Bringe den König aktiv ins Spiel, prüfe die Opposition und begleite den Freibauern.",
-  rook: "Aktiviere den Turm, unterstütze Freibauern von hinten und suche nach Schachs von der Seite.",
-  minor: "Verbessere König und Leichtfigur, greife Schwächen an und sichere wichtige Felder.",
-  queen: "Achte auf Königssicherheit, Dauerschach und die Abstimmung zwischen Dame und Freibauer.",
-};
 const capturedPieceNames: Record<string, string> = { p: "einen gegnerischen Bauern", n: "einen gegnerischen Springer", b: "einen gegnerischen Läufer", r: "einen gegnerischen Turm", q: "die gegnerische Dame", k: "den gegnerischen König" };
 const motifNames: Record<string, string> = {
   advancedPawn: "Freibauer",
@@ -128,8 +120,7 @@ function ExerciseWorkspace({
   const targets = mode === "practice" && selected && !solved
     ? board.moves({ square: selected, verbose: true }).map((move) => move.to)
     : [];
-  const motifs = exercise.themes.map((theme) => motifNames[theme]).filter((theme): theme is string => Boolean(theme));
-  const uniqueMotifs = [...new Set(motifs)];
+  const uniqueMotifs = [...new Set(exercise.themes.map((theme) => motifNames[theme]).filter((theme): theme is string => Boolean(theme)))];
   const currentMove = guideStep > 0 ? line[guideStep - 1] : null;
 
   function startPractice() {
@@ -137,7 +128,7 @@ function ExerciseWorkspace({
     setPracticeFen(applicationExercise.fen);
     setPracticePly(0);
     setSelected(null);
-    setMessage("Finde jetzt selbst die stärkste Fortsetzung. Der Gegner antwortet automatisch.");
+    setMessage("Finde die beste Fortsetzung.");
   }
 
   function selectSquare(squareName: string) {
@@ -187,18 +178,17 @@ function ExerciseWorkspace({
   }
 
   return (
-    <article className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
+    <article className="rounded-xl border border-slate-800 bg-slate-900/60 p-3 sm:p-4">
+      <header className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-amber-200">{exercise.categoryLabel} · Übung {exercise.number} · Elo {exercise.rating}</p>
-          <h2 className="mt-2 text-xl font-semibold text-white">{mode === "guide" ? "Zug für Zug verstehen" : "Jetzt selbst anwenden"}</h2>
+          <p className="text-xs font-semibold text-amber-200">{exercise.categoryLabel} · {exercise.number} · Elo {exercise.rating}</p>
+          <h2 className="mt-1 text-lg font-semibold text-white">{mode === "guide" ? "Lösung" : "Übung"}</h2>
         </div>
-        {isCompleted && <span className="rounded-full border border-emerald-300/30 px-3 py-1 text-xs text-emerald-200">Schon gelöst</span>}
+        {isCompleted && <span className="rounded-full border border-emerald-300/30 px-2 py-1 text-xs text-emerald-200">Gelöst</span>}
       </header>
-      <p className="mt-3 text-sm leading-6 text-slate-300">{categoryMotifs[exercise.categoryId]}</p>
-      {uniqueMotifs.length > 0 && <p className="mt-2 text-xs text-slate-500">Motive: {uniqueMotifs.join(" · ")}</p>}
+      {uniqueMotifs.length > 0 && <p className="mt-1 text-xs text-slate-500">{uniqueMotifs.join(" · ")}</p>}
 
-      <div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,34rem)_minmax(15rem,1fr)]">
+      <div className="mt-3 grid items-start gap-3 lg:grid-cols-[minmax(0,34rem)_minmax(15rem,1fr)]">
         <div>
           <MiniChessboard
             fen={shownFen}
@@ -208,10 +198,10 @@ function ExerciseWorkspace({
             targets={targets}
             orientation={(mode === "practice" ? applicationColor : playerColor) === "w" ? "white" : "black"}
           />
-          <p role="status" aria-live="polite" className="mt-3 rounded-lg border border-amber-300/20 bg-amber-300/5 px-3 py-2 text-center text-sm font-semibold text-amber-100">
+          <p role="status" aria-live="polite" className="mt-2 rounded-lg border border-amber-300/20 bg-amber-300/5 px-3 py-1.5 text-center text-sm font-semibold text-amber-100">
             {board.turn() === "w" ? "Weiß" : "Schwarz"} ist am Zug
           </p>
-          <p className="mt-2 text-center text-xs text-slate-500">
+          <p className="mt-1 text-center text-xs text-slate-500">
             {mode === "practice" ? "Wähle eine Figur und dann ihr Zielfeld." : `Stellung nach ${guideStep} von ${line.length} Lösungszügen`}
           </p>
         </div>
@@ -219,35 +209,35 @@ function ExerciseWorkspace({
         <div>
           {mode === "guide" ? (
             <>
-              <h3 className="font-semibold text-white">Erklärung Schritt für Schritt</h3>
+              <h3 className="font-semibold text-white">Erklärung</h3>
               {currentMove ? (
-                <p className="mt-3 min-h-20 rounded-xl border border-amber-300/20 bg-amber-300/5 p-4 text-sm leading-6 text-amber-100">
+                <p className="mt-2 rounded-lg border border-amber-300/20 bg-amber-300/5 p-3 text-sm leading-5 text-amber-100">
                   Zug {guideStep}: {describeMove(currentMove)}
                 </p>
               ) : (
-                <p className="mt-3 min-h-20 rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-sm leading-6 text-slate-300">
-                  Schau dir die Stellung an und überlege, was dein König, deine Bauern oder deine Figuren erreichen sollen. Danach gehen wir die beste Fortsetzung Schritt für Schritt durch.
+                <p className="mt-2 rounded-lg border border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300">
+                  Überlege deinen nächsten Zug.
                 </p>
               )}
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-2 flex flex-wrap gap-2">
                 <button type="button" onClick={() => setGuideStep((step) => Math.max(0, step - 1))} disabled={guideStep === 0} className="rounded-lg border border-slate-700 px-3 py-2 text-sm disabled:opacity-40">← Zurück</button>
                 {guideStep < line.length
-                  ? <button type="button" onClick={() => setGuideStep((step) => Math.min(line.length, step + 1))} className="rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-slate-950">{guideStep === 0 ? "Ersten Zug erklären →" : "Nächsten Zug erklären →"}</button>
-                  : <button type="button" onClick={startPractice} className="rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-slate-950">Jetzt selbst anwenden →</button>}
+                  ? <button type="button" onClick={() => setGuideStep((step) => Math.min(line.length, step + 1))} className="rounded-lg bg-amber-300 px-3 py-1.5 text-sm font-semibold text-slate-950">{guideStep === 0 ? "Nächster Zug →" : "Weiter →"}</button>
+                  : <button type="button" onClick={startPractice} className="rounded-lg bg-amber-300 px-3 py-1.5 text-sm font-semibold text-slate-950">Üben →</button>}
               </div>
             </>
           ) : (
             <>
-              <h3 className="font-semibold text-white">Deine Aufgabe</h3>
-              <p className="mt-3 min-h-20 rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-sm leading-6 text-slate-300">
-                Neue Stellung – Übung {applicationExercise.number}, Elo {applicationExercise.rating}. Spiele die stärkste Fortsetzung. Du bist {applicationColor === "w" ? "Weiß" : "Schwarz"}; die gegnerischen Antworten werden automatisch ausgespielt.
+              <h3 className="font-semibold text-white">Übung</h3>
+              <p className="mt-2 rounded-lg border border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-300">
+                Spiele die beste Fortsetzung. Du bist {applicationColor === "w" ? "Weiß" : "Schwarz"}.
               </p>
-              <p role="status" aria-live="polite" className={`mt-3 min-h-16 rounded-xl p-4 text-sm leading-6 ${solved ? "bg-emerald-400/10 text-emerald-200" : "bg-slate-950/60 text-slate-300"}`}>
+              <p role="status" aria-live="polite" className={`mt-2 rounded-lg p-3 text-sm ${solved ? "bg-emerald-400/10 text-emerald-200" : "bg-slate-950/60 text-slate-300"}`}>
                 {message}
               </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button type="button" onClick={startPractice} disabled={solved} className="rounded-lg border border-slate-700 px-3 py-2 text-sm disabled:opacity-40">Neu versuchen</button>
-                <button type="button" onClick={() => { setMode("guide"); setGuideStep(0); setMessage(""); }} className="rounded-lg border border-slate-700 px-3 py-2 text-sm">Erklärung ansehen</button>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button type="button" onClick={startPractice} disabled={solved} className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm disabled:opacity-40">Nochmal</button>
+                <button type="button" onClick={() => { setMode("guide"); setGuideStep(0); setMessage(""); }} className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm">Erklärung</button>
                 {solved && <button type="button" onClick={onNext} className="rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-slate-950">Nächste Übung →</button>}
               </div>
             </>
@@ -312,44 +302,42 @@ export function EndgameLearning() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100 sm:px-8 sm:py-12">
+    <main className="min-h-screen bg-slate-950 px-3 py-4 text-slate-100 sm:px-6 sm:py-6">
       <div className="mx-auto max-w-6xl">
-        <Link href="/lernen" className="text-sm text-slate-400 underline underline-offset-4 hover:text-white">← Selbstständiges Lernen</Link>
-        <header className="mt-7">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200">Selbstständiges Lernen · 500 kostenlose Übungen</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Endspiele lernen</h1>
+        <Link href="/lernen" className="text-sm text-slate-400 underline underline-offset-4 hover:text-white">← Lernpfad</Link>
+        <header className="mt-4">
+          <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">Endspiele</h1>
         </header>
 
-        <section aria-label="Endspielthemen" className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <section aria-label="Endspielthemen" className="mt-3 grid grid-cols-2 gap-2 xl:grid-cols-4">
           {categories.map((category) => {
             const active = category.id === categoryId;
             const done = allExercises.filter((item) => item.categoryId === category.id && completed.includes(item.id)).length;
             return (
-              <button key={category.id} type="button" onClick={() => chooseCategory(category.id as CategoryId)} aria-pressed={active} className={`rounded-xl border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60 ${active ? "border-amber-300/50 bg-amber-300/10" : "border-slate-800 bg-slate-900/60 hover:border-slate-600"}`}>
-                <span className="block font-semibold text-white">{category.label}</span>
-                <span className="mt-1 block text-xs leading-5 text-slate-400">{category.description}</span>
-                <span className="mt-3 block text-xs font-medium text-amber-200">{done}/125 gelöst</span>
+              <button key={category.id} type="button" onClick={() => chooseCategory(category.id as CategoryId)} aria-pressed={active} className={`rounded-lg border p-2.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60 ${active ? "border-amber-300/50 bg-amber-300/10" : "border-slate-800 bg-slate-900/60 hover:border-slate-600"}`}>
+                <span className="block text-sm font-semibold text-white">{category.label}</span>
+                <span className="mt-1 block text-xs font-medium text-amber-200">{done}/125</span>
               </button>
             );
           })}
         </section>
 
-        <section aria-label="Übungsfortschritt" className="mt-5 rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+        <section aria-label="Übungsfortschritt" className="mt-3 rounded-lg border border-slate-800 bg-slate-900/50 p-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-slate-300"><strong className="text-white">{totalCompleted} von 500</strong> Übungen abgeschlossen · {selectedCategory.label}: {completedInCategory} von 125</p>
+            <p className="text-sm text-slate-300"><strong className="text-white">{totalCompleted}/500</strong> · {selectedCategory.label} {completedInCategory}/125</p>
             <label className="flex items-center gap-2 text-sm text-slate-300">Übung
               <input type="number" min={1} max={categoryExercises.length} value={exerciseNumber} onChange={(event) => setExerciseNumber(Math.max(1, Math.min(categoryExercises.length, Number(event.target.value) || 1)))} className="w-20 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-white" />
               <span className="text-slate-500">/ {categoryExercises.length}</span>
             </label>
           </div>
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-neutral-800" role="progressbar" aria-label="Endspielübungen abgeschlossen" aria-valuemin={0} aria-valuemax={500} aria-valuenow={totalCompleted}>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-neutral-800" role="progressbar" aria-label="Endspielübungen abgeschlossen" aria-valuemin={0} aria-valuemax={500} aria-valuenow={totalCompleted}>
             <div className="h-full bg-amber-300 transition-[width]" style={{ width: `${totalCompleted / 5}%` }} />
           </div>
           {!storageAvailable && <p role="status" className="mt-2 text-xs text-amber-200">Der Browser kann deinen Übungsfortschritt derzeit nicht speichern.</p>}
         </section>
 
         {ready && exercise && (
-          <div className="mt-5">
+          <div className="mt-3">
             <ExerciseWorkspace
               key={exercise.id}
               exercise={exercise}

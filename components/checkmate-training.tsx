@@ -205,17 +205,17 @@ function CheckmateWorkspace({
   }
 
   return (
-    <article className="rounded-2xl border border-amber-300/20 bg-black p-3 sm:p-4">
-      <header className="flex flex-wrap items-start justify-between gap-3">
+    <article className="rounded-xl border border-amber-300/20 bg-black p-3">
+      <header className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-amber-200">{lesson.material} · {lesson.forceable ? `${line.length} Halbzüge bis zum Matt` : "Wichtige Materialgrenze"}</p>
-          <h2 className="mt-1 text-xl font-semibold text-white">{lesson.title}</h2>
+          <p className="text-xs font-semibold text-amber-200">{lesson.material} · {lesson.forceable ? `${line.length} Züge` : "Nicht erzwingbar"}</p>
+          <h2 className="mt-1 text-lg font-semibold text-white">{lesson.title}</h2>
         </div>
         <span className={`rounded-full border px-3 py-1 text-xs ${learned ? "border-emerald-300/30 text-emerald-200" : "border-slate-700 text-slate-400"}`}>
-          {learned ? "Gelernt · Wiederholen" : "Lernen"}
+          {learned ? "Gelernt" : "Offen"}
         </span>
       </header>
-      <div className="mt-3 grid items-start gap-4 lg:grid-cols-[minmax(0,34rem)_minmax(15rem,1fr)]">
+      <div className="mt-2 grid items-start gap-3 lg:grid-cols-[minmax(0,34rem)_minmax(15rem,1fr)]">
         <div>
           <MiniChessboard
             fen={shownFen}
@@ -224,8 +224,8 @@ function CheckmateWorkspace({
             selected={phase === "try" ? selected : null}
             targets={legalTargets}
           />
-          <p role="status" aria-live="polite" className="mt-3 rounded-lg border border-amber-300/20 bg-amber-300/5 px-3 py-2 text-center text-sm font-semibold text-amber-100">{boardStatus}</p>
-          <p className="mt-2 text-center text-xs text-slate-500">
+          <p role="status" aria-live="polite" className="mt-2 rounded-lg border border-amber-300/20 bg-amber-300/5 px-3 py-1.5 text-center text-sm font-semibold text-amber-100">{boardStatus}</p>
+          <p className="mt-1 text-center text-xs text-slate-500">
             {phase === "try"
               ? `${attemptMoves.length} Züge ausprobiert`
               : phase === "explain" && lesson.forceable
@@ -233,12 +233,12 @@ function CheckmateWorkspace({
                 : phase === "quiz" ? "Verständnis-Test" : ""}
           </p>
           {phase === "try" ? (
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" onClick={resetAttempt} className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">Zurücksetzen</button>
-              <button type="button" onClick={startExplanation} className="rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-200">Lösung ansehen →</button>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button type="button" onClick={resetAttempt} className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800">Zurücksetzen</button>
+              <button type="button" onClick={startExplanation} className="rounded-lg bg-amber-300 px-3 py-1.5 text-sm font-semibold text-slate-950 hover:bg-amber-200">Lösung →</button>
             </div>
           ) : phase === "explain" && lesson.forceable ? (
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-2 flex flex-wrap gap-2">
               <button type="button" onClick={() => setGuideStep((step) => Math.max(0, step - 1))} disabled={guideStep === 0} className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 disabled:opacity-40">← Vorheriger Zug</button>
               {guideStep < line.length
                 ? <button type="button" onClick={() => setGuideStep((step) => Math.min(line.length, step + 1))} className="rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-slate-950">Nächster Zug →</button>
@@ -259,20 +259,20 @@ function CheckmateWorkspace({
           </>}
 
           {phase === "explain" && <>
-            <h3 className="font-semibold text-white">Erklärung Schritt für Schritt</h3>
+            <h3 className="font-semibold text-white">Erklärung</h3>
             {lesson.forceable ? currentMove ? (
-              <section aria-live="polite" className={`mt-3 rounded-xl border p-4 ${currentMove.checkmate ? "border-emerald-300/30 bg-emerald-300/10" : "border-amber-300/20 bg-amber-300/5"}`}>
+              <section aria-live="polite" className={`mt-2 rounded-lg border p-3 ${currentMove.checkmate ? "border-emerald-300/30 bg-emerald-300/10" : "border-amber-300/20 bg-amber-300/5"}`}>
                 <p className="text-xs font-semibold uppercase tracking-wider text-amber-200">Zug {guideStep} von {line.length} · {currentMove.color === "w" ? "Weiß" : "Schwarz"}</p>
-                <h4 className="mt-2 text-lg font-semibold text-white">{currentMove.san} <span className="text-sm font-normal text-slate-400">({currentMove.from} → {currentMove.to})</span></h4>
+                <h4 className="mt-1 text-base font-semibold text-white">{currentMove.san} <span className="text-sm font-normal text-slate-400">({currentMove.from} → {currentMove.to})</span></h4>
                 <p className="mt-2 text-sm leading-6 text-slate-200">{explanationFor(currentMove, lesson, guideStep)}</p>
                 <p className="mt-2 text-xs text-slate-400">Danach ist {currentMove.color === "w" ? "Schwarz" : "Weiß"} am Zug und hat {currentMove.escapeMoves} legale Antwort{currentMove.escapeMoves === 1 ? "" : "en"}.</p>
               </section>
             ) : <p className="mt-3 text-sm text-slate-400">Weiter mit „Nächster Zug“.</p> : (
               <p className="mt-3 text-sm text-amber-100">Matt ist mit diesem Material nicht erzwingbar.</p>
             )}
-            {lesson.forceable && <details className="mt-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3">
-              <summary className="cursor-pointer text-sm font-medium text-slate-300">Alle {line.length} Halbzüge anzeigen</summary>
-              <ol className="mt-3 grid gap-1 text-xs text-slate-400 sm:grid-cols-2">
+            {lesson.forceable && <details className="mt-2 rounded-lg border border-slate-800 bg-slate-950/60 p-2">
+              <summary className="cursor-pointer text-sm font-medium text-slate-300">{line.length} Züge</summary>
+              <ol className="mt-2 grid gap-1 text-xs text-slate-400 sm:grid-cols-2">
                 {line.map((move, index) => <li key={`${index}-${move.san}`} className={index === guideStep - 1 ? "text-amber-200" : undefined}>
                   {Math.floor(index / 2) + 1}{index % 2 === 0 ? "." : "…"} {move.color === "w" ? "Weiß" : "Schwarz"} {move.san}
                 </li>)}
@@ -281,16 +281,16 @@ function CheckmateWorkspace({
           </>}
 
           {phase === "quiz" && <>
-            <h3 className="font-semibold text-white">Verständnis-Test</h3>
-            <p className="mt-3 rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-sm leading-6 text-slate-200">{lesson.quiz.question}</p>
-            <div className="mt-3 space-y-2">
+            <h3 className="font-semibold text-white">Test</h3>
+            <p className="mt-2 rounded-lg border border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-200">{lesson.quiz.question}</p>
+            <div className="mt-2 space-y-1.5">
               {quiz.answers.map((option, index) => (
-                <button key={option} type="button" aria-pressed={answer === index} onClick={() => { setAnswer(index); setChecked(false); setMessage(""); }} className={`w-full rounded-lg border px-3 py-3 text-left text-sm transition ${checked && index === quiz.correctAnswer ? "border-emerald-300/40 bg-emerald-300/10 text-emerald-100" : answer === index ? "border-amber-300/40 bg-amber-300/5 text-white" : "border-slate-800 bg-slate-950/60 text-slate-300 hover:border-slate-600"}`}>
+                <button key={option} type="button" aria-pressed={answer === index} onClick={() => { setAnswer(index); setChecked(false); setMessage(""); }} className={`w-full rounded-lg border px-3 py-2 text-left text-sm transition ${checked && index === quiz.correctAnswer ? "border-emerald-300/40 bg-emerald-300/10 text-emerald-100" : answer === index ? "border-amber-300/40 bg-amber-300/5 text-white" : "border-slate-800 bg-slate-950/60 text-slate-300 hover:border-slate-600"}`}>
                   <span className="mr-2 text-xs text-slate-500">{String.fromCharCode(65 + index)}.</span>{option}
                 </button>
               ))}
             </div>
-            <button type="button" disabled={answer === null} onClick={checkAnswer} className="mt-4 rounded-lg bg-amber-300 px-4 py-2.5 text-sm font-semibold text-slate-950 disabled:opacity-40">Antwort prüfen</button>
+            <button type="button" disabled={answer === null} onClick={checkAnswer} className="mt-3 rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-40">Prüfen</button>
             {message && <p role="status" aria-live="polite" className={`mt-3 text-sm leading-6 ${answer === quiz.correctAnswer ? "text-emerald-200" : "text-rose-200"}`}>{message}</p>}
             {learned && checked && answer === quiz.correctAnswer && <p className="mt-3 rounded-lg border border-emerald-300/20 bg-emerald-300/5 p-3 text-sm text-emerald-100">Methode gelernt – du kannst sie jederzeit wiederholen.</p>}
           </>}
@@ -342,42 +342,39 @@ export function CheckmateTraining() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100 sm:px-8 sm:py-12">
+    <main className="min-h-screen bg-slate-950 px-3 py-4 text-slate-100 sm:px-6 sm:py-6">
       <div className="mx-auto max-w-6xl">
-        <Link href="/lernen" className="text-sm text-slate-400 underline underline-offset-4 hover:text-white">← Selbstständiges Lernen</Link>
-        <header className="mt-7">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200">Selbstständiges Lernen · Mattmethoden</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Mattsetzen lernen</h1>
+        <Link href="/lernen" className="text-sm text-slate-400 underline underline-offset-4 hover:text-white">← Lernpfad</Link>
+        <header className="mt-4">
+          <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">Mattsetzen</h1>
         </header>
 
-        <section aria-label="Mattmethode auswählen" className="mt-6">
-          <h2 className="mb-3 text-lg font-semibold text-white">Was möchtest du lernen?</h2>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <section aria-label="Mattmethode auswählen" className="mt-3">
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {lessons.map((item, index) => {
               const active = item.id === lessonId;
-              return <button key={item.id} type="button" onClick={() => setLessonId(item.id)} aria-pressed={active} className={`rounded-xl border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60 ${active ? "border-amber-300/50 bg-amber-300/10" : "border-slate-800 bg-slate-900/60 hover:border-slate-600"}`}>
+              return <button key={item.id} type="button" onClick={() => setLessonId(item.id)} aria-pressed={active} className={`rounded-lg border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60 ${active ? "border-amber-300/50 bg-amber-300/10" : "border-slate-800 bg-slate-900/60 hover:border-slate-600"}`}>
                 <span className="flex items-start justify-between gap-2">
                   <span className="font-semibold text-white">{index + 1}. {item.shortTitle}</span>
                   <span className={`shrink-0 text-xs ${completed.includes(item.id) ? "text-emerald-200" : "text-slate-500"}`}>{completed.includes(item.id) ? "Gelernt" : item.forceable ? "Lernen" : "Verstehen"}</span>
                 </span>
-                <span className="mt-2 block text-xs leading-5 text-slate-400">{item.material}</span>
               </button>;
             })}
           </div>
         </section>
 
-        <section aria-label="Mattkurs-Fortschritt" className="mt-5 rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+        <section aria-label="Mattkurs-Fortschritt" className="mt-3 rounded-lg border border-slate-800 bg-slate-900/50 p-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-slate-300"><strong className="text-white">{completedCount} von {lessons.length}</strong> Methoden gelernt</p>
+            <p className="text-sm text-slate-300"><strong className="text-white">{completedCount}/{lessons.length}</strong> gelernt</p>
             <span className="text-sm font-semibold tabular-nums text-amber-200">{ready ? Math.round(completedCount / lessons.length * 100) : 0}%</span>
           </div>
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-neutral-800" role="progressbar" aria-label="Fortschritt im Mattkurs" aria-valuemin={0} aria-valuemax={lessons.length} aria-valuenow={completedCount}>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-neutral-800" role="progressbar" aria-label="Fortschritt im Mattkurs" aria-valuemin={0} aria-valuemax={lessons.length} aria-valuenow={completedCount}>
             <div className="h-full bg-amber-300 transition-[width]" style={{ width: `${completedCount / lessons.length * 100}%` }} />
           </div>
         </section>
 
         {!ready ? <p role="status" className="mt-5 text-sm text-slate-400">Dein Lernfortschritt wird geladen …</p> : (
-          <div className="mt-5">
+          <div className="mt-3">
             <CheckmateWorkspace key={lesson.id} lesson={lesson} learned={completed.includes(lesson.id)} onComplete={() => markCompleted(lesson.id)} />
           </div>
         )}
