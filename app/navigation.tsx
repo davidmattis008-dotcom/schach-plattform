@@ -66,7 +66,7 @@ export default function AppNavigation() {
           setOpen(false);
         }}
         aria-current={active ? "page" : undefined}
-        className={`group flex items-center justify-between rounded-lg px-4 py-2.5 text-sm transition-all duration-200 hover:translate-x-1 ${nested ? "ml-3 border-l border-white/10 pl-4" : ""} ${active ? "bg-[#d4af37]/10 font-bold text-[#e7c95c]" : "font-medium text-neutral-300 hover:bg-white/[0.04] hover:text-[#e7c95c]"}`}
+        className={`group flex items-center justify-between rounded-lg px-4 py-2.5 text-sm transition-all duration-200 hover:translate-x-1 ${nested ? "ml-3 border-l border-white/10 pl-4" : ""} ${active ? "font-bold text-[#e7c95c]" : "font-medium text-neutral-300 hover:bg-white/[0.04] hover:text-[#e7c95c]"}`}
       >
         {item.label}
         {active && <span aria-hidden="true" className="h-2 w-2 rounded-full bg-[#d4af37] shadow-[0_0_10px_rgba(212,175,55,0.8)]" />}
@@ -81,7 +81,7 @@ export default function AppNavigation() {
         onClick={onClick}
         aria-expanded={expanded}
         aria-controls={controls}
-        className={`flex w-full items-center justify-between rounded-lg px-4 py-2.5 text-left text-sm transition-all duration-200 hover:translate-x-1 hover:bg-white/[0.04] hover:text-[#e7c95c] ${active ? "bg-[#d4af37]/10 font-bold text-[#e7c95c]" : "font-medium text-neutral-300"}`}
+        className={`flex w-full items-center justify-between rounded-lg px-4 py-2.5 text-left text-sm transition-all duration-200 hover:translate-x-1 hover:bg-white/[0.04] hover:text-[#e7c95c] ${active ? "font-bold text-[#e7c95c]" : "font-medium text-neutral-300"}`}
       >
         {label}
         <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" className={`h-4 w-4 transition-transform duration-200 ${expanded ? "rotate-90" : ""}`}>
