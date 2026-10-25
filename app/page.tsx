@@ -21,7 +21,7 @@ export default function Home() {
             {FIXED_BOTS.map((bot) => (
               <Link
                 key={bot.elo}
-                href={`/play?mode=bot&elo=${bot.elo}&time=10&increment=0&color=white&custom=false`}
+                href={`/bot?elo=${bot.elo}&custom=false`}
                 className="group flex min-h-20 items-center gap-3 rounded-xl border border-white/10 bg-neutral-950 px-3 py-3 transition duration-200 hover:-translate-y-0.5 hover:border-[#d4af37]/70 hover:bg-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
               >
                 <span aria-hidden="true" className="text-2xl text-[#d4af37] transition-transform duration-200 group-hover:scale-110">{bot.icon}</span>
@@ -32,7 +32,7 @@ export default function Home() {
               </Link>
             ))}
             <Link
-              href="/bot"
+              href="/bot?elo=1500&custom=true"
               className="flex min-h-20 items-center justify-center rounded-xl border border-[#d4af37]/40 bg-[#d4af37]/[0.06] px-3 py-3 text-center text-sm font-semibold text-[#e7c95c] transition duration-200 hover:-translate-y-0.5 hover:border-[#d4af37] hover:bg-[#d4af37]/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
             >
               Eigene Spielstärke

@@ -59,25 +59,39 @@ export default function Home() {
     const params = new URLSearchParams(window.location.search);
     const elo = Number(params.get('elo'));
     if (params.get('mode') !== 'bot' || !Number.isInteger(elo) || elo < BOT_ELO_MIN || elo > BOT_ELO_MAX) {
-      window.location.replace('/bot');
+      window.location.replace('/');
+      return;
+    }
+    if (params.get('configured') !== '1') {
+      const settings = new URLSearchParams({
+        elo: String(elo),
+        custom: String(params.get('custom') === 'true'),
+      });
+      for (const key of ['time', 'increment', 'color'] as const) {
+        const value = params.get(key);
+        if (value !== null) settings.set(key, value);
+      }
+      window.location.replace(`/bot?${settings.toString()}`);
       return;
     }
 
-    setBotElo(elo);
-    setCustomBot(params.get('custom') === 'true');
     const color = params.get('color');
-    if (color === 'black') setBotColor('w');
-    else if (color === 'random') setBotColor(Math.random() < 0.5 ? 'w' : 'b');
-    else setBotColor('b');
     const minutes = Number(params.get('time'));
     const increment = Number(params.get('increment'));
-    if ([0, 1, 3, 5, 10, 15, 30].includes(minutes)) {
-      setClockMinutes(minutes);
-      setWhiteTime(minutes * 60);
-      setBlackTime(minutes * 60);
-    }
-    if ([0, 1, 2, 5, 10].includes(increment)) setIncrementSeconds(increment);
-    setBotRouteReady(true);
+    queueMicrotask(() => {
+      setBotElo(elo);
+      setCustomBot(params.get('custom') === 'true');
+      if (color === 'black') setBotColor('w');
+      else if (color === 'random') setBotColor(Math.random() < 0.5 ? 'w' : 'b');
+      else setBotColor('b');
+      if ([0, 1, 3, 5, 10, 15, 30].includes(minutes)) {
+        setClockMinutes(minutes);
+        setWhiteTime(minutes * 60);
+        setBlackTime(minutes * 60);
+      }
+      if ([0, 1, 2, 5, 10].includes(increment)) setIncrementSeconds(increment);
+      setBotRouteReady(true);
+    });
   }, []);
 
   useEffect(() => {
@@ -133,7 +147,7 @@ export default function Home() {
       };
       worker.postMessage('uci');
     } catch {
-      setEngineError('Dein Browser konnte den Bot nicht starten. Bitte lade die Seite neu.');
+      queueMicrotask(() => setEngineError('Dein Browser konnte den Bot nicht starten. Bitte lade die Seite neu.'));
     }
     return () => {
       if (botDelayRef.current !== null) window.clearTimeout(botDelayRef.current);
@@ -276,7 +290,12 @@ export default function Home() {
       <style>{`@keyframes chess-piece-move { from { transform: translate(var(--move-from-x), var(--move-from-y)); } to { transform: translate(0, 0); } } .animate-chess-piece-move { animation: chess-piece-move 220ms ease-out both; }`}</style>
       <div className="mx-auto flex min-h-screen max-w-6xl flex-col items-center px-4 py-10">
         <div className="mb-6 w-full max-w-2xl">
-          <Link href="/bot" className="text-sm text-slate-300 underline underline-offset-4 hover:text-white">← Bot-Auswahl</Link>
+          <Link
+            href={`/bot?elo=${botElo}&custom=${customBot}&time=${clockMinutes}&increment=${incrementSeconds}&color=${botColor === 'b' ? 'white' : 'black'}`}
+            className="text-sm text-slate-300 underline underline-offset-4 hover:text-white"
+          >
+            ← Partie-Einstellungen
+          </Link>
           {botElo !== null && <p className="mt-3 text-sm text-emerald-300">Spiel gegen {customBot ? 'Eigener Bot' : (FIXED_BOTS.find((bot) => bot.elo === botElo)?.name ?? 'Eigener Bot')} · {botElo} Elo · {playerName} · {clockMinutes === 0 ? 'ohne Zeit' : clockMinutes + '+' + incrementSeconds}</p>}
         </div>
         <div className="mb-6 text-center">
