@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { Chess, type Color, type Square } from "chess.js";
 import { MiniChessboard } from "@/components/mini-chessboard";
+import { SelectMenu } from "@/components/select-menu";
 import { chooseTacticsPuzzle, getTacticsDifficulty, getTacticsPuzzleForRating, getTacticsRatingChange, getTacticsTheme, tacticsPuzzles } from "@/lib/tactics";
 import { getDailyExerciseLevel, getTacticsProgress, INITIAL_TACTICS_PROGRESS, subscribeToTacticsProgress, updateTacticsProgress } from "@/lib/tactics-progress";
 import { clampTacticsRating, isTacticsDifficultyOffset, TACTICS_PLACEMENT_TASKS } from "@/lib/tactics-rating";
@@ -479,29 +480,30 @@ export default function TacticsPage() {
               </div>
             </section>
 
-            {!isPlacement && <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
+            {!isPlacement && <section className="rounded-2xl border border-amber-300/30 bg-black p-5">
               <label htmlFor="tactics-difficulty" className="font-semibold">Aufgabenniveau</label>
-              <select
-                id="tactics-difficulty"
-                value={progress.difficultyOffset}
-                onChange={(event) => {
-                  const difficultyOffset = Number(event.target.value);
+              <SelectMenu
+                aria-label="Aufgabenniveau"
+                value={String(progress.difficultyOffset)}
+                onChange={(value) => {
+                  const difficultyOffset = Number(value);
                   if (!isTacticsDifficultyOffset(difficultyOffset)) return;
                   updateTacticsProgress((current) => ({
                     ...current,
                     difficultyOffset,
                   }));
                 }}
-                className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100"
-              >
-                <option value={-300}>300 Elo leichter</option>
-                <option value={-200}>200 Elo leichter</option>
-                <option value={-100}>100 Elo leichter</option>
-                <option value={0}>Gleiches Niveau</option>
-                <option value={100}>100 Elo schwerer</option>
-                <option value={200}>200 Elo schwerer</option>
-                <option value={300}>300 Elo schwerer</option>
-              </select>
+                options={[
+                  { value: "-300", label: "300 Elo leichter" },
+                  { value: "-200", label: "200 Elo leichter" },
+                  { value: "-100", label: "100 Elo leichter" },
+                  { value: "0", label: "Gleiches Niveau" },
+                  { value: "100", label: "100 Elo schwerer" },
+                  { value: "200", label: "200 Elo schwerer" },
+                  { value: "300", label: "300 Elo schwerer" },
+                ]}
+                className="mt-3"
+              />
             </section>}
 
             <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
