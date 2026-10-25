@@ -9,7 +9,7 @@ export default function FriendsPage() {
         <header className="mb-7 mt-6">
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Freunde</h1>
         </header>
-        <SocialHub initialTab="friends" />
+        <SocialHub />
       </div>
     </main>
   );

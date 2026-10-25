@@ -481,9 +481,9 @@ function finishGame(end: MatchEnd, broadcast = false) {
                   const target = possibleMoves.includes(square);
                   return (
                     <button key={square} type="button" aria-label={square + (piece ? `, ${piece.color === "w" ? "weiße" : "schwarze"} Figur` : "")} onClick={() => handleSquareClick(square)} disabled={viewPly !== null || !localTurn || !started || !opponentOnline || Boolean(finished)}
-                      className={"relative flex h-full w-full items-center justify-center p-0 " + (light ? "chessboard-light" : "chessboard-dark") + (selected ? " ring-4 ring-inset ring-emerald-300" : "") + " disabled:cursor-default"}>
+                      className={"relative flex h-full w-full items-center justify-center p-0 " + (light ? "chessboard-light" : "chessboard-dark") + (selected ? " ring-4 ring-inset ring-amber-300" : "") + " disabled:cursor-default"}>
                       {piece && <span className="pointer-events-none absolute inset-0 flex items-center justify-center"><ChessPieceIcon color={piece.color} type={piece.type} /></span>}{colIndex === 0 && <span aria-hidden="true" className={"pointer-events-none absolute left-1 top-0.5 z-10 text-[9px] font-bold sm:text-xs " + (light ? "text-[#537765]" : "text-[#dbe5dc]")}>{square[1]}</span>}{rowIndex === 7 && <span aria-hidden="true" className={"pointer-events-none absolute bottom-0 right-1 z-10 text-[9px] font-bold sm:text-xs " + (light ? "text-[#537765]" : "text-[#dbe5dc]")}>{square[0].toUpperCase()}</span>}
-                      {target && <span className="absolute h-3 w-3 rounded-full bg-slate-950/45" />}
+                      {target && <span aria-hidden="true" className={"absolute h-3 w-3 rounded-full " + (piece ? "chessboard-capture-target" : "chessboard-move-target")} />}
                     </button>
                   );
                 }))}

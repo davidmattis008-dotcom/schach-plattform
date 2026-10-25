@@ -9,7 +9,7 @@ type AdminRole = "owner" | "admin" | "moderator";
 type AdminUser = { user_id: string; username: string; avatar_url: string | null; is_suspended: boolean; reason: string | null; expires_at: string | null };
 type ChatReport = {
   report_id: string;
-  chat_type: "global" | "direct";
+  chat_type: "direct";
   message_id: string;
   message_body: string;
   reason: string;
@@ -291,7 +291,7 @@ export function AdminDashboard() {
           <h2 className="text-lg font-semibold">Offene Chatmeldungen</h2>
           {reports.length === 0 && !loading && <p className="rounded-xl border border-slate-800 bg-slate-900 p-4 text-sm text-slate-400">Keine offenen Meldungen.</p>}
           {reports.map((report) => <article key={report.report_id} className="rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-5">
-            <div className="flex flex-wrap justify-between gap-2 text-xs text-slate-400"><span>{report.chat_type === "global" ? "Globaler Chat" : "Gemeldete private Nachricht"} · von {report.reporter_username}</span><time dateTime={report.created_at}>{new Date(report.created_at).toLocaleString("de-DE")}</time></div>
+            <div className="flex flex-wrap justify-between gap-2 text-xs text-slate-400"><span>Gemeldete private Nachricht · von {report.reporter_username}</span><time dateTime={report.created_at}>{new Date(report.created_at).toLocaleString("de-DE")}</time></div>
             <p className="mt-3 text-sm text-slate-300">Gemeldet wurde <strong>{report.reported_username}</strong>: {report.reason}</p>
             <blockquote className="mt-3 whitespace-pre-wrap rounded-lg border-l-2 border-amber-400 bg-slate-950 p-3 text-sm text-slate-100">{report.message_body}</blockquote>
             <div className="mt-4 flex flex-wrap gap-2"><button type="button" disabled={loading} onClick={() => void resolveReport(report, "remove_message")} className="rounded-lg bg-rose-400 px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">Nachricht entfernen</button><button type="button" disabled={loading} onClick={() => void resolveReport(report, "dismiss")} className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 disabled:opacity-50">Meldung schließen</button></div>

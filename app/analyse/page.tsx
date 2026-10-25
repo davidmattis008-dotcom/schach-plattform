@@ -4,14 +4,11 @@ import Link from "next/link";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Chess, type Square } from "chess.js";
 import { MiniChessboard } from "@/components/mini-chessboard";
+import { ChessPieceIcon } from "@/components/chess-piece";
 import { getTacticsDifficulty, getTacticsTheme, tacticsPuzzles, type TacticsPuzzle } from "@/lib/tactics";
 import { createClient } from "@/lib/supabase/client";
 
 const START_FEN = new Chess().fen();
-const PIECES: Record<string, string> = {
-  wK: "♔", wQ: "♕", wR: "♖", wB: "♗", wN: "♘", wP: "♙",
-  bK: "♚", bQ: "♛", bR: "♜", bB: "♝", bN: "♞", bP: "♟",
-};
 type EvalInfo = { score: string; depth: string; line: string };
 type SavedTacticRow = { puzzle_id: string; saved_at: string };
 
@@ -309,7 +306,7 @@ export default function AnalysePage() {
 
   return <main className="min-h-screen bg-slate-950 px-3 py-4 text-white sm:px-5 sm:py-6">
     <div className="mx-auto max-w-7xl">
-      {promotionPending && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/80 p-4" role="dialog" aria-modal="true" aria-labelledby="analysis-promotion-title"><div className="w-full max-w-sm rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl"><h2 id="analysis-promotion-title" className="text-xl font-bold">Bauernumwandlung</h2><p className="mt-1 text-sm text-slate-400">Welche Figur möchtest du wählen?</p><div className="mt-4 grid grid-cols-4 gap-2">{(["q", "r", "b", "n"] as const).map((piece) => <button key={piece} type="button" onClick={() => choosePromotion(piece)} className="flex flex-col items-center rounded-xl border border-slate-700 bg-slate-950 p-3 hover:border-emerald-400 hover:bg-slate-800"><span className={"text-4xl " + (promotionColor === "w" ? "text-white drop-shadow-[0_2px_2px_rgba(15,23,42,0.95)]" : "text-slate-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.85)]")}>{PIECES[promotionColor + piece.toUpperCase()]}</span><span className="mt-1 text-xs">{{ q: "Dame", r: "Turm", b: "Läufer", n: "Springer" }[piece]}</span></button>)}</div><button type="button" onClick={() => setPromotionPending(null)} className="mt-4 w-full rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">Abbrechen</button></div></div>}
+      {promotionPending && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/80 p-4" role="dialog" aria-modal="true" aria-labelledby="analysis-promotion-title"><div className="w-full max-w-sm rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl"><h2 id="analysis-promotion-title" className="text-xl font-bold">Bauernumwandlung</h2><p className="mt-1 text-sm text-slate-400">Welche Figur möchtest du wählen?</p><div className="mt-4 grid grid-cols-4 gap-2">{(["q", "r", "b", "n"] as const).map((piece) => <button key={piece} type="button" onClick={() => choosePromotion(piece)} className="flex flex-col items-center rounded-xl border border-slate-700 bg-slate-950 p-3 hover:border-emerald-400 hover:bg-slate-800"><span className="h-10 w-10"><ChessPieceIcon color={promotionColor} type={piece} /></span><span className="mt-1 text-xs">{{ q: "Dame", r: "Turm", b: "Läufer", n: "Springer" }[piece]}</span></button>)}</div><button type="button" onClick={() => setPromotionPending(null)} className="mt-4 w-full rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">Abbrechen</button></div></div>}
       <header className="mb-4">
         <h1 className="text-2xl font-bold sm:text-3xl">Analyse</h1>
       </header>
@@ -363,10 +360,8 @@ export default function AnalysePage() {
             <span className="rounded-full bg-slate-800 px-3 py-1 text-sm text-emerald-300">Engine: {engineReady ? "bereit" : "lädt …"}</span>
           </div>
           <p className="mb-2 text-center text-xs text-slate-400">{game.isGameOver() ? "Partie beendet" : (game.turn() === "w" ? "Weiß" : "Schwarz") + " am Zug"}</p>
-          <div className="mx-auto grid w-full max-w-[620px] grid-cols-[1.25rem_minmax(0,1fr)] grid-rows-[minmax(0,1fr)_1.25rem]">
-            <div className="grid grid-rows-8 text-center text-xs text-slate-400">{Array.from({ length: 8 }, (_, index) => <span key={index} className="flex items-center justify-center">{8 - index}</span>)}</div>
-            <div className="chessboard-frame grid aspect-square w-full grid-cols-8 grid-rows-8 overflow-hidden">
-              {board.flatMap((row, rowIndex) => row.map((piece, colIndex) => {
+          <div className="chessboard-frame mx-auto grid aspect-square w-full max-w-[620px] grid-cols-8 grid-rows-8 overflow-hidden">
+            {board.flatMap((row, rowIndex) => row.map((piece, colIndex) => {
                 const light = (rowIndex + colIndex) % 2 === 1;
                 const square = (String.fromCharCode(97 + colIndex) + (8 - rowIndex)) as Square;
                 const isSelected = selectedSquare === square;
@@ -380,20 +375,19 @@ export default function AnalysePage() {
                   onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); handleSquareClick(square); } }}
                   onDragOver={(event) => event.preventDefault()}
                   onDrop={(event) => handleDrop(event, square)}
-                  className={"relative flex aspect-square select-none items-center justify-center text-[clamp(1.8rem,7vw,3.6rem)] " + (light ? "chessboard-light" : "chessboard-dark") + (isSelected ? " ring-4 ring-inset ring-emerald-300" : "")}
+                  className={"relative flex aspect-square select-none items-center justify-center " + (light ? "chessboard-light" : "chessboard-dark") + (isSelected ? " ring-4 ring-inset ring-amber-300" : "")}
                 >
                   {piece && <span
                     draggable={piece.color === game.turn() && !game.isGameOver()}
                     onDragStart={(event) => { event.dataTransfer.setData("text/plain", square); setSelectedSquare(square); }}
                     onDragEnd={() => setSelectedSquare(null)}
-                    className={"cursor-grab active:cursor-grabbing " + (piece.color === "w" ? "text-white drop-shadow-[0_2px_2px_rgba(15,23,42,0.95)]" : "text-slate-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.85)]")}
-                  >{PIECES[piece.color + piece.type.toUpperCase()]}</span>}
-                  {isTarget && <span aria-hidden="true" className={"pointer-events-none absolute h-3 w-3 rounded-full " + (piece ? "border-4 border-emerald-400" : "bg-emerald-400/70")} />}
+                    className="absolute inset-0 flex cursor-grab items-center justify-center active:cursor-grabbing"
+                  ><ChessPieceIcon color={piece.color} type={piece.type} /></span>}
+                  {isTarget && <span aria-hidden="true" className={"pointer-events-none absolute h-3 w-3 rounded-full " + (piece ? "chessboard-capture-target" : "chessboard-move-target")} />}
+                  {colIndex === 0 && <span aria-hidden="true" className={"pointer-events-none absolute left-1 top-0.5 text-[9px] font-bold " + (light ? "text-[#537765]" : "text-[#dbe5dc]")}>{8 - rowIndex}</span>}
+                  {rowIndex === 7 && <span aria-hidden="true" className={"pointer-events-none absolute bottom-0 right-1 text-[9px] font-bold " + (light ? "text-[#537765]" : "text-[#dbe5dc]")}>{String.fromCharCode(65 + colIndex)}</span>}
                 </div>;
-              }))}
-            </div>
-            <div aria-hidden="true" />
-            <div className="grid grid-cols-8 text-center text-xs text-slate-400">{Array.from({ length: 8 }, (_, index) => <span key={index}>{String.fromCharCode(65 + index)}</span>)}</div>
+            }))}
           </div>
           <div className="mx-auto mt-2 flex max-w-[620px] items-center justify-between gap-1">
             <button type="button" onClick={() => { setMoveIndex(Math.max(0, moveIndex - 1)); setSelectedSquare(null); }} disabled={moveIndex === 0} className="rounded-lg border border-slate-700 px-4 py-2 disabled:opacity-40">← Zurück</button>

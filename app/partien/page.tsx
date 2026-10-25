@@ -3,37 +3,13 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Chess, type Square } from "chess.js";
-import { ONLINE_HISTORY_OWNER_KEY, readOnlineHistory, type OnlineGameRecord } from "@/app/online/history-store";
+import { getOnlineGamePgn, isOnlineGameRecord, ONLINE_HISTORY_OWNER_KEY, readOnlineHistory, type OnlineGameRecord } from "@/app/online/history-store";
 import { createClient } from "@/lib/supabase/client";
 import { MiniChessboard } from "@/components/mini-chessboard";
 
 function dateLabel(value: string) {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "Datum unbekannt" : new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeStyle: "short" }).format(date);
-}
-
-function isOnlineGameRecord(value: unknown): value is OnlineGameRecord {
-  if (!value || typeof value !== "object") return false;
-  const record = value as Partial<OnlineGameRecord>;
-  return typeof record.id === "string"
-    && typeof record.playedAt === "string"
-    && typeof record.timeControl === "string"
-    && (record.color === "w" || record.color === "b")
-    && (record.result === "win" || record.result === "loss" || record.result === "draw")
-    && typeof record.resultText === "string"
-    && typeof record.reason === "string"
-    && Array.isArray(record.moves)
-    && record.moves.every((move) => move && typeof move.san === "string"
-      && (move.color === "w" || move.color === "b")
-      && typeof move.from === "string" && typeof move.to === "string");
-}
-
-function getGamePgn(game: OnlineGameRecord) {
-  const replay = new Chess();
-  game.moves.forEach((move) => {
-    replay.move({ from: move.from as Square, to: move.to as Square, ...(move.promotion ? { promotion: move.promotion } : {}) });
-  });
-  return replay.pgn();
 }
 
 export default function GameHistoryPage() {
@@ -143,7 +119,7 @@ export default function GameHistoryPage() {
                   <div className="border-t border-slate-800 px-4 py-4 sm:px-5">
                     <p className="text-sm text-slate-400">{game.reason} · Weiß: {game.whiteName ?? "Gast"} · Schwarz: {game.blackName ?? "Gast"}</p>
                     <button type="button" onClick={() => { setSelectedGameId(game.id); setReplayPly(0); }} className="mt-3 rounded-lg border border-emerald-400/40 px-3 py-2 text-xs font-semibold text-emerald-200">Partie nachspielen</button>
-                    {game.moves.length > 0 && <Link href={`/analyse?pgn=${encodeURIComponent(getGamePgn(game))}`} className="ml-2 mt-3 inline-flex rounded-lg border border-emerald-400/40 px-3 py-2 text-xs font-semibold text-emerald-200">Analyse öffnen</Link>}
+                    {game.moves.length > 0 && <Link href={`/analyse?pgn=${encodeURIComponent(getOnlineGamePgn(game))}`} className="ml-2 mt-3 inline-flex rounded-lg border border-emerald-400/40 px-3 py-2 text-xs font-semibold text-emerald-200">Analyse öffnen</Link>}
                     {game.moves.length === 0 ? (
                       <p className="mt-3 text-sm text-slate-500">In dieser Partie wurden keine Züge gespeichert.</p>
                     ) : (

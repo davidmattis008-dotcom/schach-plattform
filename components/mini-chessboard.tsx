@@ -11,8 +11,8 @@ export function MiniChessboard({ fen, label, onSquareClick, selected, targets = 
   {rows.flatMap((rank, row) => rank.map((piece, col) => {
    const rankNumber = orientation === "black" ? row + 1 : 8 - row;
    const square = columns[col] + rankNumber; const light = (row+col)%2===1; const isTarget = targets.includes(square);
-   const className = "relative flex aspect-square items-center justify-center " + (light ? "chessboard-light " : "chessboard-dark ") + (selected===square ? "ring-4 ring-inset ring-amber-300 " : "") + (isTarget ? "after:absolute after:h-3 after:w-3 after:rounded-full after:bg-emerald-300/90 " : "") + (onSquareClick ? "cursor-pointer" : "");
-   const contents = <>{piece && <ChessPieceIcon color={piece.color} type={piece.type} />}{col===0 && <span className={"absolute left-1 top-0.5 text-[9px] font-bold " + (light ? "text-[#537765]" : "text-[#dbe5dc]")}>{rankNumber}</span>}{row===7 && <span className={"absolute bottom-0 right-1 text-[9px] font-bold " + (light ? "text-[#537765]" : "text-[#dbe5dc]")}>{columns[col].toUpperCase()}</span>}</>;
+   const className = "relative flex aspect-square items-center justify-center " + (light ? "chessboard-light " : "chessboard-dark ") + (selected===square ? "ring-4 ring-inset ring-amber-300 " : "") + (onSquareClick ? "cursor-pointer" : "");
+   const contents = <>{piece && <ChessPieceIcon color={piece.color} type={piece.type} />}{isTarget && <span aria-hidden="true" className={"pointer-events-none absolute h-3 w-3 rounded-full " + (piece ? "chessboard-capture-target" : "chessboard-move-target")} />}{col===0 && <span className={"absolute left-1 top-0.5 text-[9px] font-bold " + (light ? "text-[#537765]" : "text-[#dbe5dc]")}>{rankNumber}</span>}{row===7 && <span className={"absolute bottom-0 right-1 text-[9px] font-bold " + (light ? "text-[#537765]" : "text-[#dbe5dc]")}>{columns[col].toUpperCase()}</span>}</>;
    return onSquareClick ? <button type="button" role="gridcell" aria-label={square} key={square} onClick={() => onSquareClick(square)} className={className}>{contents}</button> : <div key={square} className={className}>{contents}</div>;
   }))}
  </div>;

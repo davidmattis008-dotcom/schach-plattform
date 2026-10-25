@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chess } from 'chess.js';import { ChessPieceIcon } from '@/components/chess-piece';
 import { getMaterialAdvantage } from '@/lib/chess/material';
 import { BOT_ELO_MAX, BOT_ELO_MIN, FIXED_BOTS } from '@/lib/bots';
+import { saveOnlineGame } from '@/app/online/history-store';
 import { createClient } from '@/lib/supabase/client';
 
 function formatTime(seconds: number) {
@@ -39,6 +40,7 @@ export default function Home() {
   const pendingGenerationRef = useRef<number | null>(null);
   const botDelayRef = useRef<number | null>(null);
   const animationTimerRef = useRef<number | null>(null);  useEffect(() => { let active = true; const loadPlayerName = async () => { try { const supabase = createClient(); const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const { data } = await supabase.from('profiles').select('username').eq('id', user.id).maybeSingle(); if (active && typeof data?.username === 'string' && data.username.trim()) setPlayerName(data.username.trim().slice(0, 20)); } catch { /* optional profile name */ } }; void loadPlayerName(); return () => { active = false; }; }, []); const isFlipped = botElo !== null && botColor === 'w';  const whitePlayerName = botElo !== null ? (botColor === 'w' ? 'Bot' : playerName) : 'Weiß'; const blackPlayerName = botElo !== null ? (botColor === 'b' ? 'Bot' : playerName) : 'Schwarz'; const boardRows = game.board();
+  const savedGameGenerationRef = useRef<number | null>(null);
   const historyPositions = useMemo(() => {
     const replay = new Chess();
     const positions = [replay.fen()];
@@ -58,7 +60,9 @@ export default function Home() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const elo = Number(params.get('elo'));
-    if (params.get('mode') !== 'bot' || !Number.isInteger(elo) || elo < BOT_ELO_MIN || elo > BOT_ELO_MAX) {
+    const isCustom = params.get('custom') === 'true';
+    const isFixedBot = FIXED_BOTS.some((bot) => bot.elo === elo);
+    if (params.get('mode') !== 'bot' || !Number.isInteger(elo) || elo < BOT_ELO_MIN || elo > BOT_ELO_MAX || (!isCustom && !isFixedBot)) {
       window.location.replace('/');
       return;
     }
@@ -167,6 +171,42 @@ export default function Home() {
     }, 1000);
     return () => clearInterval(timer);
   }, [game, clockMinutes]);
+
+  useEffect(() => {
+    if (!botRouteReady || botElo === null || savedGameGenerationRef.current === gameGenerationRef.current) return;
+    const timedOut = clockMinutes > 0 && (whiteTime === 0 || blackTime === 0);
+    if (!game.isGameOver() && !timedOut) return;
+
+    const playerColor = botColor === 'w' ? 'b' : 'w';
+    const timeoutWinner = whiteTime === 0 ? 'b' : 'w';
+    const winner = game.isCheckmate() ? (game.turn() === 'w' ? 'b' : 'w') : timedOut ? timeoutWinner : null;
+    const draw = game.isDraw() || (timedOut && game.isInsufficientMaterial());
+    const result = draw ? 'draw' : winner === playerColor ? 'win' : 'loss';
+    const replay = new Chess();
+    const savedMoves = moves.map((san) => {
+      const move = replay.move(san);
+      return {
+        san: move.san,
+        color: move.color,
+        from: move.from,
+        to: move.to,
+        ...(move.promotion ? { promotion: move.promotion } : {}),
+      };
+    });
+    savedGameGenerationRef.current = gameGenerationRef.current;
+    saveOnlineGame({
+      id: `bot-${Date.now()}-${gameGenerationRef.current}`,
+      playedAt: new Date().toISOString(),
+      timeControl: clockMinutes === 0 ? 'Ohne Zeit' : `${clockMinutes}+${incrementSeconds}`,
+      whiteName: whitePlayerName,
+      blackName: blackPlayerName,
+      color: playerColor,
+      result,
+      resultText: result === 'win' ? 'Gewonnen' : result === 'loss' ? 'Verloren' : 'Remis',
+      reason: game.isCheckmate() ? 'Schachmatt' : game.isStalemate() ? 'Patt' : timedOut ? 'Zeit abgelaufen' : 'Remis',
+      moves: savedMoves,
+    });
+  }, [blackPlayerName, blackTime, botColor, botElo, botRouteReady, clockMinutes, game, incrementSeconds, moves, whitePlayerName, whiteTime]);
 
   useEffect(() => {
     if (botElo === null || game.turn() !== botColor || game.isGameOver() || (clockMinutes > 0 && (whiteTime === 0 || blackTime === 0))) return;
@@ -336,8 +376,8 @@ export default function Home() {
                   <button key={square} type="button" aria-label={square + (piece ? ', ' + (piece.color === 'w' ? 'weiße' : 'schwarze') + ' Figur' : '')}
                     disabled={viewedPly !== null || botThinking || (botElo !== null && game.turn() === botColor)}
                     onClick={() => handleSquareClick(square)}
-                    className={'relative flex aspect-square w-11 items-center justify-center text-3xl disabled:cursor-wait sm:w-16 sm:text-5xl md:w-20 md:text-6xl ' + (isLight ? 'chessboard-light' : 'chessboard-dark') + (selectedSquare === square ? ' ring-4 ring-blue-500 ring-inset' : '')}>
-                    {piece && <span style={isAnimatedMove ? ({ '--move-from-x': moveFromX + '%', '--move-from-y': moveFromY + '%' } as import('react').CSSProperties) : undefined} className={'absolute inset-0 flex items-center justify-center' + (isAnimatedMove ? ' animate-chess-piece-move' : '')}><ChessPieceIcon color={piece.color} type={piece.type} /></span>}{colIndex === 0 && <span aria-hidden="true" className={'pointer-events-none absolute left-1 top-0.5 z-10 text-[9px] font-bold sm:text-xs ' + (isLight ? 'text-[#537765]' : 'text-[#dbe5dc]')}>{square[1]}</span>}{rowIndex === 7 && <span aria-hidden="true" className={'pointer-events-none absolute bottom-0 right-1 z-10 text-[9px] font-bold sm:text-xs ' + (isLight ? 'text-[#537765]' : 'text-[#dbe5dc]')}>{square[0].toUpperCase()}</span>}{possibleMoves.includes(square) && <span className="absolute h-3 w-3 rounded-full bg-slate-800/60" />}
+                    className={'relative flex aspect-square w-11 items-center justify-center text-3xl disabled:cursor-wait sm:w-16 sm:text-5xl md:w-20 md:text-6xl ' + (isLight ? 'chessboard-light' : 'chessboard-dark') + (selectedSquare === square ? ' ring-4 ring-amber-300 ring-inset' : '')}>
+                    {piece && <span style={isAnimatedMove ? ({ '--move-from-x': moveFromX + '%', '--move-from-y': moveFromY + '%' } as import('react').CSSProperties) : undefined} className={'absolute inset-0 flex items-center justify-center' + (isAnimatedMove ? ' animate-chess-piece-move' : '')}><ChessPieceIcon color={piece.color} type={piece.type} /></span>}{colIndex === 0 && <span aria-hidden="true" className={'pointer-events-none absolute left-1 top-0.5 z-10 text-[9px] font-bold sm:text-xs ' + (isLight ? 'text-[#537765]' : 'text-[#dbe5dc]')}>{square[1]}</span>}{rowIndex === 7 && <span aria-hidden="true" className={'pointer-events-none absolute bottom-0 right-1 z-10 text-[9px] font-bold sm:text-xs ' + (isLight ? 'text-[#537765]' : 'text-[#dbe5dc]')}>{square[0].toUpperCase()}</span>}{possibleMoves.includes(square) && <span aria-hidden="true" className={'absolute h-3 w-3 rounded-full ' + (piece ? 'chessboard-capture-target' : 'chessboard-move-target')} />}
                   </button>
                 );
               }))}
