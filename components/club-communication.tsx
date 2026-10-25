@@ -98,17 +98,17 @@ export function ClubCommunication({ clubId, canPublishNews }: { clubId: string; 
   }
 
   return (
-    <section className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/50 p-5" aria-label="Vereinskommunikation">
+    <section className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/50 p-3" aria-label="Vereinskommunikation">
       <div className="flex gap-2">
-        <button type="button" onClick={() => setTab("chat")} aria-pressed={tab === "chat"} className={`rounded-lg px-4 py-2 text-sm font-semibold ${tab === "chat" ? "bg-emerald-400 text-slate-950" : "text-slate-300 hover:bg-slate-800"}`}>Vereinschat</button>
-        <button type="button" onClick={() => setTab("news")} aria-pressed={tab === "news"} className={`rounded-lg px-4 py-2 text-sm font-semibold ${tab === "news" ? "bg-emerald-400 text-slate-950" : "text-slate-300 hover:bg-slate-800"}`}>Neuigkeiten</button>
+        <button type="button" onClick={() => setTab("chat")} aria-pressed={tab === "chat"} className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${tab === "chat" ? "bg-emerald-400 text-slate-950" : "text-slate-300 hover:bg-slate-800"}`}>Chat</button>
+        <button type="button" onClick={() => setTab("news")} aria-pressed={tab === "news"} className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${tab === "news" ? "bg-emerald-400 text-slate-950" : "text-slate-300 hover:bg-slate-800"}`}>Neuigkeiten</button>
       </div>
 
       {error && <p role="alert" className="rounded-lg border border-red-900/70 bg-red-950/30 p-3 text-sm text-red-200">{error}</p>}
 
       {tab === "chat" ? (
         <>
-          <div className="max-h-96 min-h-32 space-y-2 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950 p-3" aria-live="polite">
+          <div className="max-h-80 min-h-28 space-y-2 overflow-y-auto rounded-lg border border-slate-800 bg-slate-950 p-2" aria-live="polite">
             {messages.length ? messages.map((message) => (
               <article key={message.id} className="rounded-lg bg-slate-900 px-3 py-2">
                 <div className="flex items-center justify-between gap-3 text-xs text-slate-500"><span className="font-semibold text-emerald-200">{message.username}</span><time>{dateLabel(message.created_at)}</time></div>

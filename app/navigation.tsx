@@ -18,14 +18,13 @@ const learningItems: MenuItem[] = [
 
 const clubItems: MenuItem[] = [
   { label: "Vereine", href: "/verein" },
-  { label: "Vereinstraining", href: "/verein#training" },
-  { label: "Vereinschat", href: "/verein#vereinschat" },
+  { label: "Vereinstraining", href: "/verein/training" },
+  { label: "Vereinschat", href: "/verein/chat" },
 ];
 
 export default function AppNavigation() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [currentHash, setCurrentHash] = useState("");
   const [learningExpanded, setLearningExpanded] = useState(() =>
     pathname === "/lernen" || pathname.startsWith("/lernen/") || pathname === "/repertoire",
   );
@@ -48,8 +47,8 @@ export default function AppNavigation() {
   if (pathname.startsWith("/login") || pathname.startsWith("/auth") || pathname.startsWith("/forgot-password") || pathname.startsWith("/update-password")) return null;
 
   function isActive(item: MenuItem) {
-    const [route, anchor] = item.href.split("#");
-    if (anchor) return pathname === route && currentHash === `#${anchor}`;
+    const [route] = item.href.split("#");
+    if (route === "/verein") return pathname === route;
     return route === "/"
       ? pathname === "/"
       : pathname === route || pathname.startsWith(`${route}/`);
@@ -62,7 +61,6 @@ export default function AppNavigation() {
         key={item.href}
         href={item.href}
         onClick={() => {
-          setCurrentHash(item.href.includes("#") ? `#${item.href.split("#")[1]}` : "");
           setOpen(false);
         }}
         aria-current={active ? "page" : undefined}

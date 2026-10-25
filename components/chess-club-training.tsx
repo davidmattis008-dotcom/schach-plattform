@@ -90,6 +90,7 @@ type ClubConfirmation = {
   confirmLabel: string;
   requiredText?: string;
 };
+export type ClubAreaSection = "clubs" | "training" | "chat" | "all";
 
 function errorText(error: unknown) {
   if (typeof error === "object" && error !== null) {
@@ -134,7 +135,7 @@ function getPuzzleStartPosition(puzzle: TacticsPuzzle) {
   return position;
 }
 
-export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }) {
+export function ChessClubTraining({ adminMode = false, view = "all" }: { adminMode?: boolean; view?: ClubAreaSection }) {
   const clientRef = useRef<ReturnType<typeof createClient> | null>(null);
   const getClient = useCallback(() => {
     if (!clientRef.current) clientRef.current = createClient();
@@ -183,6 +184,9 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
   const selectedGroup = groups.find((group) => group.group_id === groupId) ?? null;
   const isTrainer = !adminMode && selectedGroup?.role === "trainer";
   const isClubOwner = selectedGroup?.is_club_owner === true;
+  const showClubs = view === "clubs" || view === "all";
+  const showTraining = view === "training" || view === "all";
+  const showChat = view === "chat" || view === "all";
 
   function askConfirmation(options: ClubConfirmation) {
     setConfirmationInput("");
@@ -826,70 +830,68 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
 
   if (!userId) {
     return (
-      <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 sm:p-8">
-        <h2 className="text-xl font-semibold">Melde dich an, um den Vereinsbereich zu nutzen.</h2>
-        <p className="mt-2 text-sm text-slate-400">Vereine, Trainingsgruppen und Aufgaben sind nur für angemeldete Mitglieder sichtbar.</p>
-        <Link href="/login" className="mt-5 inline-flex rounded-lg bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950">Anmelden</Link>
+      <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+        <h2 className="font-semibold">Zum Vereinsbereich anmelden</h2>
+        <Link href="/login" className="mt-3 inline-flex rounded-lg bg-emerald-400 px-3 py-2 text-sm font-semibold text-slate-950">Anmelden</Link>
       </section>
     );
   }
 
   return (
-    <div id="vereine" className="space-y-8">
+    <div className="space-y-5">
       {error && <p className="rounded-xl border border-red-900/70 bg-red-950/30 px-4 py-3 text-sm text-red-200" role="alert">{error}</p>}
       {notice && <p className="rounded-xl border border-emerald-900 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-200" role="status">{notice}</p>}
 
       {!groups.length ? adminMode ? (
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 text-sm text-slate-300">
-          Es wurden noch keine Vereine oder Trainingsgruppen angelegt.
+        <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-300">
+          Keine Vereine oder Gruppen.
         </section>
-      ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <form onSubmit={(event) => void createClub(event)} className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-5 sm:p-6">
-            <div>
-              <h2 className="text-xl font-semibold">Verein einrichten</h2>
-              <p className="mt-1 text-sm text-slate-400">Du wirst Vereinsverantwortlicher und Trainer der ersten Gruppe.</p>
-            </div>
-            <label className="block text-sm font-medium text-slate-200">Vereinsname
-              <input required minLength={3} maxLength={80} value={clubName} onChange={(event) => setClubName(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3" placeholder="Schachverein Beispiel" />
+      ) : showClubs ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <form onSubmit={(event) => void createClub(event)} className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+            <h2 className="font-semibold">Verein anlegen</h2>
+            <label className="block text-sm text-slate-300">Vereinsname
+              <input required minLength={3} maxLength={80} value={clubName} onChange={(event) => setClubName(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5" placeholder="Vereinsname" />
             </label>
-            <label className="block text-sm font-medium text-slate-200">Erste Trainingsgruppe
-              <input required minLength={2} maxLength={80} value={initialGroupName} onChange={(event) => setInitialGroupName(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3" placeholder="Jugendtraining" />
+            <label className="block text-sm text-slate-300">Erste Gruppe
+              <input required minLength={2} maxLength={80} value={initialGroupName} onChange={(event) => setInitialGroupName(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5" placeholder="Gruppenname" />
             </label>
-            <button disabled={busy} className="w-full rounded-lg bg-emerald-400 px-4 py-3 font-semibold text-slate-950 disabled:opacity-50">{busy ? "Wird angelegt …" : "Verein und Gruppe anlegen"}</button>
+            <button disabled={busy} className="rounded-lg bg-emerald-400 px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">{busy ? "…" : "Anlegen"}</button>
           </form>
-          <form onSubmit={(event) => void joinGroup(event)} className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-5 sm:p-6">
-            <div>
-              <h2 className="text-xl font-semibold">Gruppe beitreten</h2>
-              <p className="mt-1 text-sm text-slate-400">Lass dir den Einladungscode vom Vereinstrainer geben.</p>
-            </div>
-            <label className="block text-sm font-medium text-slate-200">Einladungscode
-              <input required minLength={8} maxLength={32} autoCapitalize="characters" value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 font-mono uppercase tracking-widest" placeholder="ABC123DEF456" />
+          <form onSubmit={(event) => void joinGroup(event)} className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+            <h2 className="font-semibold">Gruppe beitreten</h2>
+            <label className="block text-sm text-slate-300">Einladungscode
+              <input required minLength={8} maxLength={32} autoCapitalize="characters" value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 font-mono uppercase tracking-widest" placeholder="Code" />
             </label>
-            <button disabled={busy} className="w-full rounded-lg border border-emerald-400/50 px-4 py-3 font-semibold text-emerald-200 disabled:opacity-50">{busy ? "Wird geprüft …" : "Trainingsgruppe beitreten"}</button>
+            <button disabled={busy} className="rounded-lg border border-emerald-400/50 px-3 py-2 text-sm font-semibold text-emerald-200 disabled:opacity-50">{busy ? "…" : "Beitreten"}</button>
           </form>
         </div>
       ) : (
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+          <p className="text-sm text-slate-300">Keine Gruppe ausgewählt.</p>
+          <Link href="/verein" className="text-sm font-medium text-emerald-200 underline underline-offset-4">Verein wählen oder beitreten</Link>
+        </section>
+      ) : (
         <>
-          <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 sm:p-6">
+          <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
             <div className="flex flex-wrap items-end justify-between gap-4">
-              <label className="min-w-56 flex-1 text-sm font-medium text-slate-300">Verein und Trainingsgruppe
-                <SelectMenu className="mt-2" aria-label="Verein und Trainingsgruppe" value={groupId} options={groups.map((group) => ({ value: group.group_id, label: `${group.club_name} · ${group.group_name}` }))} onChange={setGroupId} />
+              <label className="min-w-48 flex-1 text-sm font-medium text-slate-300">Verein · Gruppe
+                <SelectMenu className="mt-1" aria-label="Verein und Trainingsgruppe" value={groupId} options={groups.map((group) => ({ value: group.group_id, label: `${group.club_name} · ${group.group_name}` }))} onChange={setGroupId} />
               </label>
               {selectedGroup?.invite_code && <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/5 px-4 py-3">
-                <p className="text-xs text-slate-400">Einladungscode für diese Gruppe</p>
-                <p className="mt-1 font-mono text-lg font-semibold tracking-widest text-emerald-200">{selectedGroup.invite_code}</p>
+                <p className="text-xs text-slate-400">Einladungscode</p>
+                <p className="font-mono text-lg font-semibold tracking-widest text-emerald-200">{selectedGroup.invite_code}</p>
               </div>}
-              <p className="text-sm text-slate-400">{selectedGroup?.member_count ?? 0} Mitglieder · {adminMode ? "Plattformadministration" : isTrainer ? "Trainer" : "Mitglied"}</p>
+              <p className="text-xs text-slate-400">{selectedGroup?.member_count ?? 0} Mitglieder · {adminMode ? "Admin" : isTrainer ? "Trainer" : "Mitglied"}</p>
             </div>
-            {isTrainer && <details className="mt-4 border-t border-slate-800 pt-4">
+            {showClubs && isTrainer && <details className="mt-3 border-t border-slate-800 pt-3">
               <summary className="cursor-pointer text-sm font-semibold text-slate-300">Weitere Trainingsgruppe anlegen</summary>
               <form onSubmit={(event) => void createGroup(event)} className="mt-3 flex flex-wrap gap-2">
                 <input required minLength={2} maxLength={80} value={newGroupName} onChange={(event) => setNewGroupName(event.target.value)} className="min-w-56 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm" placeholder="Gruppenname" />
                 <button disabled={busy} className="rounded-lg border border-slate-700 px-4 py-2.5 text-sm font-semibold hover:border-emerald-400/70 disabled:opacity-50">Gruppe anlegen</button>
               </form>
             </details>}
-            {isClubOwner && selectedGroup && <details className="mt-4 border-t border-slate-800 pt-4">
+            {showClubs && isClubOwner && selectedGroup && <details className="mt-3 border-t border-slate-800 pt-3">
               <summary className="cursor-pointer text-sm font-semibold text-amber-200">Verein und Trainingsgruppe verwalten</summary>
               <div className="mt-4 grid gap-4 lg:grid-cols-2">
                 <form onSubmit={(event) => void saveClubName(event)} className="space-y-3 rounded-xl border border-slate-800 bg-slate-950/50 p-4">
@@ -912,18 +914,16 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
               </div>
               <div className="mt-4 rounded-xl border border-red-900/50 bg-red-950/20 p-4">
                 <p className="text-sm font-semibold text-red-200">Verein dauerhaft löschen</p>
-                <p className="mt-1 text-xs text-slate-400">Alle Gruppen, Mitgliedschaften, Trainingspläne, Aufgaben und gespeicherten Vereinsturniere werden entfernt. Bereits verbuchte Online-Wertungen bleiben bestehen.</p>
+                <p className="mt-1 text-xs text-slate-400">Alle Vereinsdaten werden entfernt. Online-Wertungen bleiben.</p>
                 <button type="button" disabled={busy} onClick={() => void deleteClub()} className="mt-3 rounded-lg border border-red-800 px-3 py-2 text-xs font-semibold text-red-200 hover:bg-red-950/50 disabled:opacity-50">Verein löschen …</button>
               </div>
             </details>}
           </section>
 
-          {isTrainer && <div className="grid gap-4 xl:grid-cols-2">
-            <form onSubmit={(event) => void createPlan(event)} className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+          {showTraining && isTrainer && <div className="grid gap-3 xl:grid-cols-2">
+            <form onSubmit={(event) => void createPlan(event)} className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">Trainerbereich</p>
-                <h2 className="mt-1 text-lg font-semibold">Gemeinsamen Trainingsplan erstellen</h2>
-                <p className="mt-1 text-sm text-slate-400">Mit Frist und Teamziel wird der Plan zur lösbaren Gruppen-Challenge.</p>
+                <h2 className="font-semibold">Trainingsplan erstellen</h2>
               </div>
               <input required minLength={3} maxLength={100} value={planName} onChange={(event) => setPlanName(event.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-sm" placeholder="Name des Trainingsplans" aria-label="Name des Trainingsplans" />
               <textarea maxLength={500} value={planDescription} onChange={(event) => setPlanDescription(event.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-sm" placeholder="Beschreibung (optional)" aria-label="Beschreibung des Trainingsplans" rows={2} />
@@ -931,23 +931,21 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
                 <label className="text-xs text-slate-400">Frist (optional)
                   <input type="datetime-local" value={planDueAt} onChange={(event) => setPlanDueAt(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-200" />
                 </label>
-                <label className="text-xs text-slate-400">Teamziel: gelöste Aufgaben (optional)
+                <label className="text-xs text-slate-400">Teamziel (optional)
                   <input type="number" min={1} max={5000} value={planTarget} onChange={(event) => setPlanTarget(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-200" placeholder="z. B. 20" />
                 </label>
               </div>
-              <button disabled={busy} className="rounded-lg bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950 disabled:opacity-50">{busy ? "Wird angelegt …" : "Trainingsplan veröffentlichen"}</button>
+              <button disabled={busy} className="rounded-lg bg-emerald-400 px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">{busy ? "…" : "Plan veröffentlichen"}</button>
             </form>
 
-            <form onSubmit={(event) => void createTask(event)} className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+            <form onSubmit={(event) => void createTask(event)} className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">Aufgabe zuweisen</p>
-                <h2 className="mt-1 text-lg font-semibold">Taktikaufgabe für die Gruppe</h2>
-                <p className="mt-1 text-sm text-slate-400">Die Aufgabe wird online gelöst und die Teilnahme für den Trainer erfasst.</p>
+                <h2 className="font-semibold">Taktikaufgabe zuweisen</h2>
               </div>
               <input required minLength={3} maxLength={100} value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-sm" placeholder="Titel der Aufgabe" aria-label="Titel der Aufgabe" />
               <textarea maxLength={500} value={taskDescription} onChange={(event) => setTaskDescription(event.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-sm" placeholder="Hinweis für die Gruppe (optional)" aria-label="Beschreibung der Aufgabe" rows={2} />
               {savedPuzzlesLoading ? <p role="status" className="text-sm text-slate-400">Deine gespeicherten Aufgaben werden geladen …</p> : savedPuzzles.length ? (
-                <label className="block text-xs text-slate-400">Gespeicherte Taktikaufgabe für die Gruppe
+                <label className="block text-xs text-slate-400">Gespeicherte Aufgabe
                   <SelectMenu className="mt-1" aria-label="Gespeicherte Taktikaufgabe für die Gruppe" value={taskPuzzleId} options={savedPuzzles.map((puzzle) => ({ value: puzzle.id, label: `${puzzle.id} · ${puzzle.rating} Elo · ${getTacticsDifficulty(puzzle.rating)} · ${getTacticsTheme(puzzle.themes)}` }))} onChange={setTaskPuzzleId} />
                 </label>
               ) : (
@@ -967,21 +965,20 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
                   <input type="datetime-local" value={taskDueAt} onChange={(event) => setTaskDueAt(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-200" />
                 </label>
               </div>
-              <button disabled={busy || savedPuzzlesLoading || savedPuzzles.length === 0 || !taskPuzzleId} className="rounded-lg bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950 disabled:opacity-50">{busy ? "Wird zugewiesen …" : "Aufgabe veröffentlichen"}</button>
+              <button disabled={busy || savedPuzzlesLoading || savedPuzzles.length === 0 || !taskPuzzleId} className="rounded-lg bg-emerald-400 px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">{busy ? "…" : "Aufgabe veröffentlichen"}</button>
             </form>
 
           </div>}
 
-          {!adminMode && selectedGroup && <div id="vereinschat"><ClubCommunication clubId={selectedGroup.club_id} canPublishNews={isTrainer || isClubOwner} /></div>}
+          {showChat && !adminMode && selectedGroup && <ClubCommunication clubId={selectedGroup.club_id} canPublishNews={isTrainer || isClubOwner} />}
 
-          <section aria-labelledby="plans-heading" className="space-y-3">
+          {showTraining && <section aria-labelledby="plans-heading" className="space-y-3">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Gemeinsam trainieren</p>
-                <h2 id="plans-heading" className="mt-1 text-xl font-semibold">Trainingspläne & Team-Challenges</h2>
+                <h2 id="plans-heading" className="text-lg font-semibold">Trainingspläne</h2>
               </div>
               <button type="button" onClick={() => selectedGroup && void refreshGroup(groupId, selectedGroup.club_id)} disabled={loadingGroup} className="text-sm text-slate-400 underline underline-offset-4 hover:text-white disabled:opacity-50">
-                {loadingGroup ? "Wird aktualisiert …" : "Daten aktualisieren"}
+                {loadingGroup ? "…" : "Aktualisieren"}
               </button>
             </div>
             {loadingGroup ? <p className="text-sm text-slate-400">Pläne werden geladen …</p> : plans.length ? (
@@ -989,14 +986,14 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
                 {plans.map((plan) => {
                   const reachedGoal = plan.target_solutions !== null && plan.solved_count >= plan.target_solutions;
                   const progressPercent = plan.target_solutions ? Math.min(100, Math.round((plan.solved_count / plan.target_solutions) * 100)) : null;
-                  return <article key={plan.plan_id} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+                  return <article key={plan.plan_id} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div><h3 className="font-semibold text-white">{plan.name}</h3><p className="mt-1 text-sm text-slate-400">{plan.description || `${plan.task_count} Aufgaben`}</p></div>
                       {reachedGoal && <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold text-emerald-200">Ziel erreicht</span>}
                     </div>
-                    <p className="mt-4 text-sm text-slate-300">{plan.task_count} Aufgaben · {plan.solved_count} gelöste Gruppenversuche</p>
+                    <p className="mt-3 text-sm text-slate-300">{plan.task_count} Aufgaben · {plan.solved_count} gelöst</p>
                     {plan.due_at && <p className="mt-1 text-xs text-slate-500">Frist: {formatDate(plan.due_at)}</p>}
-                    {progressPercent !== null && <div className="mt-4">
+                    {progressPercent !== null && <div className="mt-3">
                       <div className="mb-1 flex justify-between text-xs text-slate-400"><span>Teamziel</span><span>{plan.solved_count}/{plan.target_solutions}</span></div>
                       <div className="h-2 overflow-hidden rounded-full bg-slate-800"><div className="h-full rounded-full bg-emerald-400 transition-all" style={{ width: `${progressPercent}%` }} /></div>
                     </div>}
@@ -1034,21 +1031,20 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
                 })}
               </div>
             ) : sectionErrors.plans
-              ? <p className="rounded-xl border border-red-900/70 bg-red-950/30 p-5 text-sm text-red-200" role="alert">Trainingspläne konnten nicht geladen werden: {sectionErrors.plans}</p>
-              : <p className="rounded-xl border border-dashed border-slate-700 p-5 text-sm text-slate-400">Noch keine Trainingspläne. Ein Trainer kann oben den ersten Plan erstellen.</p>}
-          </section>
+              ? <p className="rounded-xl border border-red-900/70 bg-red-950/30 p-4 text-sm text-red-200" role="alert">Trainingspläne konnten nicht geladen werden: {sectionErrors.plans}</p>
+              : <p className="rounded-xl border border-dashed border-slate-700 p-4 text-sm text-slate-400">Keine Trainingspläne.</p>}
+          </section>}
 
-          <section id="training" aria-labelledby="tasks-heading" className="scroll-mt-6 space-y-3">
+          {showTraining && <section aria-labelledby="tasks-heading" className="space-y-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Aufgaben</p>
-              <h2 id="tasks-heading" className="mt-1 text-xl font-semibold">Gruppentraining</h2>
+              <h2 id="tasks-heading" className="text-lg font-semibold">Gruppentraining</h2>
             </div>
             {loadingGroup ? <p className="text-sm text-slate-400">Aufgaben werden geladen …</p> : tasks.length ? (
               <div className="space-y-3">
                 {tasks.map((task) => {
                   const puzzle = tacticsPuzzles.find((item) => item.id === task.puzzle_id);
                   const preview = puzzle ? getPuzzleStartPosition(puzzle) : null;
-                  return <article key={task.task_id} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+                  return <article key={task.task_id} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <h3 className="font-semibold text-white">{task.title}</h3>
@@ -1057,18 +1053,18 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
                       </div>
                       {task.due_at && <span className="rounded-full border border-slate-700 px-2.5 py-1 text-xs text-slate-400">Frist: {formatDate(task.due_at)}</span>}
                     </div>
-                    {preview && <div className="mt-4 max-w-xs">
+                    {preview && <div className="mt-3 max-w-xs">
                       <MiniChessboard
                         fen={preview.fen()}
                         label={`Vorschau der Vereinsaufgabe ${task.title}`}
                         orientation={preview.turn() === "w" ? "white" : "black"}
                       />
                     </div>}
-                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <div className="mt-3 flex flex-wrap items-center gap-3">
                       {puzzle && !adminMode && <Link href={`/taktik?clubTask=${encodeURIComponent(task.task_id)}&puzzle=${encodeURIComponent(task.puzzle_id)}`} className="rounded-lg bg-emerald-400 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-emerald-300">
                         {task.my_solved ? "Noch einmal lösen" : task.my_attempts ? "Weiter üben" : "Aufgabe lösen"} <span aria-hidden="true">→</span>
                       </Link>}
-                      <p className="text-xs text-slate-400">{task.solved_count}/{task.participant_count} gelöst · {task.attempted_count} haben begonnen{task.my_solved ? " · Du hast sie gelöst" : ""}</p>
+                      <p className="text-xs text-slate-400">{task.solved_count}/{task.participant_count} gelöst · {task.attempted_count} begonnen{task.my_solved ? " · gelöst" : ""}</p>
                       {isTrainer && <button type="button" onClick={() => void toggleParticipation(task.task_id)} className="ml-auto text-xs font-medium text-emerald-200 underline underline-offset-4">{openParticipationId === task.task_id ? "Teilnahme schließen" : "Teilnahme ansehen"}</button>}
                     </div>
                     {openParticipationId === task.task_id && <div className="mt-4 border-t border-slate-800 pt-3">
@@ -1120,42 +1116,40 @@ export function ChessClubTraining({ adminMode = false }: { adminMode?: boolean }
                 })}
               </div>
             ) : sectionErrors.tasks
-              ? <p className="rounded-xl border border-red-900/70 bg-red-950/30 p-5 text-sm text-red-200" role="alert">Gruppenaufgaben konnten nicht geladen werden: {sectionErrors.tasks}</p>
-              : <p className="rounded-xl border border-dashed border-slate-700 p-5 text-sm text-slate-400">Noch keine Aufgaben in dieser Gruppe.</p>}
-          </section>
+              ? <p className="rounded-xl border border-red-900/70 bg-red-950/30 p-4 text-sm text-red-200" role="alert">Gruppenaufgaben konnten nicht geladen werden: {sectionErrors.tasks}</p>
+              : <p className="rounded-xl border border-dashed border-slate-700 p-4 text-sm text-slate-400">Keine Gruppenaufgaben.</p>}
+          </section>}
 
-          <section aria-labelledby="members-heading" className="space-y-3">
+          {showTraining && <section aria-labelledby="members-heading" className="space-y-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Übersicht</p>
-              <h2 id="members-heading" className="mt-1 text-xl font-semibold">Teilnahme der Gruppe</h2>
+              <h2 id="members-heading" className="text-lg font-semibold">Teilnahme</h2>
             </div>
             <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60">
-              {sectionErrors.members && <p className="border-b border-red-900/70 bg-red-950/30 p-5 text-sm text-red-200" role="alert">Gruppenmitglieder konnten nicht geladen werden: {sectionErrors.members}</p>}
-              {members.map((member) => <div key={member.user_id} className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 px-5 py-3 last:border-b-0">
+              {sectionErrors.members && <p className="border-b border-red-900/70 bg-red-950/30 p-4 text-sm text-red-200" role="alert">Gruppenmitglieder konnten nicht geladen werden: {sectionErrors.members}</p>}
+              {members.map((member) => <div key={member.user_id} className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 px-4 py-3 last:border-b-0">
                 <div><p className="font-medium text-slate-200">{member.username}</p><p className="text-xs text-slate-500">{member.role} · dabei seit {formatDate(member.joined_at)}</p></div>
                 <p className="text-sm tabular-nums text-slate-300">{member.solved_tasks} gelöst · {member.attempted_tasks} bearbeitet</p>
               </div>)}
-              {!loadingGroup && !sectionErrors.members && members.length === 0 && <p className="p-5 text-sm text-slate-400">Noch keine Gruppenmitglieder.</p>}
+              {!loadingGroup && !sectionErrors.members && members.length === 0 && <p className="p-4 text-sm text-slate-400">Keine Gruppenmitglieder.</p>}
             </div>
-          </section>
+          </section>}
 
-          <section aria-labelledby="club-members-heading" className="space-y-3">
+          {showClubs && <section aria-labelledby="club-members-heading" className="space-y-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Vereinsübersicht</p>
-              <h2 id="club-members-heading" className="mt-1 text-xl font-semibold">Mitglieder im Verein</h2>
+              <h2 id="club-members-heading" className="text-lg font-semibold">Vereinsmitglieder</h2>
             </div>
             <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60">
-              {sectionErrors.clubMembers && <p className="border-b border-red-900/70 bg-red-950/30 p-5 text-sm text-red-200" role="alert">Vereinsmitglieder konnten nicht geladen werden: {sectionErrors.clubMembers}</p>}
-              {clubMembers.map((member) => <div key={member.user_id} className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 px-5 py-3 last:border-b-0">
+              {sectionErrors.clubMembers && <p className="border-b border-red-900/70 bg-red-950/30 p-4 text-sm text-red-200" role="alert">Vereinsmitglieder konnten nicht geladen werden: {sectionErrors.clubMembers}</p>}
+              {clubMembers.map((member) => <div key={member.user_id} className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 px-4 py-3 last:border-b-0">
                 <div><p className="font-medium text-slate-200">{member.username}</p><p className="text-xs text-slate-500">{member.role} · {member.group_count} {member.group_count === 1 ? "Trainingsgruppe" : "Trainingsgruppen"} · dabei seit {formatDate(member.joined_at)}</p></div>
                 {isClubOwner && member.user_id !== userId && (adminMode || member.role !== "Vereinsgründer") && <button type="button" disabled={busy} onClick={() => void removeClubMember(member)} className="rounded-lg border border-red-900/70 px-3 py-2 text-xs font-semibold text-red-200 hover:border-red-700 hover:bg-red-950/40 disabled:opacity-50">Aus Verein entfernen</button>}
                 {!adminMode && !isClubOwner && member.user_id === userId && <button type="button" disabled={busy} onClick={() => void leaveClub()} className="rounded-lg border border-amber-300/40 px-3 py-2 text-xs font-semibold text-amber-200 hover:border-amber-300/70 disabled:opacity-50">Verein verlassen</button>}
               </div>)}
-              {!loadingGroup && !sectionErrors.clubMembers && clubMembers.length === 0 && <p className="p-5 text-sm text-slate-400">Noch keine Vereinsmitglieder.</p>}
+              {!loadingGroup && !sectionErrors.clubMembers && clubMembers.length === 0 && <p className="p-4 text-sm text-slate-400">Keine Vereinsmitglieder.</p>}
             </div>
-          </section>
+          </section>}
 
-          {!adminMode && <details className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+          {showClubs && !adminMode && <details className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
             <summary className="cursor-pointer text-sm font-semibold text-slate-300">Weitere Gruppe beitreten</summary>
             <form onSubmit={(event) => void joinGroup(event)} className="mt-3 flex flex-wrap gap-2">
               <input required minLength={8} maxLength={32} value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} className="min-w-56 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 font-mono text-sm uppercase tracking-widest" placeholder="Einladungscode" aria-label="Einladungscode" />
