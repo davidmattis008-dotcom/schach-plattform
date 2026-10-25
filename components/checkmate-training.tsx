@@ -15,8 +15,6 @@ type CheckmateLesson = {
   material: string;
   fen: string;
   solution: string;
-  principle: string;
-  plan: string;
   forceable: boolean;
   quiz: {
     question: string;
@@ -207,19 +205,17 @@ function CheckmateWorkspace({
   }
 
   return (
-    <article className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-6">
+    <article className="rounded-2xl border border-amber-300/20 bg-black p-3 sm:p-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-amber-200">{lesson.material} · {lesson.forceable ? `${line.length} Halbzüge bis zum Matt` : "Wichtige Materialgrenze"}</p>
-          <h2 className="mt-2 text-xl font-semibold text-white">{lesson.title}</h2>
+          <h2 className="mt-1 text-xl font-semibold text-white">{lesson.title}</h2>
         </div>
         <span className={`rounded-full border px-3 py-1 text-xs ${learned ? "border-emerald-300/30 text-emerald-200" : "border-slate-700 text-slate-400"}`}>
           {learned ? "Gelernt · Wiederholen" : "Lernen"}
         </span>
       </header>
-      <p className="mt-3 text-sm leading-6 text-slate-300">{lesson.principle}</p>
-
-      <div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,34rem)_minmax(15rem,1fr)]">
+      <div className="mt-3 grid items-start gap-4 lg:grid-cols-[minmax(0,34rem)_minmax(15rem,1fr)]">
         <div>
           <MiniChessboard
             fen={shownFen}
@@ -231,15 +227,15 @@ function CheckmateWorkspace({
           <p role="status" aria-live="polite" className="mt-3 rounded-lg border border-amber-300/20 bg-amber-300/5 px-3 py-2 text-center text-sm font-semibold text-amber-100">{boardStatus}</p>
           <p className="mt-2 text-center text-xs text-slate-500">
             {phase === "try"
-              ? `${attemptMoves.length} eigene Halbzüge ausprobiert · wähle auf Wunsch beide Farben`
+              ? `${attemptMoves.length} Züge ausprobiert`
               : phase === "explain" && lesson.forceable
-                ? `Lösungszug ${guideStep} von ${line.length} Halbzügen · kein Zug wird übersprungen`
-                : phase === "quiz" ? "Die Stellung bleibt sichtbar, während du dein Verständnis prüfst." : "Studiere den Plan und teste danach dein Verständnis."}
+                ? `Zug ${guideStep} von ${line.length}`
+                : phase === "quiz" ? "Verständnis-Test" : ""}
           </p>
           {phase === "try" ? (
             <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" onClick={resetAttempt} className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">Stellung zurücksetzen</button>
-              <button type="button" onClick={startExplanation} className="rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-200">Lösung Schritt für Schritt →</button>
+              <button type="button" onClick={resetAttempt} className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">Zurücksetzen</button>
+              <button type="button" onClick={startExplanation} className="rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-200">Lösung ansehen →</button>
             </div>
           ) : phase === "explain" && lesson.forceable ? (
             <div className="mt-3 flex flex-wrap gap-2">
@@ -258,18 +254,12 @@ function CheckmateWorkspace({
 
         <div>
           {phase === "try" && <>
-            <h3 className="font-semibold text-white">Erst selbst probieren</h3>
-            <p className="mt-3 rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-sm leading-6 text-slate-300">
-              {lesson.forceable
-                ? `Finde selbst heraus, wie ${lesson.material.toLocaleLowerCase("de")} zusammenarbeiten. Spiele beliebige legale Züge am Brett; du kannst beide Seiten bewegen. Wenn du bereit bist, zeigt die Erklärung danach jeden Zug der vollständigen Mattvariante.`
-                : "Versuche, eine erzwungene Mattfolge zu finden. Prüfe dabei genau, ob die angreifende Seite tatsächlich gegen jede Verteidigung gewinnen kann."}
-            </p>
+            <h3 className="font-semibold text-white">Probiere es selbst</h3>
             {message && <p role="status" aria-live="polite" className="mt-3 rounded-lg bg-slate-950/70 px-3 py-2 text-sm leading-6 text-slate-300">{message}</p>}
           </>}
 
           {phase === "explain" && <>
             <h3 className="font-semibold text-white">Erklärung Schritt für Schritt</h3>
-            <p className="mt-3 rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-sm leading-6 text-slate-300">{lesson.plan}</p>
             {lesson.forceable ? currentMove ? (
               <section aria-live="polite" className={`mt-3 rounded-xl border p-4 ${currentMove.checkmate ? "border-emerald-300/30 bg-emerald-300/10" : "border-amber-300/20 bg-amber-300/5"}`}>
                 <p className="text-xs font-semibold uppercase tracking-wider text-amber-200">Zug {guideStep} von {line.length} · {currentMove.color === "w" ? "Weiß" : "Schwarz"}</p>
@@ -277,8 +267,8 @@ function CheckmateWorkspace({
                 <p className="mt-2 text-sm leading-6 text-slate-200">{explanationFor(currentMove, lesson, guideStep)}</p>
                 <p className="mt-2 text-xs text-slate-400">Danach ist {currentMove.color === "w" ? "Schwarz" : "Weiß"} am Zug und hat {currentMove.escapeMoves} legale Antwort{currentMove.escapeMoves === 1 ? "" : "en"}.</p>
               </section>
-            ) : <p className="mt-3 rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-sm leading-6 text-slate-300">Lies den Plan und gehe mit „Nächster Zug“ die komplette Beispielvariante durch.</p> : (
-              <section className="mt-3 rounded-xl border border-amber-300/20 bg-amber-300/5 p-4 text-sm leading-6 text-amber-100">{lesson.plan}</section>
+            ) : <p className="mt-3 text-sm text-slate-400">Weiter mit „Nächster Zug“.</p> : (
+              <p className="mt-3 text-sm text-amber-100">Matt ist mit diesem Material nicht erzwingbar.</p>
             )}
             {lesson.forceable && <details className="mt-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3">
               <summary className="cursor-pointer text-sm font-medium text-slate-300">Alle {line.length} Halbzüge anzeigen</summary>
@@ -358,7 +348,6 @@ export function CheckmateTraining() {
         <header className="mt-7">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200">Selbstständiges Lernen · Mattmethoden</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Mattsetzen lernen</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">Probiere jedes Mattbild zuerst selbst am Brett. Danach erklärt der Kurs die Lösung Zug für Zug und prüft dein Verständnis. Lerne bekannte Mattbilder und alle grundlegenden erzwungenen Mattführungen gegen den alleinstehenden König; zwei Springer können ein Matt nicht erzwingen.</p>
         </header>
 
         <section aria-label="Mattmethode auswählen" className="mt-6">
@@ -392,7 +381,6 @@ export function CheckmateTraining() {
             <CheckmateWorkspace key={lesson.id} lesson={lesson} learned={completed.includes(lesson.id)} onComplete={() => markCompleted(lesson.id)} />
           </div>
         )}
-        <p className="mt-4 text-xs leading-5 text-slate-500">Die Varianten beginnen in Beispielstellungen und zeigen jeweils eine vollständige legale Mattfolge; die tatsächliche Partie kann andere beste Züge enthalten. Läufer+Springer erfordert präzises Zusammenspiel bis zur richtigen Ecke. Läufer oder Springer allein sowie zwei Springer gegen den alleinstehenden König reichen nicht, um Matt zu erzwingen.</p>
       </div>
     </main>
   );
