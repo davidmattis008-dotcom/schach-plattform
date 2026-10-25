@@ -16,9 +16,9 @@ function isLoginRequest(value: unknown): value is LoginRequest {
     && body.password.length <= 1024;
 }
 
-function loginError(status: number) {
+function loginError(status: number, message = "Anmeldung fehlgeschlagen. Prüfe Benutzername und Passwort.") {
   return NextResponse.json(
-    { error: "Anmeldung fehlgeschlagen. Prüfe Benutzername und Passwort." },
+    { error: message },
     { status, headers: { "Cache-Control": "no-store" } },
   );
 }
@@ -93,6 +93,24 @@ export async function POST(request: NextRequest) {
     !("refresh_token" in authResult) || typeof authResult.refresh_token !== "string") {
     console.error("Supabase Auth hat eine ungültige Username-Anmeldesitzung zurückgegeben.");
     return loginError(502);
+  }
+
+  const { data: { user }, error: userError } = await adminClient.auth.getUser(authResult.access_token);
+  if (userError || !user) {
+    console.error("Das Supabase-Konto für den Username-Login konnte nicht verifiziert werden:", userError);
+    return loginError(502);
+  }
+
+  const [{ data: accessRow, error: accessError }, { data: adminRow, error: adminError }] = await Promise.all([
+    adminClient.from("site_access_allowlist").select("enabled").eq("user_id", user.id).maybeSingle(),
+    adminClient.from("site_admins").select("user_id").eq("user_id", user.id).maybeSingle(),
+  ]);
+  if (accessError || adminError) {
+    console.error("Allowlist konnte für den Username-Login nicht geprüft werden:", accessError ?? adminError);
+    return loginError(503);
+  }
+  if (accessRow?.enabled !== true && !adminRow) {
+    return loginError(403, "Dieses Konto ist für den privaten Testbetrieb nicht freigeschaltet.");
   }
 
   return NextResponse.json(

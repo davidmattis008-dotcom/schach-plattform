@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { ProfileEditor } from "@/components/profile-editor";
 import { ProfileGameHistory } from "@/components/profile-game-history";
 import { createClient } from "@/lib/supabase/client";
+import { getProfileAvatarSrc } from "@/lib/profile-avatar";
 import { getDailyExerciseLevel, getTacticsProgress, INITIAL_TACTICS_PROGRESS, subscribeToTacticsProgress } from "@/lib/tactics-progress";
 
 type PublicProfile = { id: string; username: string; bio: string; avatar_url: string | null };
@@ -154,8 +155,8 @@ export function PlayerProfileView({ requestedUsername }: { requestedUsername?: s
         <header className="mt-8 border-b border-slate-800 pb-7">
           <p className="text-sm font-medium text-emerald-400">SPIELERPROFIL</p>
           <div className="mt-3 flex flex-wrap items-center gap-4">
-            {profile?.avatar_url
-              ? <img src={profile.avatar_url} alt={`Profilbild von ${profile.username}`} className="h-20 w-20 rounded-full border border-slate-700 object-cover" />
+            {profile?.avatar_url && getProfileAvatarSrc(profile.id, profile.avatar_url)
+              ? <img src={getProfileAvatarSrc(profile.id, profile.avatar_url) ?? undefined} alt={`Profilbild von ${profile.username}`} className="h-20 w-20 rounded-full border border-slate-700 object-cover" />
               : <span aria-hidden="true" className="flex h-20 w-20 items-center justify-center rounded-full bg-slate-800 text-3xl text-emerald-300">♟</span>}
             <div>
               <h1 className="break-all text-4xl font-semibold tracking-tight">{username || "Dein Profil"}</h1>

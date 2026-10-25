@@ -201,7 +201,7 @@ function finishGame(end: MatchEnd, broadcast = false) {
     let active = true;
     const supabase = createClient();
     const channel = supabase.channel("online-match-" + config.room, {
-      config: { presence: { key: config.player }, broadcast: { self: false } },
+      config: { private: true, presence: { key: config.player }, broadcast: { self: false } },
     });
     channelRef.current = channel;
 

@@ -60,6 +60,15 @@ export default function LoginPage() {
         setMessage("Login fehlgeschlagen.");
         return;
       }
+      const { data: hasAccess, error: accessError } = await supabase.rpc("get_my_site_access");
+      if (accessError || hasAccess !== true) {
+        const { error: signOutError } = await supabase.auth.signOut();
+        if (signOutError) console.error("Abmeldung für ein nicht freigeschaltetes Konto fehlgeschlagen:", signOutError);
+        setMessage(accessError && accessError.code !== "42501"
+          ? "Der Testzugriff kann gerade nicht geprüft werden. Bitte versuche es später erneut."
+          : "Dieses Konto ist für den privaten Testbetrieb nicht freigeschaltet.");
+        return;
+      }
       const { data: profile } = await supabase.from("profiles").select("id").eq("id", user.id).maybeSingle();
       if (profile) router.push("/");
       else router.push("/profile/setup");
@@ -92,7 +101,7 @@ export default function LoginPage() {
             </button>
           </form>
           <p className="mt-4 text-sm text-slate-400"><Link href="/forgot-password" className="underline hover:text-white">Passwort vergessen?</Link></p>
-          <p className="mt-6 border-t border-slate-800 pt-5 text-sm text-slate-400">Noch kein Konto? <Link href="/auth/register" className="font-medium text-slate-200 underline underline-offset-4 hover:text-emerald-300">Account erstellen</Link></p>
+          <p className="mt-6 border-t border-slate-800 pt-5 text-sm text-slate-400">Neue Testkonten werden vom Betreiber eingerichtet.</p>
           {message && <p className="mt-6 rounded-xl border border-slate-700 bg-slate-900 p-4 text-sm text-slate-300">{message}</p>}
         </section>
       </div>

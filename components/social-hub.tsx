@@ -7,10 +7,11 @@ import { createClient } from "@/lib/supabase/client";
 import { useDirectMessageNotifications } from "@/components/direct-message-notifications";
 import { ONLINE_TIME_CONTROLS } from "@/app/online/protocol";
 import { SelectMenu } from "@/components/select-menu";
+import { getProfileAvatarSrc } from "@/lib/profile-avatar";
 
 type SocialTab = "friends" | "challenges";
 type Person = { id: string; username: string; bio?: string; avatar_url?: string | null };
-type FriendRequest = Person & { request_id: string; status: string; direction: "incoming" | "outgoing"; created_at: string };
+type FriendRequest = { request_id: string; user_id: string; username: string; avatar_url: string | null; status: string; direction: "incoming" | "outgoing"; created_at: string };
 type ChatMessage = { id: string; sender_id: string; username: string; avatar_url: string | null; body: string; created_at: string };
 type BlockedUser = { user_id: string; username: string; created_at: string };
 type ChessChallenge = {
@@ -32,9 +33,10 @@ function needsSocialMigrations(error: unknown) {
   return /PGRST202|PGRST204|42501/i.test(`${code} ${message}`);
 }
 
-function Avatar({ person, size = "h-10 w-10" }: { person: Pick<Person, "username" | "avatar_url">; size?: string }) {
-  return person.avatar_url
-    ? <img src={person.avatar_url} alt="" className={`${size} rounded-full bg-slate-800 object-cover`} />
+function Avatar({ person, userId, size = "h-10 w-10" }: { person: Pick<Person, "username" | "avatar_url">; userId: string; size?: string }) {
+  const avatarSrc = getProfileAvatarSrc(userId, person.avatar_url);
+  return avatarSrc
+    ? <img src={avatarSrc} alt="" className={`${size} rounded-full bg-slate-800 object-cover`} />
     : <span aria-hidden="true" className={`${size} flex shrink-0 items-center justify-center rounded-full bg-slate-800 font-semibold text-emerald-300`}>{person.username.slice(0, 1).toUpperCase()}</span>;
 }
 
@@ -375,20 +377,20 @@ export function SocialHub() {
                 <input id="player-search" value={search} onChange={(event) => setSearch(event.target.value)} maxLength={20} placeholder="Benutzername" className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-emerald-400" />
                 <button type="submit" disabled={searching} className="rounded-lg border border-slate-700 px-3 py-2 text-sm hover:bg-slate-800 disabled:opacity-50">{searching ? "Sucht …" : "Suchen"}</button>
               </div>
-              {results.length > 0 && <ul className="mt-3 space-y-2">{results.map((person) => <li key={person.id} className="flex min-w-0 flex-wrap items-center gap-2 rounded-lg bg-slate-800/70 p-2"><Link href={`/profile/${encodeURIComponent(person.username)}`} className="flex min-w-0 flex-1 basis-full items-center gap-2 sm:basis-auto"><Avatar person={person} size="h-8 w-8" /><span className="truncate text-sm">{person.username}</span></Link><button type="button" onClick={() => void requestFriend(person.username)} className="rounded-md bg-emerald-400 px-2 py-1 text-xs font-semibold text-slate-950">Hinzufügen</button><button type="button" onClick={() => void blockUser(person)} className="rounded-md border border-rose-900 px-2 py-1 text-xs text-rose-300">Blockieren</button></li>)}</ul>}
+              {results.length > 0 && <ul className="mt-3 space-y-2">{results.map((person) => <li key={person.id} className="flex min-w-0 flex-wrap items-center gap-2 rounded-lg bg-slate-800/70 p-2"><Link href={`/profile/${encodeURIComponent(person.username)}`} className="flex min-w-0 flex-1 basis-full items-center gap-2 sm:basis-auto"><Avatar person={person} userId={person.id} size="h-8 w-8" /><span className="truncate text-sm">{person.username}</span></Link><button type="button" onClick={() => void requestFriend(person.username)} className="rounded-md bg-emerald-400 px-2 py-1 text-xs font-semibold text-slate-950">Hinzufügen</button><button type="button" onClick={() => void blockUser(person)} className="rounded-md border border-rose-900 px-2 py-1 text-xs text-rose-300">Blockieren</button></li>)}</ul>}
               {!searching && !error && search.trim().length >= 3 && results.length === 0 && <p className="mt-3 text-sm text-slate-500">Keine Spieler gefunden.</p>}
             </form>
 
             <section className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-5">
               <h2 className="font-semibold">Freundschaftsanfragen</h2>
-              {requests.length === 0 ? <p className="mt-3 text-sm text-slate-500">Keine offenen Anfragen.</p> : <ul className="mt-3 space-y-3">{requests.map((request) => <li key={request.request_id} className="flex min-w-0 flex-wrap items-center gap-2"><Link href={`/profile/${encodeURIComponent(request.username)}`} className="flex min-w-0 flex-1 basis-full items-center gap-2 sm:basis-auto"><Avatar person={request} size="h-8 w-8" /><span className="truncate text-sm">{request.username}</span></Link>{request.direction === "incoming" ? <><button type="button" onClick={() => void respondToRequest(request, true)} className="rounded-md bg-emerald-400 px-2 py-1 text-xs font-semibold text-slate-950">Annehmen</button><button type="button" onClick={() => void respondToRequest(request, false)} className="rounded-md border border-slate-700 px-2 py-1 text-xs">Ablehnen</button></> : <span className="text-xs text-slate-500">Ausstehend</span>}</li>)}</ul>}
+              {requests.length === 0 ? <p className="mt-3 text-sm text-slate-500">Keine offenen Anfragen.</p> : <ul className="mt-3 space-y-3">{requests.map((request) => <li key={request.request_id} className="flex min-w-0 flex-wrap items-center gap-2"><Link href={`/profile/${encodeURIComponent(request.username)}`} className="flex min-w-0 flex-1 basis-full items-center gap-2 sm:basis-auto"><Avatar person={request} userId={request.user_id} size="h-8 w-8" /><span className="truncate text-sm">{request.username}</span></Link>{request.direction === "incoming" ? <><button type="button" onClick={() => void respondToRequest(request, true)} className="rounded-md bg-emerald-400 px-2 py-1 text-xs font-semibold text-slate-950">Annehmen</button><button type="button" onClick={() => void respondToRequest(request, false)} className="rounded-md border border-slate-700 px-2 py-1 text-xs">Ablehnen</button></> : <span className="text-xs text-slate-500">Ausstehend</span>}</li>)}</ul>}
             </section>
 
             <section className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-5">
               <h2 className="font-semibold">Deine Freunde</h2>
               {friends.length === 0 ? <p className="mt-3 text-sm text-slate-500">Noch keine Freunde – suche nach einem Spielernamen.</p> : <ul className="mt-3 space-y-2">{friends.map((friend) => <li key={friend.id} className="flex min-w-0 flex-wrap items-center gap-2 rounded-lg p-2 hover:bg-slate-800/60">
                 <Link href={`/profile/${encodeURIComponent(friend.username)}`} className="flex min-w-0 flex-1 basis-full items-center gap-2 sm:basis-auto" aria-label={`Profil von ${friend.username} öffnen`}>
-                  <Avatar person={friend} size="h-8 w-8" />
+                  <Avatar person={friend} userId={friend.id} size="h-8 w-8" />
                   <span className="truncate text-sm">{friend.username}</span>
                 </Link>
                 {unreadByFriend[friend.id] && <span aria-label={`${unreadByFriend[friend.id].unread_count} ungelesene Nachrichten`} className="rounded-full bg-emerald-400 px-2 py-0.5 text-[10px] font-bold text-slate-950">{unreadByFriend[friend.id].unread_count}</span>}
@@ -431,7 +433,7 @@ export function SocialHub() {
               <SelectMenu compact aria-label="Bedenkzeit für Herausforderungen" value={challengeControlId} options={ONLINE_TIME_CONTROLS.map((control) => ({ value: control.id, label: control.label }))} onChange={setChallengeControlId} />
             </div>
             {friends.length === 0 ? <p className="mt-4 text-sm text-slate-500">Füge zuerst Freunde hinzu.</p> : <ul className="mt-3 space-y-2">{friends.map((friend) => <li key={friend.id} className="flex min-w-0 flex-wrap items-center gap-2 rounded-lg bg-slate-800/60 p-2">
-              <Link href={`/profile/${encodeURIComponent(friend.username)}`} className="flex min-w-0 flex-1 items-center gap-2"><Avatar person={friend} size="h-8 w-8" /><span className="truncate text-sm">{friend.username}</span></Link>
+              <Link href={`/profile/${encodeURIComponent(friend.username)}`} className="flex min-w-0 flex-1 items-center gap-2"><Avatar person={friend} userId={friend.id} size="h-8 w-8" /><span className="truncate text-sm">{friend.username}</span></Link>
               <button type="button" onClick={() => void challengeFriend(friend)} className="shrink-0 rounded-md border border-emerald-400/40 px-2.5 py-1.5 text-xs font-medium text-emerald-200">Herausfordern</button>
             </li>)}</ul>}
           </div>
@@ -506,7 +508,7 @@ function ChatPanel({
         {messages.length === 0 ? <p className="py-8 text-center text-sm text-slate-500">{emptyText}</p> : messages.map((message) => (
           <article key={message.id} className={`flex gap-2 ${message.sender_id === userId ? "flex-row-reverse" : ""}`}>
             <Link href={`/profile/${encodeURIComponent(message.username)}`} aria-label={`Profil von ${message.username}`}>
-              <Avatar person={{ username: message.username, avatar_url: message.avatar_url }} size="h-8 w-8" />
+              <Avatar person={{ username: message.username, avatar_url: message.avatar_url }} userId={message.sender_id} size="h-8 w-8" />
             </Link>
             <div className={`max-w-[85%] rounded-xl px-3 py-2 ${message.sender_id === userId ? "bg-emerald-950/60 text-emerald-50" : "bg-slate-800 text-slate-200"}`}>
               <div className="mb-1 flex items-baseline gap-2"><Link href={`/profile/${encodeURIComponent(message.username)}`} className="text-xs font-semibold hover:underline">{message.username}</Link><time dateTime={message.created_at} className="text-[10px] text-slate-500">{new Date(message.created_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}</time></div>
