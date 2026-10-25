@@ -58,7 +58,7 @@ export default function AnalysePage() {
       setEvaluation(null);
       setAnalyzing(false);
       setAnalysisPuzzleId(puzzle.id);
-      setMessage(`Taktikaufgabe ${puzzle.id} geladen. Spiele Züge am Brett und analysiere die Stellung mit Stockfish.`);
+      setMessage("Taktikaufgabe geladen.");
       setEngineError("");
       workerRef.current?.postMessage("stop");
     } catch (loadError) {
@@ -307,24 +307,21 @@ export default function AnalysePage() {
       : (Number(evaluation.score) > 0 ? "+" : "") + evaluation.score
     : "Noch nicht analysiert";
 
-  return <main className="min-h-screen bg-slate-950 px-4 py-8 text-white sm:px-6">
+  return <main className="min-h-screen bg-slate-950 px-3 py-4 text-white sm:px-5 sm:py-6">
     <div className="mx-auto max-w-7xl">
       {promotionPending && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/80 p-4" role="dialog" aria-modal="true" aria-labelledby="analysis-promotion-title"><div className="w-full max-w-sm rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl"><h2 id="analysis-promotion-title" className="text-xl font-bold">Bauernumwandlung</h2><p className="mt-1 text-sm text-slate-400">Welche Figur möchtest du wählen?</p><div className="mt-4 grid grid-cols-4 gap-2">{(["q", "r", "b", "n"] as const).map((piece) => <button key={piece} type="button" onClick={() => choosePromotion(piece)} className="flex flex-col items-center rounded-xl border border-slate-700 bg-slate-950 p-3 hover:border-emerald-400 hover:bg-slate-800"><span className={"text-4xl " + (promotionColor === "w" ? "text-white drop-shadow-[0_2px_2px_rgba(15,23,42,0.95)]" : "text-slate-950 drop-shadow-[0_1px_1px_rgba(255,255,255,0.85)]")}>{PIECES[promotionColor + piece.toUpperCase()]}</span><span className="mt-1 text-xs">{{ q: "Dame", r: "Turm", b: "Läufer", n: "Springer" }[piece]}</span></button>)}</div><button type="button" onClick={() => setPromotionPending(null)} className="mt-4 w-full rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">Abbrechen</button></div></div>}
-      <header className="mb-7">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300">Partie verstehen · besser spielen</p>
-        <h1 className="mt-2 text-3xl font-bold sm:text-4xl">Analyse</h1>
-        <p className="mt-2 text-slate-400">Lade eine Partie oder gib sie direkt am Brett ein und untersuche sie mit Stockfish.</p>
+      <header className="mb-4">
+        <h1 className="text-2xl font-bold sm:text-3xl">Analyse</h1>
       </header>
-      <section aria-labelledby="saved-tactics-heading" className="mb-5 rounded-2xl border border-amber-300/20 bg-slate-900 p-5">
-        <div className="flex flex-wrap items-end justify-between gap-3">
+      <section aria-labelledby="saved-tactics-heading" className="mb-4 rounded-xl border border-amber-300/20 bg-slate-900 p-3 sm:p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 id="saved-tactics-heading" className="text-lg font-bold">Gespeicherte Taktikaufgaben</h2>
-            <p className="mt-1 text-sm text-slate-400">Lade eine Aufgabe auf das Brett und analysiere sie mit Stockfish.</p>
+            <h2 id="saved-tactics-heading" className="font-bold">Gespeicherte Aufgaben</h2>
           </div>
-          <Link href="/taktik" className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800">Taktikaufgaben öffnen</Link>
+          <Link href="/taktik" className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800">Taktik öffnen</Link>
         </div>
         {savedPuzzlesLoading ? <p className="mt-4 text-sm text-slate-400" role="status">Gespeicherte Aufgaben werden geladen …</p> : savedPuzzles.length ? (
-          <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {savedPuzzles.map((puzzle) => {
               const preview = new Chess(puzzle.fen);
               if (puzzle.setupMove) {
@@ -334,13 +331,13 @@ export default function AnalysePage() {
                   ...(puzzle.setupMove.length === 5 ? { promotion: puzzle.setupMove[4] } : {}),
                 });
               }
-              return <li key={puzzle.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+              return <li key={puzzle.id} className="rounded-lg border border-slate-800 bg-slate-950/70 p-2">
                 <MiniChessboard
                   fen={preview.fen()}
                   label={`Vorschau der Taktikaufgabe ${puzzle.id}`}
                   orientation={preview.turn() === "w" ? "white" : "black"}
                 />
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-1">
                   <button type="button" onClick={() => loadTacticsPuzzle(puzzle)} className="min-w-0 text-left">
                     <span className="block truncate text-sm font-semibold text-white">Aufgabe {puzzle.id} · {puzzle.rating} Elo</span>
                     <span className="mt-1 block text-xs text-slate-400">{getTacticsDifficulty(puzzle.rating)} · {getTacticsTheme(puzzle.themes)}</span>
@@ -351,21 +348,21 @@ export default function AnalysePage() {
             })}
           </ul>
         ) : (
-          <p className="mt-4 text-sm text-slate-400">{savedPuzzleMessage || "Du hast noch keine Taktikaufgaben gespeichert. Speichere Aufgaben im Taktiktraining, um sie hier zu analysieren."}</p>
+          <p className="mt-4 text-sm text-slate-400">{savedPuzzleMessage || "Keine gespeicherten Aufgaben."}</p>
         )}
         {savedPuzzleMessage && savedPuzzles.length > 0 && <p role="status" className="mt-3 text-sm text-slate-400">{savedPuzzleMessage}</p>}
       </section>
-      {analysisPuzzleId && <p className="mb-4 rounded-lg border border-violet-500/20 bg-violet-500/5 px-4 py-3 text-sm text-violet-100">Taktikaufgabe {analysisPuzzleId} ist geladen. Du kannst die Stellung verändern und analysieren.</p>}
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)]">
-        <section className="rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-6">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      {analysisPuzzleId && <p className="mb-3 rounded-lg border border-violet-500/20 bg-violet-500/5 px-3 py-2 text-sm text-violet-100">Aufgabe {analysisPuzzleId}</p>}
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.4fr)_minmax(300px,0.8fr)]">
+        <section className="rounded-xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 className="font-semibold">Partiebrett</h2>
               <p className="text-sm text-slate-400">{moves.length ? moveIndex === 0 ? "Ausgangsstellung" : "Nach " + Math.ceil(moveIndex / 2) + ". Zug" : "Neue Partie"}</p>
             </div>
             <span className="rounded-full bg-slate-800 px-3 py-1 text-sm text-emerald-300">Engine: {engineReady ? "bereit" : "lädt …"}</span>
           </div>
-          <p className="mb-3 text-center text-sm text-slate-400">{game.isGameOver() ? "Partie beendet" : "Am Zug: " + (game.turn() === "w" ? "Weiß" : "Schwarz") + " · Ziehe eine Figur oder wähle Start- und Zielfeld."}</p>
+          <p className="mb-2 text-center text-xs text-slate-400">{game.isGameOver() ? "Partie beendet" : (game.turn() === "w" ? "Weiß" : "Schwarz") + " am Zug"}</p>
           <div className="mx-auto grid w-full max-w-[620px] grid-cols-[1.25rem_minmax(0,1fr)] grid-rows-[minmax(0,1fr)_1.25rem]">
             <div className="grid grid-rows-8 text-center text-xs text-slate-400">{Array.from({ length: 8 }, (_, index) => <span key={index} className="flex items-center justify-center">{8 - index}</span>)}</div>
             <div className="chessboard-frame grid aspect-square w-full grid-cols-8 grid-rows-8 overflow-hidden">
@@ -398,40 +395,37 @@ export default function AnalysePage() {
             <div aria-hidden="true" />
             <div className="grid grid-cols-8 text-center text-xs text-slate-400">{Array.from({ length: 8 }, (_, index) => <span key={index}>{String.fromCharCode(65 + index)}</span>)}</div>
           </div>
-          <div className="mx-auto mt-4 flex max-w-[620px] items-center justify-between gap-2">
+          <div className="mx-auto mt-2 flex max-w-[620px] items-center justify-between gap-1">
             <button type="button" onClick={() => { setMoveIndex(Math.max(0, moveIndex - 1)); setSelectedSquare(null); }} disabled={moveIndex === 0} className="rounded-lg border border-slate-700 px-4 py-2 disabled:opacity-40">← Zurück</button>
             <span className="text-sm text-slate-400">{moveIndex} / {moves.length}</span>
             <button type="button" onClick={() => { setMoveIndex(Math.min(moves.length, moveIndex + 1)); setSelectedSquare(null); }} disabled={moveIndex >= moves.length} className="rounded-lg border border-slate-700 px-4 py-2 disabled:opacity-40">Weiter →</button>
             <button type="button" onClick={resetGame} className="rounded-lg border border-slate-700 px-3 py-2 text-sm hover:bg-slate-800">Neue Partie</button>
           </div>
-          <div className="mt-5">
-            <h3 className="mb-2 text-sm font-semibold text-slate-300">Züge</h3>
-            <div className="flex max-h-36 flex-wrap gap-2 overflow-auto">{moves.length ? moves.map((san, index) => <button type="button" key={index} onClick={() => { setMoveIndex(index + 1); setSelectedSquare(null); }} className={"rounded px-2 py-1 text-sm " + (moveIndex === index + 1 ? "bg-emerald-500/20 text-emerald-200" : "bg-slate-800 text-slate-300")}>{index % 2 === 0 ? Math.floor(index / 2) + 1 + ". " : ""}{san}</button>) : <p className="text-sm text-slate-500">Noch keine Züge. Du kannst die Partie direkt am Brett eingeben.</p>}</div>
+          <div className="mt-3">
+            <h3 className="mb-1 text-sm font-semibold text-slate-300">Züge</h3>
+            <div className="flex max-h-36 flex-wrap gap-2 overflow-auto">{moves.length ? moves.map((san, index) => <button type="button" key={index} onClick={() => { setMoveIndex(index + 1); setSelectedSquare(null); }} className={"rounded px-2 py-1 text-sm " + (moveIndex === index + 1 ? "bg-emerald-500/20 text-emerald-200" : "bg-slate-800 text-slate-300")}>{index % 2 === 0 ? Math.floor(index / 2) + 1 + ". " : ""}{san}</button>) : <p className="text-sm text-slate-500">Keine Züge.</p>}</div>
             {message && <p role="status" className="mt-3 text-sm text-slate-300">{message}</p>}
           </div>
         </section>
-        <aside className="space-y-5">
-          <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <h2 className="text-lg font-bold">Partie laden</h2>
-            <p className="mt-1 text-sm text-slate-400">Füge PGN-Züge ein oder wähle eine .pgn- bzw. .txt-Datei aus.</p>
-            <textarea value={pgn} onChange={(event) => setPgn(event.target.value)} placeholder="Zum Beispiel: 1. e4 e5 2. Nf3 Nc6 3. Bb5 a6" rows={6} className="mt-4 w-full resize-y rounded-xl border border-slate-700 bg-slate-950 p-3 font-mono text-sm text-white outline-none focus:border-emerald-400" />
-            <div className="mt-3 flex flex-wrap gap-3">
+        <aside className="space-y-3">
+          <section className="rounded-xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
+            <h2 className="font-bold">Partie laden</h2>
+            <textarea value={pgn} onChange={(event) => setPgn(event.target.value)} placeholder="PGN-Züge" rows={4} className="mt-2 w-full resize-y rounded-lg border border-slate-700 bg-slate-950 p-2.5 font-mono text-sm text-white outline-none focus:border-emerald-400" />
+            <div className="mt-2 flex flex-wrap gap-2">
               <button type="button" onClick={() => loadPgn(pgn)} className="rounded-xl bg-emerald-400 px-4 py-2.5 font-semibold text-slate-950 hover:bg-emerald-300">Partie laden</button>
               <label className="cursor-pointer rounded-xl border border-slate-700 px-4 py-2.5 text-sm hover:bg-slate-800">PGN-Datei wählen<input type="file" accept=".pgn,.txt,text/plain" onChange={handleFile} className="sr-only" /></label>
             </div>
           </section>
-          <section className="rounded-2xl border border-violet-500/30 bg-slate-900 p-5">
-            <div className="flex items-center justify-between"><h2 className="text-lg font-bold">Stockfish-Analyse</h2><span className="rounded-full bg-violet-500/15 px-3 py-1 text-xs text-violet-200">Lokal & kostenlos</span></div>
-            <p className="mt-2 text-sm text-slate-400">Die Stellung wird in deinem Browser untersucht.</p>
-            <button type="button" onClick={analyzePosition} disabled={analyzing || !engineReady} className="mt-4 w-full rounded-xl bg-violet-500 px-4 py-3 font-semibold text-white transition hover:bg-violet-400 disabled:cursor-wait disabled:opacity-50">{analyzing ? "Analysiere Stellung …" : "Stellung analysieren"}</button>
-            {engineError && <p role="alert" className="mt-3 text-sm text-red-300">{engineError}</p>}
-            <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-4"><p className="text-sm text-slate-400">Engine-Bewertung</p><p className="mt-1 text-2xl font-bold text-emerald-300">{scoreLabel}</p>{evaluation && <><p className="mt-2 text-xs text-slate-500">Tiefe {evaluation.depth} · beste Zugfolge</p><p className="mt-1 break-words font-mono text-sm text-slate-200">{evaluation.line || "—"}</p></>}</div>
+          <section className="rounded-xl border border-violet-500/30 bg-slate-900 p-3 sm:p-4">
+            <h2 className="font-bold">Stockfish</h2>
+            <button type="button" onClick={analyzePosition} disabled={analyzing || !engineReady} className="mt-2 w-full rounded-lg bg-violet-500 px-3 py-2.5 font-semibold text-white transition hover:bg-violet-400 disabled:cursor-wait disabled:opacity-50">{analyzing ? "Analysiert …" : "Stellung analysieren"}</button>
+            {engineError && <p role="alert" className="mt-2 text-sm text-red-300">{engineError}</p>}
+            <div className="mt-3 rounded-lg border border-slate-800 bg-slate-950 p-3"><p className="text-xs text-slate-400">Bewertung</p><p className="mt-1 text-xl font-bold text-emerald-300">{scoreLabel}</p>{evaluation && <><p className="mt-1 text-xs text-slate-500">Tiefe {evaluation.depth} · Variante</p><p className="break-words font-mono text-sm text-slate-200">{evaluation.line || "—"}</p></>}</div>
           </section>
-          <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <h2 className="text-lg font-bold">Partieformular abfotografieren</h2>
-            <p className="mt-2 text-sm text-slate-400">Lade ein Foto deiner Notation hoch. Die Texterkennung läuft lokal in deinem Browser; kontrolliere die erkannten Züge anschließend.</p>
-            <label className="mt-4 inline-flex cursor-pointer rounded-xl border border-slate-700 px-4 py-2.5 text-sm hover:bg-slate-800">Foto auswählen<input type="file" accept="image/*" onChange={(event) => { const file = event.target.files?.[0] ?? null; setSheetFile(file); setSheetName(file?.name ?? ""); setOcrStatus(""); }} className="sr-only" /></label>
-            {sheetName && <p className="mt-2 text-sm text-slate-300">Ausgewählt: {sheetName}</p>}<button type="button" onClick={readSheet} disabled={!sheetFile || ocrBusy} className="mt-3 w-full rounded-xl bg-emerald-400 px-4 py-3 font-semibold text-slate-950 disabled:opacity-50">{ocrBusy ? "Lese Partie …" : "Züge aus Foto lesen"}</button>{ocrStatus && <p role="status" className="mt-3 text-sm text-slate-300">{ocrStatus}</p>}
+          <section className="rounded-xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
+            <h2 className="font-bold">Partie aus Foto</h2>
+            <label className="mt-2 inline-flex cursor-pointer rounded-lg border border-slate-700 px-3 py-2 text-sm hover:bg-slate-800">Foto wählen<input type="file" accept="image/*" onChange={(event) => { const file = event.target.files?.[0] ?? null; setSheetFile(file); setSheetName(file?.name ?? ""); setOcrStatus(""); }} className="sr-only" /></label>
+            {sheetName && <p className="mt-1 truncate text-xs text-slate-300">{sheetName}</p>}<button type="button" onClick={readSheet} disabled={!sheetFile || ocrBusy} className="mt-2 w-full rounded-lg bg-emerald-400 px-3 py-2.5 font-semibold text-slate-950 disabled:opacity-50">{ocrBusy ? "Lese …" : "Züge lesen"}</button>{ocrStatus && <p role="status" className="mt-2 text-sm text-slate-300">{ocrStatus}</p>}
           </section>
         </aside>
       </div>
