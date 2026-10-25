@@ -8,7 +8,7 @@ import { useDirectMessageNotifications } from "@/components/direct-message-notif
 import { ONLINE_TIME_CONTROLS } from "@/app/online/protocol";
 import { SelectMenu } from "@/components/select-menu";
 
-type SocialTab = "friends" | "global";
+type SocialTab = "friends" | "challenges";
 type Person = { id: string; username: string; bio?: string; avatar_url?: string | null };
 type FriendRequest = Person & { request_id: string; status: string; direction: "incoming" | "outgoing"; created_at: string };
 type ChatMessage = { id: string; sender_id: string; username: string; avatar_url: string | null; body: string; created_at: string };
@@ -46,9 +46,9 @@ function messageText(error: { message: string } | null, fallback: string) {
   return fallback;
 }
 
-export function SocialHub({ initialTab = "friends" }: { initialTab?: SocialTab }) {
+export function SocialHub() {
   const { unreadByFriend, refreshUnread } = useDirectMessageNotifications();
-  const [tab, setTab] = useState<SocialTab>(initialTab);
+  const [tab, setTab] = useState<SocialTab>("friends");
   const [userId, setUserId] = useState<string | null>(null);
   const [friends, setFriends] = useState<Person[]>([]);
   const [requests, setRequests] = useState<FriendRequest[]>([]);
@@ -97,27 +97,19 @@ export function SocialHub({ initialTab = "friends" }: { initialTab?: SocialTab }
   }, [getSupabase]);
 
   const loadMessages = useCallback(async () => {
-    const supabase = getSupabase();
-    if (tab === "global") {
-      const { data, error: queryError } = await supabase.rpc("get_global_chat_messages");
-      if (queryError) throw queryError;
-      setMessages((data ?? []) as ChatMessage[]);
-      setMessageScope("global");
-      return;
-    }
     if (activeFriend) {
-      const { data, error: queryError } = await supabase.rpc("get_direct_messages", { p_other_user_id: activeFriend.id });
+      const { data, error: queryError } = await getSupabase().rpc("get_direct_messages", { p_other_user_id: activeFriend.id });
       if (queryError) throw queryError;
       setMessages((data ?? []) as ChatMessage[]);
       setMessageScope(activeFriend.id);
-      const { error: readError } = await supabase.rpc("mark_direct_messages_read", { p_other_user_id: activeFriend.id });
+      const { error: readError } = await getSupabase().rpc("mark_direct_messages_read", { p_other_user_id: activeFriend.id });
       if (readError) {
         console.error("Private Nachrichten konnten nicht als gelesen markiert werden:", readError);
       } else {
         await refreshUnread();
       }
     }
-  }, [activeFriend, getSupabase, refreshUnread, tab]);
+  }, [activeFriend, getSupabase, refreshUnread]);
 
   useEffect(() => {
     let active = true;
@@ -252,7 +244,7 @@ export function SocialHub({ initialTab = "friends" }: { initialTab?: SocialTab }
   }
 
   useEffect(() => {
-    if (!userId || (tab === "friends" && !activeFriend)) {
+    if (!userId || !activeFriend || tab !== "friends") {
       return;
     }
     let active = true;
@@ -336,11 +328,9 @@ export function SocialHub({ initialTab = "friends" }: { initialTab?: SocialTab }
     setError("");
     try {
       const supabase = getSupabase();
-      const { error: sendError } = tab === "global"
-        ? await supabase.rpc("send_global_chat_message", { p_body: body })
-        : activeFriend
-          ? await supabase.rpc("send_direct_message", { p_recipient_id: activeFriend.id, p_body: body })
-          : { error: { message: "Wähle zuerst einen Freund aus." } };
+      const { error: sendError } = activeFriend
+        ? await supabase.rpc("send_direct_message", { p_recipient_id: activeFriend.id, p_body: body })
+        : { error: { message: "Wähle zuerst einen Freund aus." } };
       if (sendError) {
         setError(messageText(sendError, needsSocialMigrations(sendError)
           ? "Die Chatfunktion ist in der Datenbank noch nicht eingerichtet. Bitte wende die Supabase-Migrationen an."
@@ -359,102 +349,115 @@ export function SocialHub({ initialTab = "friends" }: { initialTab?: SocialTab }
   }
 
   if (loading) return <p className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-slate-300" role="status">Freunde werden geladen …</p>;
-  if (!userId) return <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6"><h2 className="text-xl font-semibold">Melde dich an, um Freunde und Chat zu nutzen</h2><p className="mt-2 text-sm text-slate-400">Freundesliste, private Nachrichten und globaler Chat sind an dein Konto gebunden.</p><Link href="/login" className="mt-4 inline-flex rounded-lg bg-emerald-400 px-4 py-2 font-semibold text-slate-950">Zum Login</Link></section>;
+  if (!userId) return <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6"><h2 className="text-xl font-semibold">Melde dich an, um Freunde zu nutzen</h2><p className="mt-2 text-sm text-slate-400">Freundesliste und private Nachrichten sind an dein Konto gebunden.</p><Link href="/login" className="mt-4 inline-flex rounded-lg bg-emerald-400 px-4 py-2 font-semibold text-slate-950">Zum Login</Link></section>;
 
   const incomingRequests = requests.filter((request) => request.direction === "incoming");
-  const currentMessageScope = tab === "global" ? "global" : activeFriend?.id ?? "";
+  const incomingChallenges = challenges.filter((challenge) => challenge.challenged_id === userId && challenge.status === "pending").length;
+  const currentMessageScope = activeFriend?.id ?? "";
   const visibleMessages = messageScope === currentMessageScope ? messages : [];
 
   return (
-    <div className="space-y-5">
-      <div className="flex gap-2 rounded-xl border border-slate-800 bg-slate-900 p-2">
-        <button type="button" onClick={() => { setTab("friends"); setActiveFriend(null); }} className={`flex-1 rounded-lg px-4 py-3 text-sm font-semibold ${tab === "friends" ? "bg-emerald-400 text-slate-950" : "text-slate-300 hover:bg-slate-800"}`}>Freunde {incomingRequests.length > 0 && `· ${incomingRequests.length} neu`}</button>
-        <button type="button" onClick={() => { setTab("global"); setActiveFriend(null); }} className={`flex-1 rounded-lg px-4 py-3 text-sm font-semibold ${tab === "global" ? "bg-emerald-400 text-slate-950" : "text-slate-300 hover:bg-slate-800"}`}>Globaler Chat</button>
+    <div className="min-w-0 space-y-4">
+      <div className="grid grid-cols-2 gap-2 rounded-xl border border-slate-800 bg-slate-900 p-2">
+        <button type="button" onClick={() => setTab("friends")} className={`min-w-0 rounded-lg px-3 py-2.5 text-sm font-semibold ${tab === "friends" ? "bg-emerald-400 text-slate-950" : "text-slate-300 hover:bg-slate-800"}`}>Freunde {incomingRequests.length > 0 && `· ${incomingRequests.length} neu`}</button>
+        <button type="button" onClick={() => setTab("challenges")} className={`min-w-0 rounded-lg px-3 py-2.5 text-sm font-semibold ${tab === "challenges" ? "bg-emerald-400 text-slate-950" : "text-slate-300 hover:bg-slate-800"}`}>Herausforderungen {incomingChallenges > 0 && `· ${incomingChallenges} neu`}</button>
       </div>
 
       {error && <p role="status" className="rounded-xl border border-slate-700 bg-slate-900 p-3 text-sm text-slate-300">{error}</p>}
 
       {tab === "friends" && (
-        <div className="grid gap-5 lg:grid-cols-[minmax(250px,0.8fr)_minmax(0,1.2fr)]">
-          <section className="space-y-4">
-            <form onSubmit={searchProfiles} className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+        <div className={`grid min-w-0 gap-4 ${activeFriend ? "lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]" : ""}`}>
+          <section className={`min-w-0 space-y-4 ${activeFriend ? "order-2 lg:order-1" : "order-1"}`}>
+            <form onSubmit={searchProfiles} className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-5">
               <h2 className="font-semibold">Spieler finden</h2>
               <label htmlFor="player-search" className="sr-only">Nach Spielernamen suchen</label>
               <div className="mt-3 flex gap-2">
                 <input id="player-search" value={search} onChange={(event) => setSearch(event.target.value)} maxLength={20} placeholder="Benutzername" className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-emerald-400" />
                 <button type="submit" disabled={searching} className="rounded-lg border border-slate-700 px-3 py-2 text-sm hover:bg-slate-800 disabled:opacity-50">{searching ? "Sucht …" : "Suchen"}</button>
               </div>
-              {results.length > 0 && <ul className="mt-3 space-y-2">{results.map((person) => <li key={person.id} className="flex items-center gap-2 rounded-lg bg-slate-800/70 p-2"><Link href={`/profile/${encodeURIComponent(person.username)}`} className="flex min-w-0 flex-1 items-center gap-2"><Avatar person={person} size="h-8 w-8" /><span className="truncate text-sm">{person.username}</span></Link><button type="button" onClick={() => void requestFriend(person.username)} className="rounded-md bg-emerald-400 px-2 py-1 text-xs font-semibold text-slate-950">Hinzufügen</button><button type="button" onClick={() => void blockUser(person)} className="rounded-md border border-rose-900 px-2 py-1 text-xs text-rose-300">Blockieren</button></li>)}</ul>}
+              {results.length > 0 && <ul className="mt-3 space-y-2">{results.map((person) => <li key={person.id} className="flex min-w-0 flex-wrap items-center gap-2 rounded-lg bg-slate-800/70 p-2"><Link href={`/profile/${encodeURIComponent(person.username)}`} className="flex min-w-0 flex-1 basis-full items-center gap-2 sm:basis-auto"><Avatar person={person} size="h-8 w-8" /><span className="truncate text-sm">{person.username}</span></Link><button type="button" onClick={() => void requestFriend(person.username)} className="rounded-md bg-emerald-400 px-2 py-1 text-xs font-semibold text-slate-950">Hinzufügen</button><button type="button" onClick={() => void blockUser(person)} className="rounded-md border border-rose-900 px-2 py-1 text-xs text-rose-300">Blockieren</button></li>)}</ul>}
               {!searching && !error && search.trim().length >= 3 && results.length === 0 && <p className="mt-3 text-sm text-slate-500">Keine Spieler gefunden.</p>}
             </form>
 
-            <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <section className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-5">
               <h2 className="font-semibold">Freundschaftsanfragen</h2>
-              {requests.length === 0 ? <p className="mt-3 text-sm text-slate-500">Keine offenen Anfragen.</p> : <ul className="mt-3 space-y-3">{requests.map((request) => <li key={request.request_id} className="flex items-center gap-2"><Link href={`/profile/${encodeURIComponent(request.username)}`} className="flex min-w-0 flex-1 items-center gap-2"><Avatar person={request} size="h-8 w-8" /><span className="truncate text-sm">{request.username}</span></Link>{request.direction === "incoming" ? <><button type="button" onClick={() => void respondToRequest(request, true)} className="rounded-md bg-emerald-400 px-2 py-1 text-xs font-semibold text-slate-950">Annehmen</button><button type="button" onClick={() => void respondToRequest(request, false)} className="rounded-md border border-slate-700 px-2 py-1 text-xs">Ablehnen</button></> : <span className="text-xs text-slate-500">Ausstehend</span>}</li>)}</ul>}
+              {requests.length === 0 ? <p className="mt-3 text-sm text-slate-500">Keine offenen Anfragen.</p> : <ul className="mt-3 space-y-3">{requests.map((request) => <li key={request.request_id} className="flex min-w-0 flex-wrap items-center gap-2"><Link href={`/profile/${encodeURIComponent(request.username)}`} className="flex min-w-0 flex-1 basis-full items-center gap-2 sm:basis-auto"><Avatar person={request} size="h-8 w-8" /><span className="truncate text-sm">{request.username}</span></Link>{request.direction === "incoming" ? <><button type="button" onClick={() => void respondToRequest(request, true)} className="rounded-md bg-emerald-400 px-2 py-1 text-xs font-semibold text-slate-950">Annehmen</button><button type="button" onClick={() => void respondToRequest(request, false)} className="rounded-md border border-slate-700 px-2 py-1 text-xs">Ablehnen</button></> : <span className="text-xs text-slate-500">Ausstehend</span>}</li>)}</ul>}
             </section>
 
-            <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="font-semibold">Schachherausforderungen</h2>
-                <button type="button" onClick={() => void loadChallenges()} className="text-xs text-slate-400 underline">Aktualisieren</button>
-              </div>
-              {challenges.length === 0 ? <p className="mt-3 text-sm text-slate-500">Keine offenen Herausforderungen.</p> : <ul className="mt-3 space-y-2">{challenges.map((challenge) => {
-                const incoming = challenge.challenged_id === userId;
-                const otherName = incoming ? challenge.challenger_username : challenge.challenged_username;
-                return <li key={challenge.challenge_id} className="rounded-lg bg-slate-800/70 p-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2"><span className="text-sm font-medium">{incoming ? "Von " : "An "}{otherName} · {Math.floor(challenge.initial_seconds / 60)}+{challenge.increment_seconds}</span><span className="text-[10px] text-slate-400">{challenge.status === "accepted" ? "Angenommen" : "Ausstehend"}</span></div>
-                  {challenge.status === "pending" && incoming && <div className="mt-2 flex gap-2"><button type="button" onClick={() => void respondToChallenge(challenge, true)} className="rounded-md bg-emerald-400 px-3 py-1.5 text-xs font-semibold text-slate-950">Annehmen & spielen</button><button type="button" onClick={() => void respondToChallenge(challenge, false)} className="rounded-md border border-slate-700 px-3 py-1.5 text-xs text-slate-300">Ablehnen</button></div>}
-                  {challenge.status === "accepted" && <button type="button" onClick={() => openChallenge(challenge)} className="mt-2 rounded-md bg-emerald-400 px-3 py-1.5 text-xs font-semibold text-slate-950">Partie öffnen</button>}
-                </li>;
-              })}</ul>}
-            </section>
-
-            <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-semibold">Deine Freunde</h2><label className="flex items-center gap-2 text-xs text-slate-400">Zeit<SelectMenu compact aria-label="Bedenkzeit für Herausforderungen" value={challengeControlId} options={ONLINE_TIME_CONTROLS.map((control) => ({ value: control.id, label: control.label }))} onChange={setChallengeControlId} /></label></div>
-              {friends.length === 0 ? <p className="mt-3 text-sm text-slate-500">Noch keine Freunde – suche nach einem Spielernamen.</p> : <ul className="mt-3 space-y-2">{friends.map((friend) => <li key={friend.id} className="flex items-center gap-2 rounded-lg p-2 hover:bg-slate-800/60">
-                <Link href={`/profile/${encodeURIComponent(friend.username)}`} className="flex min-w-0 flex-1 items-center gap-2" aria-label={`Profil von ${friend.username} öffnen`}>
+            <section className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-5">
+              <h2 className="font-semibold">Deine Freunde</h2>
+              {friends.length === 0 ? <p className="mt-3 text-sm text-slate-500">Noch keine Freunde – suche nach einem Spielernamen.</p> : <ul className="mt-3 space-y-2">{friends.map((friend) => <li key={friend.id} className="flex min-w-0 flex-wrap items-center gap-2 rounded-lg p-2 hover:bg-slate-800/60">
+                <Link href={`/profile/${encodeURIComponent(friend.username)}`} className="flex min-w-0 flex-1 basis-full items-center gap-2 sm:basis-auto" aria-label={`Profil von ${friend.username} öffnen`}>
                   <Avatar person={friend} size="h-8 w-8" />
                   <span className="truncate text-sm">{friend.username}</span>
                 </Link>
-              {unreadByFriend[friend.id] && <span aria-label={`${unreadByFriend[friend.id].unread_count} ungelesene Nachrichten`} className="rounded-full bg-emerald-400 px-2 py-0.5 text-[10px] font-bold text-slate-950">{unreadByFriend[friend.id].unread_count}</span>}
-              <button type="button" onClick={() => { setActiveFriend(friend); setTab("friends"); }} className={`rounded-md px-2 py-1 text-xs font-medium ${activeFriend?.id === friend.id ? "bg-emerald-400 text-slate-950" : "border border-slate-700 text-slate-300 hover:bg-slate-800"}`}>Chat</button>
-              <button type="button" onClick={() => void challengeFriend(friend)} className="rounded-md border border-emerald-400/40 px-2 py-1 text-xs text-emerald-200">Herausfordern</button>
+                {unreadByFriend[friend.id] && <span aria-label={`${unreadByFriend[friend.id].unread_count} ungelesene Nachrichten`} className="rounded-full bg-emerald-400 px-2 py-0.5 text-[10px] font-bold text-slate-950">{unreadByFriend[friend.id].unread_count}</span>}
+                <button type="button" onClick={() => { setActiveFriend(friend); setTab("friends"); }} className={`rounded-md px-2 py-1 text-xs font-medium ${activeFriend?.id === friend.id ? "bg-emerald-400 text-slate-950" : "border border-slate-700 text-slate-300 hover:bg-slate-800"}`}>Chat</button>
                 <button type="button" onClick={() => void removeFriend(friend)} aria-label={`${friend.username} als Freund entfernen`} className="px-2 text-xs text-slate-500 hover:text-rose-300">Entfernen</button>
                 <button type="button" onClick={() => void blockUser(friend)} aria-label={`${friend.username} blockieren`} className="px-2 text-xs text-rose-300 hover:text-rose-200">Blockieren</button>
               </li>)}</ul>}
             </section>
-            <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <section className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-5">
               <h2 className="font-semibold">Blockierte Nutzer</h2>
               {blockedUsers.length === 0 ? <p className="mt-3 text-sm text-slate-500">Keine Nutzer blockiert.</p> : <ul className="mt-3 space-y-2">{blockedUsers.map((person) => <li key={person.user_id} className="flex items-center justify-between gap-3 rounded-lg bg-slate-800/60 p-2"><span className="truncate text-sm">{person.username}</span><button type="button" onClick={() => void unblockUser(person)} className="shrink-0 text-xs text-emerald-300 underline">Entblocken</button></li>)}</ul>}
             </section>
           </section>
 
-          <ChatPanel
-            title={activeFriend ? `Chat mit ${activeFriend.username}` : "Private Nachrichten"}
-            messages={activeFriend ? visibleMessages : []}
-            userId={userId}
-            draft={draft}
-            onDraft={setDraft}
-            onSubmit={sendMessage}
-            sending={sending}
-            maxLength={2000}
-            emptyText={activeFriend ? "Schreib deinem Freund eine Nachricht." : "Wähle links einen Freund aus, um privat zu schreiben."}
-            chatType="direct"
-            onBack={() => setActiveFriend(null)}
-            showBack={Boolean(activeFriend)}
-          />
+          {activeFriend && <div className="order-1 min-w-0 lg:order-2">
+            <ChatPanel
+              title={`Chat mit ${activeFriend.username}`}
+              messages={visibleMessages}
+              userId={userId}
+              draft={draft}
+              onDraft={setDraft}
+              onSubmit={sendMessage}
+              sending={sending}
+              maxLength={2000}
+              emptyText="Schreib deinem Freund eine Nachricht."
+              onBack={() => setActiveFriend(null)}
+            />
+          </div>}
         </div>
       )}
 
-      {tab === "global" && (
-        <ChatPanel title="Globaler Schach-Chat" messages={visibleMessages} userId={userId} draft={draft} onDraft={setDraft} onSubmit={sendMessage} sending={sending} maxLength={500} emptyText="Noch keine Nachrichten. Starte das Gespräch respektvoll – und bleib beim Schach." chatType="global" />
+      {tab === "challenges" && (
+        <section className="grid min-w-0 gap-4 lg:grid-cols-2">
+          <div className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="font-semibold">Herausforderungen</h2>
+                <p className="mt-1 text-xs text-slate-400">Ungewertet · Zeitkontrolle wählen</p>
+              </div>
+              <SelectMenu compact aria-label="Bedenkzeit für Herausforderungen" value={challengeControlId} options={ONLINE_TIME_CONTROLS.map((control) => ({ value: control.id, label: control.label }))} onChange={setChallengeControlId} />
+            </div>
+            {friends.length === 0 ? <p className="mt-4 text-sm text-slate-500">Füge zuerst Freunde hinzu.</p> : <ul className="mt-3 space-y-2">{friends.map((friend) => <li key={friend.id} className="flex min-w-0 flex-wrap items-center gap-2 rounded-lg bg-slate-800/60 p-2">
+              <Link href={`/profile/${encodeURIComponent(friend.username)}`} className="flex min-w-0 flex-1 items-center gap-2"><Avatar person={friend} size="h-8 w-8" /><span className="truncate text-sm">{friend.username}</span></Link>
+              <button type="button" onClick={() => void challengeFriend(friend)} className="shrink-0 rounded-md border border-emerald-400/40 px-2.5 py-1.5 text-xs font-medium text-emerald-200">Herausfordern</button>
+            </li>)}</ul>}
+          </div>
+          <div className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-semibold">Offene Partien</h2>
+              <button type="button" onClick={() => void loadChallenges()} className="shrink-0 text-xs text-slate-400 underline">Aktualisieren</button>
+            </div>
+            {challenges.length === 0 ? <p className="mt-3 text-sm text-slate-500">Keine offenen Herausforderungen.</p> : <ul className="mt-3 space-y-2">{challenges.map((challenge) => {
+              const incoming = challenge.challenged_id === userId;
+              const otherName = incoming ? challenge.challenger_username : challenge.challenged_username;
+              return <li key={challenge.challenge_id} className="min-w-0 rounded-lg bg-slate-800/70 p-3">
+                <div className="flex min-w-0 flex-wrap items-center justify-between gap-2"><span className="min-w-0 break-words text-sm font-medium">{incoming ? "Von " : "An "}{otherName} · {Math.floor(challenge.initial_seconds / 60)}+{challenge.increment_seconds}</span><span className="shrink-0 text-[10px] text-slate-400">{challenge.status === "accepted" ? "Angenommen" : "Ausstehend"}</span></div>
+                {challenge.status === "pending" && incoming && <div className="mt-2 flex flex-wrap gap-2"><button type="button" onClick={() => void respondToChallenge(challenge, true)} className="rounded-md bg-emerald-400 px-3 py-1.5 text-xs font-semibold text-slate-950">Annehmen & spielen</button><button type="button" onClick={() => void respondToChallenge(challenge, false)} className="rounded-md border border-slate-700 px-3 py-1.5 text-xs text-slate-300">Ablehnen</button></div>}
+                {challenge.status === "accepted" && <button type="button" onClick={() => openChallenge(challenge)} className="mt-2 rounded-md bg-emerald-400 px-3 py-1.5 text-xs font-semibold text-slate-950">Partie öffnen</button>}
+              </li>;
+            })}</ul>}
+          </div>
+        </section>
       )}
     </div>
   );
 }
 
 function ChatPanel({
-  title, messages, userId, draft, onDraft, onSubmit, sending, maxLength, emptyText, chatType, onBack, showBack = false,
+  title, messages, userId, draft, onDraft, onSubmit, sending, maxLength, emptyText, onBack,
 }: {
   title: string;
   messages: ChatMessage[];
@@ -465,9 +468,7 @@ function ChatPanel({
   sending: boolean;
   maxLength: number;
   emptyText: string;
-  chatType: "global" | "direct";
-  onBack?: () => void;
-  showBack?: boolean;
+  onBack: () => void;
 }) {
   const [reportingMessageId, setReportingMessageId] = useState<string | null>(null);
   const [reportReason, setReportReason] = useState("");
@@ -480,7 +481,7 @@ function ChatPanel({
       return;
     }
     const { error } = await createClient().rpc("report_chat_message", {
-      p_chat_type: chatType,
+      p_chat_type: "direct",
       p_message_id: messageId,
       p_reason: reason,
     });
@@ -498,8 +499,8 @@ function ChatPanel({
     <section className="flex min-h-[32rem] flex-col rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-5">
       <div className="flex items-center justify-between gap-3 border-b border-slate-800 pb-3">
         <h2 className="font-semibold">{title}</h2>
-        {showBack && <button type="button" onClick={onBack} className="text-xs text-slate-400 underline underline-offset-4">Alle Freunde</button>}
-        <span className="text-xs text-slate-500">{title === "Globaler Schach-Chat" ? "Wöchentlicher Verlauf · erkannte Beleidigungen werden zensiert" : "Erkannte Beleidigungen werden zensiert"}</span>
+        <button type="button" onClick={onBack} className="text-xs text-slate-400 underline underline-offset-4">Alle Freunde</button>
+        <span className="text-xs text-slate-500">Private Nachrichten</span>
       </div>
       <div className="flex-1 space-y-3 overflow-y-auto py-4" aria-live="polite">
         {messages.length === 0 ? <p className="py-8 text-center text-sm text-slate-500">{emptyText}</p> : messages.map((message) => (

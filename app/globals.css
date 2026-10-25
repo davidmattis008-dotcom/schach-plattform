@@ -74,3 +74,5 @@ input[type="date"], input[type="time"], input[type="datetime-local"] { accent-co
 }
 .chessboard-light { background-color: #f2f2f2; }
 .chessboard-dark { background-color: #202020; }
+.chessboard-move-target { background-color: rgb(212 175 55 / 78%); }
+.chessboard-capture-target { border: 3px solid #d4af37; }

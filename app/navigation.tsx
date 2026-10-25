@@ -128,7 +128,6 @@ export default function AppNavigation() {
           </div>
 
           {navLink({ label: "Freunde", href: "/freunde" })}
-          {navLink({ label: "Chat", href: "/chat" })}
           {navLink({ label: "Profil", href: "/profile" })}
           {navLink({ label: "Einstellungen", href: "/einstellungen" })}
           {navLink({ label: "Support", href: "/support" })}

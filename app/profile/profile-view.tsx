@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { ProfileEditor } from "@/components/profile-editor";
+import { ProfileGameHistory } from "@/components/profile-game-history";
 import { createClient } from "@/lib/supabase/client";
 import { getDailyExerciseLevel, getTacticsProgress, INITIAL_TACTICS_PROGRESS, subscribeToTacticsProgress } from "@/lib/tactics-progress";
 
@@ -201,6 +202,10 @@ export function PlayerProfileView({ requestedUsername }: { requestedUsername?: s
               <p className="mt-1 text-2xl font-bold tabular-nums text-emerald-300">Level {learningLevel.level}</p>
             </article>
           </section>
+        )}
+
+        {profile && !loading && (
+          <ProfileGameHistory username={profile.username} profileId={profile.id} isOwnProfile={viewerId === profile.id} />
         )}
 
         {message && !loading && !profile && (
