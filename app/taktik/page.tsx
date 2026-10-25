@@ -454,7 +454,7 @@ export default function TacticsPage() {
               clubTaskId
                 ? <Link href="/verein" className="mt-3 block w-full rounded-lg bg-emerald-400 px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-emerald-300">Zur Vereinsgruppe →</Link>
                 : dailyExercise
-                  ? <Link href="/lernen#tagesuebung" className="mt-3 block w-full rounded-lg bg-emerald-400 px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-emerald-300">Zurück zum Lernpfad →</Link>
+                  ? <Link href="/lernen" className="mt-3 block w-full rounded-lg bg-emerald-400 px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-emerald-300">Zurück zum Lernpfad →</Link>
                 : <button
                     type="button"
                     onClick={nextPuzzle}

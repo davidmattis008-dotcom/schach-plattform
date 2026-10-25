@@ -81,9 +81,7 @@ export function AccountProgressSync() {
           const remoteProgress = data && typeof data === "object" && !Array.isArray(data)
             ? data as Record<string, unknown>
             : {};
-          const progressToApply = localRevision === revisionAtStart
-            ? remoteProgress
-            : mergeAccountProgress(remoteProgress, readAccountProgress());
+          const progressToApply = mergeAccountProgress(remoteProgress, readAccountProgress());
           applyAccountProgress(progressToApply);
           localStorage.setItem(ACCOUNT_PROGRESS_OWNER_KEY, forUserId);
 

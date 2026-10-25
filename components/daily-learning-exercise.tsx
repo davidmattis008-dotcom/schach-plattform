@@ -311,7 +311,7 @@ export function DailyLearningExercise() {
   }
 
   return (
-    <section id="tagesuebung" aria-labelledby="daily-exercise-title" className="mb-8 scroll-mt-20 rounded-2xl border border-amber-300/30 bg-slate-900/80 p-4 shadow-[0_16px_50px_rgba(0,0,0,0.24)] sm:p-6">
+    <section id="lernpfad" aria-labelledby="daily-exercise-title" className="mb-8 scroll-mt-20 rounded-2xl border border-amber-300/30 bg-slate-900/80 p-4 shadow-[0_16px_50px_rgba(0,0,0,0.24)] sm:p-6">
       <div>
         <div>
           <div className="flex flex-wrap items-center justify-between gap-3">
