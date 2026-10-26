@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Chess, type Square } from "chess.js";
 import { MiniChessboard } from "@/components/mini-chessboard";
+import { CageAiPanel } from "@/components/cage-ai-panel";
 import rulesData from "@/lib/chess-rules.json";
 import { subscribeToAccountProgressUpdates, writeProgressStorage } from "@/lib/account-progress";
 
@@ -166,6 +167,24 @@ function RuleLessonWorkspace({
         </span>
       </header>
       <p className="mt-2 text-sm leading-5 text-slate-300">{lesson.description}</p>
+      <div className="mt-3">
+        <CageAiPanel
+          key={lesson.id}
+          contextLabel={`Frage CageAI zur Regel „${lesson.title}“.`}
+          contextReady
+          contextBadge="Regelkurs"
+          placeholder="Frage zu dieser Regel …"
+          quickPrompts={["Erkläre mir diese Regel mit einem einfachen Beispiel."]}
+          requestConfig={{
+            purpose: "course_question",
+            course: {
+              courseId: "rules",
+              lessonTitle: lesson.title,
+              sourceKeys: [`course:rule:${lesson.id}`],
+            },
+          }}
+        />
+      </div>
 
       <div className="mt-3 grid items-start gap-3 lg:grid-cols-[minmax(0,34rem)_minmax(15rem,1fr)]">
         <div>

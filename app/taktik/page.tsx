@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { Chess, type Color, type Square } from "chess.js";
 import { MiniChessboard } from "@/components/mini-chessboard";
+import { CageAiPanel } from "@/components/cage-ai-panel";
 import { SelectMenu } from "@/components/select-menu";
 import { chooseTacticsPuzzle, getTacticsDifficulty, getTacticsPuzzleForRating, getTacticsRatingChange, getTacticsTheme, tacticsPuzzles } from "@/lib/tactics";
 import { getDailyExerciseLevel, getTacticsProgress, INITIAL_TACTICS_PROGRESS, subscribeToTacticsProgress, updateTacticsProgress } from "@/lib/tactics-progress";
@@ -433,6 +434,25 @@ export default function TacticsPage() {
             >
               {message}
             </div>
+            {!outcome && <div className="mt-4">
+              <CageAiPanel
+                key={puzzle.id}
+                contextLabel={`CageAI kennt das Thema „${getTacticsTheme(puzzle.themes)}“ und das Aufgabenniveau, aber nicht den Lösungszug. Bitte erstelle einen kleinen Hinweis, keine Lösung.`}
+                contextReady
+                contextBadge="Hinweis · keine Lösung"
+                placeholder="Frag nach einem Hinweis …"
+                quickPrompts={["Gib mir einen kleinen Hinweis, ohne den Zug zu verraten."]}
+                requestConfig={{
+                  purpose: "tactic_hint",
+                  tactic: {
+                    fen: puzzleStartFen,
+                    theme: getTacticsTheme(puzzle.themes),
+                    rating: puzzle.rating,
+                    hintLevel: 1,
+                  },
+                }}
+              />
+            </div>}
             {clubTaskMessage && <p className="mt-2 text-sm text-slate-400" role="status">{clubTaskMessage}</p>}
             <div className="mt-3 flex flex-wrap gap-2">
               <button

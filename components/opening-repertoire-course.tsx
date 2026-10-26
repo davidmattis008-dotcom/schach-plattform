@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Chess, type Square } from "chess.js";
 import { MiniChessboard } from "@/components/mini-chessboard";
+import { CageAiPanel } from "@/components/cage-ai-panel";
 import { openingRepertoire, type Opening, type OpeningVariant } from "@/lib/opening-repertoire";
 import openingDatabaseData from "@/lib/opening-database.json";
 import { subscribeToAccountProgressUpdates, writeProgressStorage } from "@/lib/account-progress";
@@ -330,6 +331,26 @@ export function OpeningRepertoireCourse() {
                 completed={selectedDone}
                 onComplete={() => markCompleted(openingProgressKey(selectedVariant.id, learnerColor))}
               />
+              {openingRepertoire.some((opening) => opening.id === selectedOpening.id) && (
+                <div className="mt-4">
+                  <CageAiPanel
+                    key={selectedOpening.id}
+                    contextLabel={`Frage CageAI zur Eröffnung „${selectedOpening.name}“.`}
+                    contextReady
+                    contextBadge="Eröffnungskurs"
+                    placeholder="Frage zu dieser Eröffnung …"
+                    quickPrompts={["Was ist der typische Plan in dieser Eröffnung?"]}
+                    requestConfig={{
+                      purpose: "course_question",
+                      course: {
+                        courseId: "openings",
+                        lessonTitle: selectedOpening.name,
+                        sourceKeys: [`course:opening:${selectedOpening.id}`],
+                      },
+                    }}
+                  />
+                </div>
+              )}
             </>
           )}
         </section>

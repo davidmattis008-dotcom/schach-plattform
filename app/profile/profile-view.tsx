@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { ProfileEditor } from "@/components/profile-editor";
 import { ProfileGameHistory } from "@/components/profile-game-history";
+import { CageAiPanel } from "@/components/cage-ai-panel";
 import { createClient } from "@/lib/supabase/client";
 import { getProfileAvatarSrc } from "@/lib/profile-avatar";
 import { getDailyExerciseLevel, getTacticsProgress, INITIAL_TACTICS_PROGRESS, subscribeToTacticsProgress } from "@/lib/tactics-progress";
@@ -193,16 +194,28 @@ export function PlayerProfileView({ requestedUsername }: { requestedUsername?: s
         )}
 
         {!requestedUsername && profile && viewerId === profile.id && !loading && (
-          <section className="mt-5 grid grid-cols-2 gap-3" aria-label="Lernfortschritt">
-            <article className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-              <p className="text-xs text-slate-400">Taktik-Elo</p>
-              <p className="mt-1 text-2xl font-bold tabular-nums text-emerald-300">{tacticsProgress.rating}</p>
-            </article>
-            <article className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-              <p className="text-xs text-slate-400">Lernpfad</p>
-              <p className="mt-1 text-2xl font-bold tabular-nums text-emerald-300">Level {learningLevel.level}</p>
-            </article>
-          </section>
+          <>
+            <section className="mt-5 grid grid-cols-2 gap-3" aria-label="Lernfortschritt">
+              <article className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
+                <p className="text-xs text-slate-400">Taktik-Elo</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-emerald-300">{tacticsProgress.rating}</p>
+              </article>
+              <article className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
+                <p className="text-xs text-slate-400">Lernpfad</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-emerald-300">Level {learningLevel.level}</p>
+              </article>
+            </section>
+            <section className="mt-5">
+              <CageAiPanel
+                contextLabel="CageAI kann deinen eigenen Lernfortschritt erklären und beim Erkennen sinnvoller Trainingsschwerpunkte helfen."
+                contextReady
+                contextBadge="Dein Fortschritt"
+                placeholder="Frage nach deinem Lernfortschritt oder möglichen Schwerpunkten …"
+                quickPrompts={["Was sagt mein aktueller Trainingsfortschritt aus?"]}
+                requestConfig={{ purpose: "training_plan" }}
+              />
+            </section>
+          </>
         )}
 
         {profile && !loading && (

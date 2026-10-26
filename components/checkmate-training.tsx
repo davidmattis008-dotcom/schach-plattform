@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Chess, type Square } from "chess.js";
 import { MiniChessboard } from "@/components/mini-chessboard";
+import { CageAiPanel } from "@/components/cage-ai-panel";
 import trainingData from "@/lib/checkmate-training.json";
 import { orderQuizAnswers } from "@/lib/quiz-answer-order";
 import { subscribeToAccountProgressUpdates, writeProgressStorage } from "@/lib/account-progress";
@@ -215,6 +216,24 @@ function CheckmateWorkspace({
           {learned ? "Gelernt" : "Offen"}
         </span>
       </header>
+      <div className="mt-3">
+        <CageAiPanel
+          key={lesson.id}
+          contextLabel={`Frage CageAI zur Mattlektion „${lesson.title}“.`}
+          contextReady
+          contextBadge="Mattkurs"
+          placeholder="Frage zu dieser Mattmethode …"
+          quickPrompts={["Was ist die wichtigste Idee dieser Mattmethode?"]}
+          requestConfig={{
+            purpose: "course_question",
+            course: {
+              courseId: "checkmate",
+              lessonTitle: lesson.title,
+              sourceKeys: [`course:checkmate:${lesson.id}`],
+            },
+          }}
+        />
+      </div>
       <div className="mt-2 grid items-start gap-3 lg:grid-cols-[minmax(0,34rem)_minmax(15rem,1fr)]">
         <div>
           <MiniChessboard
