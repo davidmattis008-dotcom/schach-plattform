@@ -54,9 +54,15 @@ async function correctPerspectiveAndLighting(input: HTMLCanvasElement): Promise<
   const threshold = new cv.Mat();
   const ink = new cv.Mat();
   const horizontalLines = new cv.Mat();
+  const verticalLines = new cv.Mat();
+  const cleanInk = new cv.Mat();
   const horizontalKernel = cv.getStructuringElement(
     cv.MORPH_RECT,
     new cv.Size(Math.max(25, Math.floor(source.cols * 0.1)), 1),
+  );
+  const verticalKernel = cv.getStructuringElement(
+    cv.MORPH_RECT,
+    new cv.Size(1, Math.max(25, Math.floor(source.rows * 0.1))),
   );
   try {
     cv.cvtColor(source, gray, cv.COLOR_RGBA2GRAY);
@@ -115,8 +121,10 @@ async function correctPerspectiveAndLighting(input: HTMLCanvasElement): Promise<
       );
       cv.bitwise_not(threshold, ink);
       cv.morphologyEx(ink, horizontalLines, cv.MORPH_OPEN, horizontalKernel);
-      cv.subtract(ink, horizontalLines, ink);
-      cv.bitwise_not(ink, threshold);
+      cv.morphologyEx(ink, verticalLines, cv.MORPH_OPEN, verticalKernel);
+      cv.subtract(ink, horizontalLines, cleanInk);
+      cv.subtract(cleanInk, verticalLines, cleanInk);
+      cv.bitwise_not(cleanInk, threshold);
       const output = createCanvas(threshold.cols, threshold.rows);
       cv.imshow(output, threshold);
       return output;
@@ -134,7 +142,10 @@ async function correctPerspectiveAndLighting(input: HTMLCanvasElement): Promise<
     threshold.delete();
     ink.delete();
     horizontalLines.delete();
+    verticalLines.delete();
+    cleanInk.delete();
     horizontalKernel.delete();
+    verticalKernel.delete();
   }
 }
 
@@ -150,10 +161,117 @@ function orderCorners(points: Array<{ x: number; y: number }>) {
   return [topLeft, byDifference[0], bottomRight, byDifference[3]];
 }
 
+export function detectPeriodicTextRows(
+  projection: readonly number[],
+  width: number,
+  height: number,
+): Array<{ top: number; bottom: number }> | null {
+  const minimumActivity = Math.max(8, Math.floor(width * 0.002));
+  const activeRows = projection.flatMap((value, y) => value >= minimumActivity ? [y] : []);
+  if (activeRows.length < 4) return null;
+
+  let regionTop = activeRows[0];
+  let regionBottom = Math.min(height, activeRows.at(-1)! + 1);
+  let activeRegionTop = activeRows[0];
+  let activeRegionBottom = activeRows[0];
+  let longestRegionTop = activeRows[0];
+  let longestRegionBottom = activeRows[0];
+  for (const y of activeRows.slice(1)) {
+    if (y - activeRegionBottom > 18) {
+      if (activeRegionBottom - activeRegionTop > longestRegionBottom - longestRegionTop) {
+        longestRegionTop = activeRegionTop;
+        longestRegionBottom = activeRegionBottom;
+      }
+      activeRegionTop = y;
+    }
+    activeRegionBottom = y;
+  }
+  if (activeRegionBottom - activeRegionTop > longestRegionBottom - longestRegionTop) {
+    longestRegionTop = activeRegionTop;
+    longestRegionBottom = activeRegionBottom;
+  }
+  if (longestRegionBottom - longestRegionTop >= 160) {
+    regionTop = longestRegionTop;
+    regionBottom = Math.min(height, longestRegionBottom + 1);
+  }
+  if (regionBottom - regionTop < 160) return null;
+
+  const smoothed = projection.map((_, y) => {
+    let total = 0;
+    let count = 0;
+    for (let offset = -2; offset <= 2; offset += 1) {
+      const value = projection[y + offset];
+      if (value !== undefined) {
+        total += value;
+        count += 1;
+      }
+    }
+    return total / count;
+  });
+  const regionMean = smoothed.slice(regionTop, regionBottom)
+    .reduce((total, value) => total + value, 0) / (regionBottom - regionTop);
+  const centered = smoothed.map((value) => value - regionMean);
+  let pitch = 0;
+  let bestCorrelation = 0;
+  const maxPitch = Math.min(160, Math.floor((regionBottom - regionTop) / 4));
+
+  for (let candidate = 32; candidate <= maxPitch; candidate += 1) {
+    let covariance = 0;
+    let firstVariance = 0;
+    let secondVariance = 0;
+    for (let y = regionTop; y + candidate < regionBottom; y += 1) {
+      const first = centered[y];
+      const second = centered[y + candidate];
+      covariance += first * second;
+      firstVariance += first * first;
+      secondVariance += second * second;
+    }
+    const correlation = covariance / Math.sqrt(firstVariance * secondVariance);
+    if (correlation > bestCorrelation) {
+      pitch = candidate;
+      bestCorrelation = correlation;
+    }
+  }
+  if (pitch === 0 || bestCorrelation < 0.4) return null;
+
+  const searchRadius = Math.max(3, Math.floor(pitch * 0.28));
+  let phase = regionTop;
+  let bestPhaseScore = -1;
+  for (let candidate = regionTop; candidate < regionTop + pitch; candidate += 1) {
+    let score = 0;
+    for (let center = candidate; center < regionBottom; center += pitch) {
+      for (let y = Math.max(regionTop, center - searchRadius); y <= Math.min(regionBottom - 1, center + searchRadius); y += 1) {
+        score += smoothed[y];
+      }
+    }
+    if (score > bestPhaseScore) {
+      phase = candidate;
+      bestPhaseScore = score;
+    }
+  }
+
+  const peakThreshold = Math.max(8, Math.floor(width * 0.006));
+  const rows: Array<{ top: number; bottom: number }> = [];
+  const peakSearch = Math.max(2, Math.floor(pitch * 0.12));
+  for (let center = phase; center < regionBottom; center += pitch) {
+    let peak = center;
+    for (let y = Math.max(regionTop, center - peakSearch); y <= Math.min(regionBottom - 1, center + peakSearch); y += 1) {
+      if (projection[y] > projection[peak]) peak = y;
+    }
+    if (projection[peak] < peakThreshold) continue;
+    rows.push({
+      top: Math.max(regionTop, Math.floor(peak - pitch * 0.42)),
+      bottom: Math.min(regionBottom, Math.ceil(peak + pitch * 0.42)),
+    });
+  }
+  return rows.length >= 3 ? rows : null;
+}
+
 function detectTextRows(canvas: HTMLCanvasElement): Array<{ top: number; bottom: number }> {
   const context = canvas.getContext("2d", { willReadFrequently: true });
   if (!context) throw new Error("Das Formular konnte nicht auf Textzeilen untersucht werden.");
   const { data, width, height } = context.getImageData(0, 0, canvas.width, canvas.height);
+  const projection: number[] = [];
   const active: number[] = [];
   const threshold = Math.max(8, Math.floor(width * 0.002));
   for (let y = 0; y < height; y += 1) {
@@ -162,8 +280,12 @@ function detectTextRows(canvas: HTMLCanvasElement): Array<{ top: number; bottom:
       const offset = (y * width + x) * 4;
       if (data[offset] < 155) darkPixels += 1;
     }
+    projection.push(darkPixels);
     if (darkPixels >= threshold) active.push(y);
   }
+
+  const periodicRows = detectPeriodicTextRows(projection, width, height);
+  if (periodicRows) return periodicRows;
 
   const rows: Array<{ top: number; bottom: number }> = [];
   for (const y of active) {
