@@ -52,6 +52,12 @@ async function correctPerspectiveAndLighting(input: HTMLCanvasElement): Promise<
   const hierarchy = new cv.Mat();
   const warped = new cv.Mat();
   const threshold = new cv.Mat();
+  const ink = new cv.Mat();
+  const horizontalLines = new cv.Mat();
+  const horizontalKernel = cv.getStructuringElement(
+    cv.MORPH_RECT,
+    new cv.Size(Math.max(25, Math.floor(source.cols * 0.1)), 1),
+  );
   try {
     cv.cvtColor(source, gray, cv.COLOR_RGBA2GRAY);
     cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
@@ -107,6 +113,10 @@ async function correctPerspectiveAndLighting(input: HTMLCanvasElement): Promise<
         31,
         12,
       );
+      cv.bitwise_not(threshold, ink);
+      cv.morphologyEx(ink, horizontalLines, cv.MORPH_OPEN, horizontalKernel);
+      cv.subtract(ink, horizontalLines, ink);
+      cv.bitwise_not(ink, threshold);
       const output = createCanvas(threshold.cols, threshold.rows);
       cv.imshow(output, threshold);
       return output;
@@ -122,6 +132,9 @@ async function correctPerspectiveAndLighting(input: HTMLCanvasElement): Promise<
     hierarchy.delete();
     warped.delete();
     threshold.delete();
+    ink.delete();
+    horizontalLines.delete();
+    horizontalKernel.delete();
   }
 }
 
