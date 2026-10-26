@@ -6,6 +6,7 @@ import { Chess, type Square } from "chess.js";
 import { MiniChessboard } from "@/components/mini-chessboard";
 import { ChessPieceIcon } from "@/components/chess-piece";
 import { CageAiPanel } from "@/components/cage-ai-panel";
+import { ChessScoreSheetImporter } from "@/components/chess-score-sheet-importer";
 import {
   analyzePlayedMoves,
   formatEngineScore,
@@ -45,6 +46,8 @@ export default function AnalysePage() {
   const [gameAnalysisProgress, setGameAnalysisProgress] = useState<{ current: number; total: number } | null>(null);
   const [gameAnalysis, setGameAnalysis] = useState<AnalyzedMove[]>([]);
   const [gameAnalysisError, setGameAnalysisError] = useState("");
+  const [analysisMemoryMessage, setAnalysisMemoryMessage] = useState("");
+  const [savingAnalysisMemory, setSavingAnalysisMemory] = useState(false);
   const [cageAiInitialQuestion, setCageAiInitialQuestion] = useState("");
   const [evaluation, setEvaluation] = useState<EvalInfo | null>(null);
   const [engineError, setEngineError] = useState("");
@@ -52,7 +55,6 @@ export default function AnalysePage() {
   const [savedPuzzleMessage, setSavedPuzzleMessage] = useState("");
   const [savedPuzzlesLoading, setSavedPuzzlesLoading] = useState(true);
   const [analysisPuzzleId, setAnalysisPuzzleId] = useState<string | null>(null);
-  const [sheetName, setSheetName] = useState(""); const [sheetFile, setSheetFile] = useState<File | null>(null); const [ocrStatus, setOcrStatus] = useState(""); const [ocrBusy, setOcrBusy] = useState(false); const [manualMove, setManualMove] = useState<{ index: number; token: string; fen: string } | null>(null); const [manualSan, setManualSan] = useState(""); const [ocrTokens, setOcrTokens] = useState<string[]>([]); const [acceptedOcrMoves, setAcceptedOcrMoves] = useState<string[]>([]);
   const workerRef = useRef<Worker | null>(null);
   const pendingPositionAnalysisRef = useRef<PendingPositionAnalysis | null>(null);
   const regularAnalysisLinesRef = useRef<Map<number, EngineLine>>(new Map());
@@ -271,7 +273,7 @@ export default function AnalysePage() {
     void file.text().then(loadPgn).catch(() => setMessage("Die Datei konnte nicht gelesen werden."));
   }
 
-  function processOcrTokens(tokens: string[], start: number, current: Chess, accepted: string[]) { for (let index = start; index < tokens.length; index += 1) { let rawToken = tokens[index].trim(); if (/^[KDTLS]$/i.test(rawToken) && tokens[index + 1]) { rawToken += tokens[index + 1].trim(); index += 1; } let token = rawToken.replace(/^[0-9]+\.{1,3}/, "").replace(/^[0-9]+$/, "").replace(/[!?+#.,;:]+$/g, "").replace(/^0-0-0$/i, "O-O-O").replace(/^0-0$/i, "O-O").replace(/^[KDTLS](?=[a-h1-8x=])/i, (letter) => ({ D: "Q", T: "R", L: "B", S: "N", K: "K" }[letter.toUpperCase()] ?? letter)).replace(/^0-0-0$/i, "O-O-O").replace(/^0-0$/i, "O-O").replace(/^[KDTLS](?=[a-h1-8x=])/i, (letter) => ({ D: "Q", T: "R", L: "B", S: "N", K: "K" }[letter.toUpperCase()] ?? letter)); if (!/^(?:O-O(?:-O)?|[KQRBN]?[a-h]?[1-8]?x?[a-h][1-8](?:=[QRBN])?[+#]?)$/i.test(token)) continue; try { const result = current.move(token); accepted.push(result.san); } catch { setAcceptedOcrMoves(accepted); setManualSan(""); setManualMove({ index, token, fen: current.fen() }); setOcrStatus("Zug " + (accepted.length + 1) + " ist unklar. Bitte prüfe die Stellung und gib den Zug ein."); return; } } const score = accepted.join(" "); setPgn(score); loadPgn(score); setOcrStatus("Erkannte Partie geladen. Bitte kontrolliere die Züge, bevor du analysierst."); } async function readSheet() { if (!sheetFile) return; setOcrBusy(true); setOcrStatus("Texterkennung wird im Browser geladen …"); try { let library = (window as unknown as { Tesseract?: { recognize: (image: File | HTMLCanvasElement, language: string) => Promise<{ data: { text: string } }> } }).Tesseract; if (!library) { await new Promise<void>((resolve, reject) => { const script = document.createElement("script"); script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"; script.onload = () => resolve(); script.onerror = () => reject(new Error("Texterkennung konnte nicht geladen werden.")); document.head.appendChild(script); }); library = (window as unknown as { Tesseract?: { recognize: (image: File | HTMLCanvasElement, language: string) => Promise<{ data: { text: string } }> } }).Tesseract; } if (!library) throw new Error("Texterkennung ist nicht verfügbar."); setOcrStatus("Das Foto wird lokal gelesen …"); const imageUrl = URL.createObjectURL(sheetFile); const image = new Image(); image.src = imageUrl; await new Promise<void>((resolve, reject) => { image.onload = () => resolve(); image.onerror = () => reject(new Error("Das Foto konnte nicht geöffnet werden.")); }); const scale = Math.min(2, 2400 / Math.max(image.naturalWidth, image.naturalHeight));  const canvas = document.createElement("canvas"); canvas.width = Math.round(image.naturalWidth * scale); canvas.height = Math.round(image.naturalHeight * scale); const context = canvas.getContext("2d"); if (!context) throw new Error("Das Foto konnte nicht vorbereitet werden."); context.drawImage(image, 0, 0, canvas.width, canvas.height); URL.revokeObjectURL(imageUrl); const result = await library.recognize(canvas, "eng"); const tokens = result.data.text.replace(/[\[\]{}()]/g, " ").split(/\s+/).map((token) => token.trim()).filter(Boolean); if (!tokens.length) throw new Error("Auf dem Foto wurden keine Züge erkannt. Bitte versuche ein schärferes Foto oder gib die Züge manuell ein."); setOcrTokens(tokens); setAcceptedOcrMoves([]); processOcrTokens(tokens, 0, new Chess(), []); } catch (error) { setOcrStatus(error instanceof Error ? error.message : "Das Foto konnte nicht gelesen werden."); } finally { setOcrBusy(false); } } function confirmManualOcrMove() { if (!manualMove) return; try { const current = new Chess(manualMove.fen); const manual = manualSan.trim(); const germanPieces: Record<string, string> = { D: "Q", T: "R", L: "B", S: "N" }; const corrected = germanPieces[manual[0]] ? germanPieces[manual[0]] + manual.slice(1) : manual; const result = current.move(corrected); const accepted = [...acceptedOcrMoves, result.san]; setManualMove(null); setManualSan(""); processOcrTokens(ocrTokens, manualMove.index + 1, current, accepted); } catch { setOcrStatus("Dieser Zug ist in der aktuellen Stellung nicht legal. Bitte prüfe die Eingabe."); } } function playMove(from: Square, to: Square) {
+  function playMove(from: Square, to: Square) {
     if (game.isGameOver()) return false;
     const movingPiece = game.get(from);
     const isLegalMove = game.moves({ square: from, verbose: true }).some((move) => move.to === to);
@@ -361,6 +363,39 @@ export default function AnalysePage() {
     } catch (removeError) {
       console.error("Gespeicherte Taktikaufgabe konnte nicht entfernt werden:", removeError);
       setSavedPuzzleMessage("Die Aufgabe konnte nicht entfernt werden. Bitte versuche es erneut.");
+    }
+  }
+
+  async function saveAnalysisTrainingFocus() {
+    if (gameAnalysis.length === 0 || savingAnalysisMemory) return;
+    setSavingAnalysisMemory(true);
+    setAnalysisMemoryMessage("");
+    const counts = {
+      inaccuracy: gameAnalysis.filter((item) => item.quality === "inaccuracy").length,
+      mistake: gameAnalysis.filter((item) => item.quality === "mistake").length,
+      blunder: gameAnalysis.filter((item) => item.quality === "blunder").length,
+    };
+    const content = `Stockfish-Partieanalyse: ${counts.inaccuracy} Ungenauigkeiten, ${counts.mistake} Fehler und ${counts.blunder} schwere Fehler. Bitte hilf mir, wiederkehrende Ursachen zu erkennen und diese Züge künftig bewusster zu prüfen.`;
+    try {
+      const response = await fetch("/api/cage-ai/memories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memoryType: "weakness", content }),
+      });
+      let result: { error?: string };
+      try {
+        result = await response.json() as { error?: string };
+      } catch {
+        throw new Error("Der Memory-Endpunkt hat eine ungültige Antwort geliefert.");
+      }
+      if (!response.ok) throw new Error(result.error || "Die Erkenntnis konnte nicht gespeichert werden.");
+      setAnalysisMemoryMessage("Eine kurze Zusammenfassung der Analyse ist als Trainingsschwerpunkt gespeichert. PGN, Züge und Engine-Varianten wurden nicht gespeichert.");
+    } catch (saveError) {
+      setAnalysisMemoryMessage(saveError instanceof Error
+        ? saveError.message
+        : "Die Erkenntnis konnte nicht gespeichert werden.");
+    } finally {
+      setSavingAnalysisMemory(false);
     }
   }
 
@@ -629,13 +664,24 @@ export default function AnalysePage() {
             quickPrompts={["Warum war mein größter Fehler schlecht?", "Was sollte ich aus der Partie lernen?"]}
             requestConfig={{ purpose: "game_review", moves: gameAnalysis, positions }}
           />}
-          <section className="rounded-xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
-            <h2 className="font-bold">Partie aus Foto</h2>
-            <label className="mt-2 inline-flex cursor-pointer rounded-lg border border-slate-700 px-3 py-2 text-sm hover:bg-slate-800">Foto wählen<input type="file" accept="image/*" onChange={(event) => { const file = event.target.files?.[0] ?? null; setSheetFile(file); setSheetName(file?.name ?? ""); setOcrStatus(""); }} className="sr-only" /></label>
-            {sheetName && <p className="mt-1 truncate text-xs text-slate-300">{sheetName}</p>}<button type="button" onClick={readSheet} disabled={!sheetFile || ocrBusy} className="mt-2 w-full rounded-lg bg-emerald-400 px-3 py-2.5 font-semibold text-slate-950 disabled:opacity-50">{ocrBusy ? "Lese …" : "Züge lesen"}</button>{ocrStatus && <p role="status" className="mt-2 text-sm text-slate-300">{ocrStatus}</p>}
-          </section>
+          {gameAnalysis.length > 0 && <section className="rounded-xl border border-amber-300/20 bg-slate-900 p-3 sm:p-4">
+            <h2 className="font-semibold">Analyse als Trainingsschwerpunkt merken</h2>
+            <p className="mt-1 text-sm text-slate-400">
+              Speichert nur die Anzahl der Ungenauigkeiten, Fehler und schweren Fehler sowie deinen Wunsch, diese Muster zu üben – keine Partie, Züge oder Engine-Varianten.
+            </p>
+            <button
+              type="button"
+              onClick={() => void saveAnalysisTrainingFocus()}
+              disabled={savingAnalysisMemory}
+              className="mt-3 min-h-10 rounded-lg border border-amber-300/40 px-3 py-2 text-sm font-medium text-amber-100 transition hover:bg-amber-300/10 disabled:opacity-50"
+            >
+              {savingAnalysisMemory ? "Wird gespeichert …" : "Zusammenfassung im CageAI Memory speichern"}
+            </button>
+            {analysisMemoryMessage && <p role="status" className="mt-2 text-sm text-slate-300">{analysisMemoryMessage}</p>}
+          </section>}
+          <ChessScoreSheetImporter onLoadPgn={loadPgn} />
         </aside>
       </div>
     </div>
-  {manualMove && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-labelledby="manual-ocr-title"><div className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl"><h2 id="manual-ocr-title" className="text-xl font-bold">Zug bitte manuell prüfen</h2><p className="mt-3 text-sm text-slate-300">Die Texterkennung konnte diesen Zug in der aktuellen Stellung nicht legal übernehmen.</p><p className="mt-2 text-sm font-semibold text-amber-200">Fehlerstelle: {Math.floor(acceptedOcrMoves.length / 2) + 1}. Zug – {acceptedOcrMoves.length % 2 === 0 ? "Weiß" : "Schwarz"} am Zug.</p><p className="mt-2 text-xs text-slate-400">Bisher erkannt: {acceptedOcrMoves.slice(-4).join(" ") || "Noch keine Züge"}</p><p className="mt-2 rounded-lg bg-slate-950 p-3 font-mono text-amber-300">Erkannt: {manualMove.token}</p><p className="mt-3 text-sm text-slate-400">Gib den Zug in deutscher oder internationaler Notation ein, z. B. e4, Sf3 oder Nf3.</p><input autoFocus value={manualSan} onChange={(event) => setManualSan(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") confirmManualOcrMove(); }} className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-white" placeholder="Korrigierter Zug" /><div className="mt-4 flex gap-3"><button type="button" onClick={confirmManualOcrMove} className="flex-1 rounded-lg bg-emerald-400 px-4 py-2 font-semibold text-slate-950">Zug übernehmen</button><button type="button" onClick={() => setManualMove(null)} className="rounded-lg border border-slate-700 px-4 py-2">Abbrechen</button></div></div></div>} </main>;
+  </main>;
 }
