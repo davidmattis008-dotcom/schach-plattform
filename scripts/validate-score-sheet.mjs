@@ -5,6 +5,7 @@ import {
   parseScoreSheetText,
   reviewScoreSheet,
 } from "../lib/chess/score-sheet-review.ts";
+import { detectPeriodicTextRows } from "../lib/chess/score-sheet-image.ts";
 
 const line = (page, row, texts) => ({
   id: `${page}-${row}`,
@@ -86,5 +87,28 @@ const conflictingInterpretations = reviewScoreSheet([
 assert.equal(conflictingInterpretations.issue?.ply, 0);
 assert.equal(conflictingInterpretations.issue?.kind, "ambiguous");
 assert.equal(conflictingInterpretations.moves.length, 0);
+
+const rowPitch = 70;
+const rowProjection = Array(1700).fill(0);
+for (let row = 0; row < 20; row += 1) {
+  const center = 220 + row * rowPitch;
+  for (let y = center - 12; y <= center + 12; y += 1) {
+    rowProjection[y] = 35 + Math.abs(center - y);
+  }
+}
+const detectedRows = detectPeriodicTextRows(rowProjection, 1650, rowProjection.length);
+assert.equal(detectedRows?.length, 20, "Repeated score-sheet rows should be segmented individually.");
+assert.ok(detectedRows?.every((row, index) =>
+  index === 0 || detectedRows[index - 1].bottom <= row.top,
+), "Detected score-sheet rows must not merge adjacent move rows.");
+const irregularProjection = Array(600).fill(0);
+for (const center of [60, 132, 234, 319, 448, 512]) {
+  irregularProjection[center] = 40;
+}
+assert.equal(
+  detectPeriodicTextRows(irregularProjection, 1650, irregularProjection.length),
+  null,
+  "Irregular content should keep the existing row detector fallback.",
+);
 
 console.log("Validated score-sheet parsing, legal replay, confidence gating, corrections, missing moves, ambiguity, and pages.");
