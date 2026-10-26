@@ -15,6 +15,7 @@
     "test:cage-ai-contract": "node --experimental-strip-types scripts/validate-cage-ai-contract.mjs",
     "test:cage-ai-knowledge": "node --experimental-strip-types scripts/validate-cage-ai-knowledge.mjs",
     "test:cage-ai-memory": "node --experimental-strip-types scripts/validate-cage-ai-memory.mjs",
+    "test:cage-ai-training-plan": "node --experimental-strip-types scripts/validate-cage-ai-training-plan.mjs",
     "sync:cage-ai-knowledge": "node --experimental-strip-types scripts/sync-cage-ai-knowledge.mjs",
     "test:opening-repertoire": "node scripts/validate-opening-repertoire.mjs",
     "test:checkmate-training": "node scripts/validate-checkmate-training.mjs",

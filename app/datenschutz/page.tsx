@@ -40,6 +40,7 @@ export default function PrivacyPage() {
               <li><strong>Spielerprofil:</strong> Benutzername, freiwillige Biografie und Avatarbild. Profilangaben können anderen Nutzern angezeigt werden; öffentliche Profil- und Avataransichten sind teilweise auch ohne Anmeldung abrufbar. Rechtsgrundlage und Umfang der öffentlichen Sichtbarkeit müssen vom Betreiber bestätigt werden.</li>
               <li><strong>Community-Inhalte:</strong> Freundschaftsanfragen, globale Chatnachrichten, private Nachrichten, Vereinsaktivitäten, Supportanfragen, Turniere, Spielergebnisse und Wertungen werden verarbeitet, um die jeweiligen Community-Funktionen bereitzustellen, zu moderieren und Missbrauch zu bearbeiten. Nachrichten können Namen, Inhalte und Zeitpunkte enthalten; globale Chat-Inhalte sind für angemeldete Nutzer sichtbar, private Nachrichten für die beteiligten Personen.</li>
               <li><strong>Partien und Training:</strong> Züge, Ergebnisse und Wertungsdaten können zur Anzeige von Partien, Verlauf, Ranglisten und Trainingsfortschritt verarbeitet werden. Taktikfortschritt und abgeschlossene Lernlektionen werden zunächst im Browser gespeichert und bei Anmeldung mit dem jeweiligen Konto synchronisiert. Abgeschlossene Online-Partien werden für angemeldete Konten in Supabase gespeichert; lokale Partien werden beim nächsten Kontoabgleich dorthin übertragen. Bei Gästen verbleiben diese Fortschritte und Partien auf dem jeweiligen Gerät. Gespeicherte Taktikaufgaben werden dem angemeldeten Konto zugeordnet; wenn sie ausdrücklich einer Vereinsgruppe zugewiesen werden, sind sie für deren Mitglieder als Trainingsaufgabe sichtbar.</li>
+              <li><strong>CageAI Memory und Trainingsplan:</strong> Wenn du CageAI-Erinnerungen ausdrücklich speicherst, werden kurze Texte zu deinen Trainingszielen, deiner Spielstärke, Schwächen und Präferenzen deinem Konto in Supabase zugeordnet. Du kannst sie in den Einstellungen einsehen und einzeln oder vollständig löschen. Eine Stockfish-Partieanalyse wird nur dann als kurzer Trainingsschwerpunkt gespeichert, wenn du diese Schaltfläche ausdrücklich auswählst; Partie, Züge und Engine-Varianten werden dabei nicht übernommen. Der persönliche Wochenplan speichert deine verfügbare Trainingszeit, gewählte Trainingsbereiche, konkrete Aufgaben und deren Erledigungsstatus. Für die Planberechnung werden Elo- und Lernfortschritt, zusammengefasste Ergebnisse der letzten gespeicherten Partien sowie passende Erinnerungen verwendet. Die Planberechnung benötigt derzeit kein externes KI-Modell.</li>
               <li><strong>Support und Beta-Feedback:</strong> Wenn du ein Problem oder einen Vorschlag übermittelst, verarbeiten wir die Angaben aus deiner Nachricht und – bei Supportanfragen innerhalb eines Kontos – die zugehörigen Kontodaten zur Bearbeitung.</li>
               <li><strong>Technischer Betrieb und Sicherheit:</strong> Server- und Sicherheitsprotokolle können durch Hosting- und Infrastruktur-Anbieter verarbeitet werden. Welche Angaben, Aufbewahrungsfristen und Rechtsgrundlagen dabei konkret gelten, hängt von den Anbieter-Einstellungen ab und muss vom Betreiber ergänzt werden.</li>
             </ul>
@@ -70,6 +71,9 @@ export default function PrivacyPage() {
             <p className="mt-2 text-sm leading-6 text-slate-300">
               Browserdaten bleiben gespeichert, bis du sie in den Website-/Browserdaten löschst. Konto-, Profil-, Nachrichten-, Support-, Turnier- und Wertungsdaten werden in der Datenbank verarbeitet. Konkrete Löschfristen, ein möglicher Aufbewahrungszeitraum nach Kontolöschung und der Ablauf für die Löschung oder Anonymisierung müssen vom Betreiber noch festgelegt und hier angegeben werden. Gesetzliche Aufbewahrungspflichten bleiben unberührt.
             </p>
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              CageAI Memory und Trainingspläne bleiben deinem Konto zugeordnet, bis du sie löschst oder dein Konto gelöscht wird. Erinnerungen kannst du in den Einstellungen einzeln oder gemeinsam entfernen; der Trainingsplan ist für die regelmäßige Neuberechnung vorgesehen. Es werden keine vollständigen CageAI-Chats, technischen Logs oder vorübergehenden Stockfish-Berechnungen als Memory gespeichert.
+            </p>
           </section>
 
           <section>
@@ -96,7 +100,7 @@ export default function PrivacyPage() {
             </ul>
           </section>
 
-          <p className="text-xs text-slate-500">Stand: 9. Oktober 2026. Dieser Entwurf ist keine Rechtsberatung und ersetzt keine Prüfung durch eine qualifizierte Datenschutzberatung.</p>
+          <p className="text-xs text-slate-500">Stand: 26. Oktober 2026. Dieser Entwurf ist keine Rechtsberatung und ersetzt keine Prüfung durch eine qualifizierte Datenschutzberatung.</p>
         </div>
       </article>
     </main>

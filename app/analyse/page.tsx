@@ -45,6 +45,8 @@ export default function AnalysePage() {
   const [gameAnalysisProgress, setGameAnalysisProgress] = useState<{ current: number; total: number } | null>(null);
   const [gameAnalysis, setGameAnalysis] = useState<AnalyzedMove[]>([]);
   const [gameAnalysisError, setGameAnalysisError] = useState("");
+  const [analysisMemoryMessage, setAnalysisMemoryMessage] = useState("");
+  const [savingAnalysisMemory, setSavingAnalysisMemory] = useState(false);
   const [cageAiInitialQuestion, setCageAiInitialQuestion] = useState("");
   const [evaluation, setEvaluation] = useState<EvalInfo | null>(null);
   const [engineError, setEngineError] = useState("");
@@ -364,6 +366,39 @@ export default function AnalysePage() {
     }
   }
 
+  async function saveAnalysisTrainingFocus() {
+    if (gameAnalysis.length === 0 || savingAnalysisMemory) return;
+    setSavingAnalysisMemory(true);
+    setAnalysisMemoryMessage("");
+    const counts = {
+      inaccuracy: gameAnalysis.filter((item) => item.quality === "inaccuracy").length,
+      mistake: gameAnalysis.filter((item) => item.quality === "mistake").length,
+      blunder: gameAnalysis.filter((item) => item.quality === "blunder").length,
+    };
+    const content = `Stockfish-Partieanalyse: ${counts.inaccuracy} Ungenauigkeiten, ${counts.mistake} Fehler und ${counts.blunder} schwere Fehler. Bitte hilf mir, wiederkehrende Ursachen zu erkennen und diese Züge künftig bewusster zu prüfen.`;
+    try {
+      const response = await fetch("/api/cage-ai/memories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memoryType: "weakness", content }),
+      });
+      let result: { error?: string };
+      try {
+        result = await response.json() as { error?: string };
+      } catch {
+        throw new Error("Der Memory-Endpunkt hat eine ungültige Antwort geliefert.");
+      }
+      if (!response.ok) throw new Error(result.error || "Die Erkenntnis konnte nicht gespeichert werden.");
+      setAnalysisMemoryMessage("Eine kurze Zusammenfassung der Analyse ist als Trainingsschwerpunkt gespeichert. PGN, Züge und Engine-Varianten wurden nicht gespeichert.");
+    } catch (saveError) {
+      setAnalysisMemoryMessage(saveError instanceof Error
+        ? saveError.message
+        : "Die Erkenntnis konnte nicht gespeichert werden.");
+    } finally {
+      setSavingAnalysisMemory(false);
+    }
+  }
+
   function analyzePosition() {
     const worker = workerRef.current;
     if (gameAnalyzing || engineStoppingRef.current) return;
@@ -629,6 +664,21 @@ export default function AnalysePage() {
             quickPrompts={["Warum war mein größter Fehler schlecht?", "Was sollte ich aus der Partie lernen?"]}
             requestConfig={{ purpose: "game_review", moves: gameAnalysis, positions }}
           />}
+          {gameAnalysis.length > 0 && <section className="rounded-xl border border-amber-300/20 bg-slate-900 p-3 sm:p-4">
+            <h2 className="font-semibold">Analyse als Trainingsschwerpunkt merken</h2>
+            <p className="mt-1 text-sm text-slate-400">
+              Speichert nur die Anzahl der Ungenauigkeiten, Fehler und schweren Fehler sowie deinen Wunsch, diese Muster zu üben – keine Partie, Züge oder Engine-Varianten.
+            </p>
+            <button
+              type="button"
+              onClick={() => void saveAnalysisTrainingFocus()}
+              disabled={savingAnalysisMemory}
+              className="mt-3 min-h-10 rounded-lg border border-amber-300/40 px-3 py-2 text-sm font-medium text-amber-100 transition hover:bg-amber-300/10 disabled:opacity-50"
+            >
+              {savingAnalysisMemory ? "Wird gespeichert …" : "Zusammenfassung im CageAI Memory speichern"}
+            </button>
+            {analysisMemoryMessage && <p role="status" className="mt-2 text-sm text-slate-300">{analysisMemoryMessage}</p>}
+          </section>}
           <section className="rounded-xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
             <h2 className="font-bold">Partie aus Foto</h2>
             <label className="mt-2 inline-flex cursor-pointer rounded-lg border border-slate-700 px-3 py-2 text-sm hover:bg-slate-800">Foto wählen<input type="file" accept="image/*" onChange={(event) => { const file = event.target.files?.[0] ?? null; setSheetFile(file); setSheetName(file?.name ?? ""); setOcrStatus(""); }} className="sr-only" /></label>

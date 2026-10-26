@@ -16,6 +16,15 @@ export type RatingRow = {
   rated_games: number;
 };
 
+export type RecentGamesSummary = {
+  sampleSize: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  averageMoves: number;
+  timeControls: string[];
+};
+
 type TacticsSummary = {
   rating: number;
   solved: number;
@@ -39,6 +48,14 @@ export type CageAiPersonalContext = {
   ratedGamesPlayed?: number;
   learning?: LearningSummary;
   memories?: CageAiMemoryContext[];
+  recentGames?: {
+    sampleSize: number;
+    wins: number;
+    draws: number;
+    losses: number;
+    averageMoves: number;
+    timeControls: string[];
+  };
 };
 
 function boundedInteger(value: unknown, minimum: number, maximum: number): number | null {
@@ -81,6 +98,7 @@ export function selectCageAiPersonalContext(
   ratings: RatingRow[],
   progress: Record<string, unknown>,
   memories: readonly { memory_type: string; content: string }[] = [],
+  recentGames: RecentGamesSummary | null = null,
 ): CageAiPersonalContext {
   const relevantMemories = selectRelevantCageAiMemories(memories, purpose);
   const memoryContext = relevantMemories.length ? { memories: relevantMemories } : {};
@@ -119,6 +137,9 @@ export function selectCageAiPersonalContext(
     };
   }
   const ratedGamesPlayed = normalizedRatings.reduce((total, row) => total + row.rated_games, 0);
+  const recentGameSummary = purpose === "training_plan" && recentGames && recentGames.sampleSize > 0
+    ? recentGames
+    : undefined;
 
   return {
     purpose,
@@ -126,5 +147,6 @@ export function selectCageAiPersonalContext(
     ...(normalizedRatings.length ? { ratings: normalizedRatings } : {}),
     ...(purpose === "game_review" && normalizedRatings.length ? { ratedGamesPlayed } : {}),
     ...(Object.keys(learning).length ? { learning } : {}),
+    ...(recentGameSummary ? { recentGames: recentGameSummary } : {}),
   };
 }
