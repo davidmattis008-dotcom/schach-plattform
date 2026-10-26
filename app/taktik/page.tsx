@@ -4,9 +4,9 @@ import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { Chess, type Color, type Square } from "chess.js";
 import { MiniChessboard } from "@/components/mini-chessboard";
-import { CageAiPanel } from "@/components/cage-ai-panel";
 import { SelectMenu } from "@/components/select-menu";
 import { chooseTacticsPuzzle, getTacticsDifficulty, getTacticsPuzzleForRating, getTacticsRatingChange, getTacticsTheme, tacticsPuzzles } from "@/lib/tactics";
+import { getPreferredTacticsThemes, getTacticsCoachExplanation, getTacticsCoachHint, getTacticsCoachTheme } from "@/lib/tactics-coach";
 import { getDailyExerciseLevel, getTacticsProgress, INITIAL_TACTICS_PROGRESS, subscribeToTacticsProgress, updateTacticsProgress } from "@/lib/tactics-progress";
 import { clampTacticsRating, isTacticsDifficultyOffset, TACTICS_PLACEMENT_TASKS } from "@/lib/tactics-rating";
 import { createClient } from "@/lib/supabase/client";
@@ -27,6 +27,12 @@ function playUci(position: Chess, uci: string) {
 
 function moveToUci(move: { from: Square; to: Square; promotion?: string }): string {
   return move.from + move.to + (move.promotion ?? "");
+}
+
+function getSolutionLine(puzzle: (typeof tacticsPuzzles)[number]): string {
+  const position = new Chess(puzzle.fen);
+  if (puzzle.setupMove) playUci(position, puzzle.setupMove);
+  return puzzle.moves.map((move) => playUci(position, move).san).join(" ");
 }
 
 export default function TacticsPage() {
@@ -50,6 +56,12 @@ export default function TacticsPage() {
   const [selected, setSelected] = useState<Square | null>(null);
   const [outcome, setOutcome] = useState<Outcome>(null);
   const [message, setMessage] = useState("");
+  const [coachHintLevel, setCoachHintLevel] = useState(0);
+  const [coachFeedback, setCoachFeedback] = useState<{ playedMove: string; expectedMove: string } | null>(null);
+  const [weaknessThemes, setWeaknessThemes] = useState<string[]>([]);
+  const [coachMemoryBusy, setCoachMemoryBusy] = useState(false);
+  const [coachMemoryMessage, setCoachMemoryMessage] = useState("");
+  const [coachMemoryError, setCoachMemoryError] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -114,6 +126,36 @@ export default function TacticsPage() {
     return () => { active = false; };
   }, []);
 
+  useEffect(() => {
+    if (!userId) return;
+    const controller = new AbortController();
+    async function loadWeaknessMemories() {
+      try {
+        const response = await fetch("/api/cage-ai/memories", {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        const result = await response.json() as {
+          memories?: Array<{ memory_type?: unknown; content?: unknown }>;
+          error?: string;
+        };
+        if (!response.ok) throw new Error(result.error || "Deine gespeicherten Schachschwächen konnten nicht geladen werden.");
+        if (!Array.isArray(result.memories)) throw new Error("Die gespeicherten Schachschwächen haben ein ungültiges Format.");
+        const weaknesses = result.memories
+          .filter((memory) => memory.memory_type === "weakness" && typeof memory.content === "string")
+          .map((memory) => memory.content as string);
+        if (!controller.signal.aborted) setWeaknessThemes(getPreferredTacticsThemes(weaknesses));
+      } catch (loadError) {
+        if (!controller.signal.aborted) {
+          console.error("Gespeicherte CageAI-Taktikschwächen konnten nicht geladen werden:", loadError);
+          setCoachMemoryError("Gespeicherte Schwerpunkte konnten nicht geladen werden; du kannst die Aufgaben trotzdem normal lösen.");
+        }
+      }
+    }
+    void loadWeaknessMemories();
+    return () => controller.abort();
+  }, [userId]);
+
   const isPlacement = progress.placementAttempts < TACTICS_PLACEMENT_TASKS;
   const targetRating = isPlacement
     ? progress.rating
@@ -131,7 +173,11 @@ export default function TacticsPage() {
     ? []
     : chess.moves({ square: selected, verbose: true }).map((move) => move.to);
 
-  function finish(correct: boolean, answer: string) {
+  function finish(
+    correct: boolean,
+    answer: string,
+    feedback: { playedMove: string; expectedMove: string },
+  ) {
     if (outcome) return;
 
     const isPractice = practicePuzzleId === puzzle.id;
@@ -170,6 +216,7 @@ export default function TacticsPage() {
     }));
     setPuzzleId(puzzle.id);
     setOutcome(correct ? "solved" : "missed");
+    setCoachFeedback(feedback);
     setSelected(null);
     const dailyProgressResult = ` Tagesaufgabe erledigt: Level ${nextDailyLevel.level}, ${nextDailyLevel.completedInLevel}/${nextDailyLevel.taskCount}.`;
     let ratingResult: string;
@@ -246,7 +293,7 @@ export default function TacticsPage() {
     const expectedPosition = new Chess(positionFen);
     const expected = playUci(expectedPosition, puzzle.moves[solutionIndex]);
     if (moveToUci(played) !== puzzle.moves[solutionIndex]) {
-      finish(false, `${expected.san}.`);
+      finish(false, `${expected.san}.`, { playedMove: played.san, expectedMove: expected.san });
       return;
     }
 
@@ -262,12 +309,12 @@ export default function TacticsPage() {
     setSelected(null);
 
     if (nextIndex >= puzzle.moves.length) {
-      finish(true, `${played.san}.`);
+      finish(true, `${played.san}.`, { playedMove: played.san, expectedMove: expected.san });
     }
   }
 
   function nextPuzzle() {
-    const next = chooseTacticsPuzzle(targetRating, progress.recent);
+    const next = chooseTacticsPuzzle(targetRating, progress.recent, weaknessThemes);
     setPuzzleId(next.id);
     setPracticePuzzleId(null);
     setPositionState(null);
@@ -275,6 +322,10 @@ export default function TacticsPage() {
     setSelected(null);
     setOutcome(null);
     setMessage("");
+    setCoachHintLevel(0);
+    setCoachFeedback(null);
+    setCoachMemoryMessage("");
+    setCoachMemoryError("");
   }
 
   function selectSavedPuzzle(id: string) {
@@ -285,7 +336,39 @@ export default function TacticsPage() {
     setSelected(null);
     setOutcome(null);
     setMessage("");
+    setCoachHintLevel(0);
+    setCoachFeedback(null);
+    setCoachMemoryMessage("");
+    setCoachMemoryError("");
     setShowSavedPuzzles(false);
+  }
+
+  async function saveTacticsWeakness() {
+    if (!userId || outcome !== "missed" || coachMemoryBusy) return;
+    setCoachMemoryBusy(true);
+    setCoachMemoryMessage("");
+    setCoachMemoryError("");
+    const coachTheme = getTacticsCoachTheme(puzzle.themes);
+    const theme = coachTheme ? getTacticsTheme([coachTheme]) : getTacticsTheme(puzzle.themes);
+    const content = `Bei Taktikaufgaben zum Motiv „${theme}“ übersehe ich gelegentlich den Lösungszug. Ich möchte künftig vor dem Zug Schachgebote, Schlagzüge und direkte Drohungen prüfen.`;
+    try {
+      const response = await fetch("/api/cage-ai/memories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memoryType: "weakness", content }),
+      });
+      const result = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(result.error || "Die Taktikschwäche konnte nicht gespeichert werden.");
+      setWeaknessThemes((current) => [...new Set([...current, ...getPreferredTacticsThemes([content])])]);
+      setCoachMemoryMessage("Als private CageAI-Erinnerung gespeichert. Künftige Aufgaben berücksichtigen diesen Schwerpunkt.");
+    } catch (saveError) {
+      console.error("CageAI-Taktikschwäche konnte nicht gespeichert werden:", saveError);
+      setCoachMemoryError(saveError instanceof Error
+        ? saveError.message
+        : "Die Taktikschwäche konnte nicht gespeichert werden.");
+    } finally {
+      setCoachMemoryBusy(false);
+    }
   }
 
   async function removeSavedPuzzle(id: string) {
@@ -434,25 +517,57 @@ export default function TacticsPage() {
             >
               {message}
             </div>
-            {!outcome && <div className="mt-4">
-              <CageAiPanel
-                key={puzzle.id}
-                contextLabel={`CageAI kennt das Thema „${getTacticsTheme(puzzle.themes)}“ und das Aufgabenniveau, aber nicht den Lösungszug. Bitte erstelle einen kleinen Hinweis, keine Lösung.`}
-                contextReady
-                contextBadge="Hinweis · keine Lösung"
-                placeholder="Frag nach einem Hinweis …"
-                quickPrompts={["Gib mir einen kleinen Hinweis, ohne den Zug zu verraten."]}
-                requestConfig={{
-                  purpose: "tactic_hint",
-                  tactic: {
-                    fen: puzzleStartFen,
-                    theme: getTacticsTheme(puzzle.themes),
-                    rating: puzzle.rating,
-                    hintLevel: 1,
-                  },
-                }}
-              />
-            </div>}
+            {!outcome && <section aria-labelledby="tactics-coach-title" className="mt-4 rounded-xl border border-amber-300/20 bg-slate-950/70 p-4">
+              <h2 id="tactics-coach-title" className="font-semibold text-amber-100">CageAI Taktik-Coach</h2>
+              <p className="mt-1 text-xs leading-5 text-slate-400">
+                Hinweise werden lokal aus dem Aufgabenthema erstellt. Die Lösung bleibt bis zum Abschluss verborgen; es wird kein KI-Dienst aufgerufen.
+              </p>
+              {coachHintLevel > 0 && (
+                <p className="mt-3 rounded-lg bg-slate-800/80 px-3 py-2.5 text-sm text-slate-200" role="status">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-amber-200">Hinweis {coachHintLevel} von 3</span>
+                  {getTacticsCoachHint(puzzle.themes, coachHintLevel as 1 | 2 | 3)}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => setCoachHintLevel((level) => Math.min(3, level + 1))}
+                disabled={coachHintLevel >= 3}
+                className="mt-3 rounded-lg border border-amber-300/40 px-3 py-2 text-sm font-medium text-amber-100 transition hover:bg-amber-300/10 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {coachHintLevel === 0 ? "Hinweis anzeigen" : coachHintLevel < 3 ? "Nächsten Hinweis" : "Alle Hinweise angezeigt"}
+              </button>
+            </section>}
+            {outcome && coachFeedback && <section aria-labelledby="tactics-feedback-title" className="mt-4 rounded-xl border border-emerald-300/20 bg-slate-950/70 p-4">
+              <h2 id="tactics-feedback-title" className="font-semibold text-white">CageAI erklärt das Ergebnis</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                {outcome === "solved"
+                  ? `Richtig: ${coachFeedback.playedMove} folgt der hinterlegten Aufgabenlösung.`
+                  : `${coachFeedback.playedMove} weicht von der hinterlegten Aufgabenlösung ab; gesucht war ${coachFeedback.expectedMove}.`}
+                {" "}{getTacticsCoachExplanation(puzzle.themes)}
+              </p>
+              <p className="mt-2 text-xs leading-5 text-slate-400">
+                Lösungsvariante: <span className="font-mono text-slate-300">{getSolutionLine(puzzle)}</span>
+              </p>
+              <p className="mt-2 text-xs text-slate-500">
+                Die Erklärung nutzt die geprüfte Puzzle-Lösung und das hinterlegte Taktikmotiv, keine externe KI oder zusätzliche Engine-Berechnung.
+              </p>
+              {outcome === "missed" && userId && (
+                <button
+                  type="button"
+                  onClick={() => void saveTacticsWeakness()}
+                  disabled={coachMemoryBusy || Boolean(coachMemoryMessage)}
+                  className="mt-3 rounded-lg border border-amber-300/40 px-3 py-2 text-sm font-medium text-amber-100 transition hover:bg-amber-300/10 disabled:cursor-wait disabled:opacity-50"
+                >
+                  {coachMemoryBusy ? "Wird gespeichert …" : coachMemoryMessage ? "Schwerpunkt gespeichert" : "Dieses Motiv als private Schwäche merken"}
+                </button>
+              )}
+              {outcome === "missed" && !userId && (
+                <p className="mt-3 text-xs text-slate-400">Melde dich an, wenn du dieses Motiv als private CageAI-Erinnerung speichern möchtest.</p>
+              )}
+              {coachMemoryMessage && <p role="status" className="mt-2 text-xs text-emerald-200">{coachMemoryMessage}</p>}
+              {coachMemoryError && <p role="alert" className="mt-2 text-xs text-amber-200">{coachMemoryError}</p>}
+            </section>}
+            {coachMemoryError && !outcome && <p role="status" className="mt-2 text-xs text-amber-200">{coachMemoryError}</p>}
             {clubTaskMessage && <p className="mt-2 text-sm text-slate-400" role="status">{clubTaskMessage}</p>}
             <div className="mt-3 flex flex-wrap gap-2">
               <button

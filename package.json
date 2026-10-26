@@ -9,9 +9,11 @@
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "lint": "eslint",
     "test:tactics": "node scripts/validate-tactics.mjs",
+    "test:tactics-coach": "node --experimental-strip-types scripts/validate-tactics-coach.mjs",
     "test:endgame-exercises": "node scripts/validate-endgame-exercises.mjs",
     "test:chess-rules": "node scripts/validate-chess-rules.mjs",
     "test:stockfish-analysis": "node --experimental-strip-types scripts/validate-stockfish-analysis.mjs",
+    "test:score-sheet": "node --experimental-strip-types scripts/validate-score-sheet.mjs",
     "test:cage-ai-contract": "node --experimental-strip-types scripts/validate-cage-ai-contract.mjs",
     "test:cage-ai-knowledge": "node --experimental-strip-types scripts/validate-cage-ai-knowledge.mjs",
     "test:cage-ai-memory": "node --experimental-strip-types scripts/validate-cage-ai-memory.mjs",
@@ -23,8 +25,10 @@
     "import:endgame-exercises": "node scripts/import-endgame-exercises.mjs"
   },
   "dependencies": {
+    "@huggingface/transformers": "3.7.2",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.2",
+    "@techstark/opencv-js": "^5.0.0-release.1",
     "chess.js": "^1.4.0",
     "next": "16.3.8",
     "react": "19.2.8",

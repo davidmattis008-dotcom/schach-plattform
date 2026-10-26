@@ -20,13 +20,22 @@ export function getTacticsPuzzleForRating(rating: number, recent: string[]): Tac
   ));
 }
 
-export function chooseTacticsPuzzle(rating: number, recent: string[]): TacticsPuzzle {
+export function chooseTacticsPuzzle(
+  rating: number,
+  recent: string[],
+  preferredThemes: string[] = [],
+): TacticsPuzzle {
   const unseen = tacticsPuzzles.filter((puzzle) => !recent.includes(puzzle.id));
   const available = unseen.length > 0 ? unseen : tacticsPuzzles;
+  const preferred = new Set(preferredThemes);
   const nearby = available.filter((puzzle) => Math.abs(puzzle.rating - rating) <= 100);
-  const candidates = nearby.length > 0
-    ? nearby
-    : available.filter((puzzle) => Math.abs(puzzle.rating - rating) === Math.abs(getTacticsPuzzleForRating(rating, recent).rating - rating));
+  const matching = preferred.size > 0
+    ? nearby.filter((puzzle) => puzzle.themes.some((theme) => preferred.has(theme)))
+    : [];
+  if (matching.length > 0) return matching[Math.floor(Math.random() * matching.length)];
+  if (nearby.length > 0) return nearby[Math.floor(Math.random() * nearby.length)];
+  const closestDistance = Math.min(...available.map((puzzle) => Math.abs(puzzle.rating - rating)));
+  const candidates = available.filter((puzzle) => Math.abs(puzzle.rating - rating) === closestDistance);
 
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
