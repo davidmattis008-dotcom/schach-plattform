@@ -5,10 +5,11 @@ Der private Zugriff ist erst aktiv, wenn die Repository-Änderungen bereitgestel
 ## Supabase
 
 1. Wende `supabase/migrations/20261025122200_private_test_access.sql` auf das bestehende Projekt an. Sie legt die App-Allowlist und Admin-Funktionen an, sperrt den Supabase-Data-API-Zugriff für nicht freigeschaltete Konten, macht Profilbilder privat und verlangt autorisierte private Realtime-Kanäle.
-2. Prüfe, dass die Migration ohne Fehler abgeschlossen wurde. Sie konfiguriert `pgrst.db_pre_request` für die Data API.
-3. Deaktiviere in **Authentication → Settings** die öffentliche Registrierung („Allow new users to sign up“).
-4. Deaktiviere in den **Realtime Settings** den öffentlichen Kanalzugriff („Allow public access“). Die Partie verwendet nun private Kanäle.
-5. Neue Testkonten müssen im Supabase-Dashboard angelegt werden, bevor ein Admin sie unter **Administration → Testzugriff** per E-Mail oder Benutzername freigibt.
+2. Wende danach `supabase/migrations/20261029000000_grant_service_role_site_access.sql` an. Sie gewährt dem ausschließlich serverseitig verwendeten `service_role` Leserechte auf die Allowlist- und Admin-Tabellen, die der Username-Login zur Zugriffsprüfung abfragt.
+3. Prüfe, dass beide Migrationen ohne Fehler abgeschlossen wurden. Die erste konfiguriert `pgrst.db_pre_request` für die Data API.
+4. Deaktiviere in **Authentication → Settings** die öffentliche Registrierung („Allow new users to sign up“).
+5. Deaktiviere in den **Realtime Settings** den öffentlichen Kanalzugriff („Allow public access“). Die Partie verwendet nun private Kanäle.
+6. Neue Testkonten müssen im Supabase-Dashboard angelegt werden, bevor ein Admin sie unter **Administration → Testzugriff** per E-Mail oder Benutzername freigibt.
 
 Der Server benötigt `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` und `SUPABASE_SERVICE_ROLE_KEY`. Der Service-Role-Key darf niemals als `NEXT_PUBLIC_*` veröffentlicht werden.
 
