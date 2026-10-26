@@ -3,6 +3,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CageAiContextPurpose } from "./contracts.ts";
 import { selectCageAiPersonalContext, type CageAiPersonalContext, type RatingRow } from "./context-selection";
+import { getCageAiMemoryTypesForPurpose, MAX_CAGE_AI_MEMORIES } from "./memories";
 
 export type { CageAiPersonalContext } from "./context-selection";
 
@@ -25,12 +26,21 @@ export async function loadCageAiPersonalContext(
       .eq("user_id", userId)
       .limit(MAX_RATINGS);
   const progressQuery = supabase.rpc("get_my_learning_context", { p_purpose: purpose });
-  const [ratingResult, progressResult] = await Promise.all([
+  const memoriesQuery = supabase
+    .from("cage_ai_memories")
+    .select("memory_type, content")
+    .eq("user_id", userId)
+    .in("memory_type", [...getCageAiMemoryTypesForPurpose(purpose)])
+    .order("updated_at", { ascending: false })
+    .limit(MAX_CAGE_AI_MEMORIES);
+  const [ratingResult, progressResult, memoriesResult] = await Promise.all([
     ratingsQuery,
     progressQuery,
+    memoriesQuery,
   ]);
   if (ratingResult?.error) throw new Error("Elo-Kontext konnte nicht sicher geladen werden.", { cause: ratingResult.error });
   if (progressResult.error) throw new Error("Lernfortschritt konnte nicht sicher geladen werden.", { cause: progressResult.error });
+  if (memoriesResult.error) throw new Error("CageAI-Erinnerungen konnten nicht sicher geladen werden.", { cause: memoriesResult.error });
 
   const ratings = (ratingResult?.data ?? []).filter((row): row is RatingRow =>
     typeof row.game_mode === "string"
@@ -41,5 +51,6 @@ export async function loadCageAiPersonalContext(
     purpose,
     ratings,
     isRecord(progressResult.data) ? progressResult.data : {},
+    memoriesResult.data ?? [],
   );
 }

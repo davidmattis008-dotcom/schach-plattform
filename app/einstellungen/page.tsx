@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CageAiMemoryManager } from "@/components/cage-ai-memory-manager";
 import { createClient } from "@/lib/supabase/client";
 
 export default function SettingsPage() {
@@ -31,6 +32,8 @@ export default function SettingsPage() {
           {error && <p role="alert" className="mt-4 text-sm text-rose-300">{error}</p>}
           <button type="button" onClick={() => void handleLogout()} disabled={busy} className="mt-4 rounded-lg border border-rose-400/30 px-4 py-2.5 text-sm font-medium text-rose-200 transition hover:bg-rose-400/10 disabled:opacity-50">{busy ? "Wird abgemeldet …" : "Abmelden"}</button>
         </section>
+
+        <CageAiMemoryManager />
       </div>
     </main>
   );

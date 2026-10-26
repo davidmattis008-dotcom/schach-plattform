@@ -1,4 +1,5 @@
 import type { CageAiContextPurpose } from "./contracts.ts";
+import { selectRelevantCageAiMemories, type CageAiMemoryContext } from "./memories.ts";
 
 const COURSE_PROGRESS_KEYS = {
   rules: "schach-regeln-lernen-v1",
@@ -37,6 +38,7 @@ export type CageAiPersonalContext = {
   ratings?: RatingRow[];
   ratedGamesPlayed?: number;
   learning?: LearningSummary;
+  memories?: CageAiMemoryContext[];
 };
 
 function boundedInteger(value: unknown, minimum: number, maximum: number): number | null {
@@ -78,8 +80,11 @@ export function selectCageAiPersonalContext(
   purpose: CageAiContextPurpose,
   ratings: RatingRow[],
   progress: Record<string, unknown>,
+  memories: readonly { memory_type: string; content: string }[] = [],
 ): CageAiPersonalContext {
-  if (purpose === "course_question") return { purpose };
+  const relevantMemories = selectRelevantCageAiMemories(memories, purpose);
+  const memoryContext = relevantMemories.length ? { memories: relevantMemories } : {};
+  if (purpose === "course_question") return { purpose, ...memoryContext };
 
   const normalizedRatings = ratings
     .filter((row) => ["bullet", "blitz", "rapid", "classical"].includes(row.game_mode))
@@ -97,6 +102,7 @@ export function selectCageAiPersonalContext(
     const tactics = readTacticsSummary(progress);
     return {
       purpose,
+      ...memoryContext,
       ...(tactics ? { learning: { tactics } } : {}),
     };
   }
@@ -116,6 +122,7 @@ export function selectCageAiPersonalContext(
 
   return {
     purpose,
+    ...memoryContext,
     ...(normalizedRatings.length ? { ratings: normalizedRatings } : {}),
     ...(purpose === "game_review" && normalizedRatings.length ? { ratedGamesPlayed } : {}),
     ...(Object.keys(learning).length ? { learning } : {}),
