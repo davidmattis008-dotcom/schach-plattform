@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { Chess, type Square } from "chess.js";
 import { MiniChessboard } from "@/components/mini-chessboard";
+import { CageAiPanel } from "@/components/cage-ai-panel";
 import { createDailyLearningAssignment, findDailyLearningAssignment, type DailyLearningAssignment, type DailyLearningType } from "@/lib/daily-learning";
 import { getTacticsRatingChange, getTacticsTheme, type TacticsPuzzle } from "@/lib/tactics";
 import { getDailyExerciseLevel, getTacticsProgress, INITIAL_TACTICS_PROGRESS, subscribeToTacticsProgress, updateTacticsProgress } from "@/lib/tactics-progress";
@@ -257,6 +258,24 @@ function DailyLessonChallenge({
           {assignment.type === "opening" ? "Erklärung am Eröffnungsbrett üben" : lesson.practice.label}
         </Link>
       )}
+      <div className="mt-4">
+        <CageAiPanel
+          key={lesson.id}
+          contextLabel={`Frage CageAI zur heutigen Lektion „${lesson.title}“. Die Antwort wird auf passende ChessCage-Kursinhalte begrenzt.`}
+          contextReady
+          contextBadge="Aktuelle Lektion"
+          placeholder="Frage zu dieser Lektion …"
+          quickPrompts={["Kannst du mir diese Lektion einfacher erklären?"]}
+          requestConfig={{
+            purpose: "course_question",
+            course: {
+              courseId: assignment.type,
+              lessonTitle: lesson.title,
+              sourceKeys: [`course:lesson:${lesson.id}`],
+            },
+          }}
+        />
+      </div>
     </>
   );
 }

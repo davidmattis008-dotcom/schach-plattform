@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MiniChessboard } from "@/components/mini-chessboard";
+import { CageAiPanel } from "@/components/cage-ai-panel";
 import { FIXED_BOTS } from "@/lib/bots";
 import { tacticsPreviewFen } from "@/lib/tactics";
 
@@ -7,6 +8,16 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-black px-5 pb-10 pt-1 text-white sm:px-8 sm:pt-3 md:pt-5">
       <div className="mx-auto flex w-full max-w-4xl flex-col items-center gap-5 sm:gap-7">
+        <div className="w-full">
+          <CageAiPanel
+            contextLabel="CageAI kann künftig deine Trainingsfortschritte nutzen, um passende nächste Schritte vorzuschlagen."
+            contextReady
+            contextBadge="Persönliche Empfehlung"
+            placeholder="Frage nach deiner nächsten Trainingsempfehlung …"
+            quickPrompts={["Was sollte ich als Nächstes trainieren?"]}
+            requestConfig={{ purpose: "training_plan" }}
+          />
+        </div>
         <Link
           href="/taktik"
           aria-label="Taktikaufgabe öffnen"

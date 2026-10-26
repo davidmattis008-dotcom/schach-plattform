@@ -439,6 +439,12 @@ function finishGame(end: MatchEnd, broadcast = false) {
   }
 
   const boardRows = displayedGame.board();
+  const cageAiReviewUrl = moves.length > 0
+    ? `/analyse?${new URLSearchParams({
+      pgn: moves.map((move, index) => `${index % 2 === 0 ? `${Math.floor(index / 2) + 1}. ` : ""}${move.san}`).join(" "),
+      cageAiQuestion: "Warum war mein Zug schlecht und was wäre besser gewesen?",
+    }).toString()}`
+    : null;
   const shownRows = config && !config.white ? boardRows.slice().reverse().map((row) => row.slice().reverse()) : boardRows;
   const whoseTurn = game.turn() === "w" ? "Weiß" : "Schwarz";
   const material = describeMaterialAdvantage(getMaterialAdvantage(game), config?.white ? "w" : "b");
@@ -528,7 +534,7 @@ function finishGame(end: MatchEnd, broadcast = false) {
                 <button type="button" onClick={resign} disabled={!started} className="w-full rounded-xl border border-rose-950 px-4 py-3 text-sm font-semibold text-rose-300 hover:bg-rose-950/40 disabled:cursor-not-allowed disabled:opacity-50">Aufgeben</button>
               </section>
             ) : (
-              <div className="rounded-2xl border border-emerald-900 bg-emerald-950/30 p-4"><p className="font-bold text-emerald-200">Partie beendet</p>{ratingMessage && <p className="mt-1 text-sm text-emerald-200">{ratingMessage}</p>}<p className="mt-1 text-sm text-slate-300">{archiveMessage || "Partie auf diesem Gerät gespeichert …"}</p><div className="mt-4 flex flex-wrap gap-4"><Link href="/partien" className="font-semibold text-emerald-300 underline underline-offset-4">Zum Partieverlauf</Link></div></div>
+              <div className="rounded-2xl border border-emerald-900 bg-emerald-950/30 p-4"><p className="font-bold text-emerald-200">Partie beendet</p>{ratingMessage && <p className="mt-1 text-sm text-emerald-200">{ratingMessage}</p>}<p className="mt-1 text-sm text-slate-300">{archiveMessage || "Partie auf diesem Gerät gespeichert …"}</p><div className="mt-4 flex flex-wrap gap-4"><Link href="/partien" className="font-semibold text-emerald-300 underline underline-offset-4">Zum Partieverlauf</Link>{cageAiReviewUrl && <Link href={cageAiReviewUrl} className="font-semibold text-amber-200 underline underline-offset-4">Partie mit CageAI verstehen</Link>}</div></div>
             )}
           </aside>
         </div>

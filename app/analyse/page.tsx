@@ -5,12 +5,30 @@ import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Chess, type Square } from "chess.js";
 import { MiniChessboard } from "@/components/mini-chessboard";
 import { ChessPieceIcon } from "@/components/chess-piece";
+import { CageAiPanel } from "@/components/cage-ai-panel";
+import {
+  analyzePlayedMoves,
+  formatEngineScore,
+  parseStockfishBestMove,
+  parseStockfishInfoLine,
+  uciLineToSan,
+  type AnalyzedMove,
+  type EngineLine,
+  type PositionAnalysis,
+} from "@/lib/chess/stockfish-analysis";
 import { getTacticsDifficulty, getTacticsTheme, tacticsPuzzles, type TacticsPuzzle } from "@/lib/tactics";
 import { createClient } from "@/lib/supabase/client";
 
 const START_FEN = new Chess().fen();
-type EvalInfo = { score: string; depth: string; line: string };
+const MAX_GAME_ANALYSIS_PLIES = 200;
+type EvalInfo = { score: string; depth: string; line: string; lines: EngineLine[] };
 type SavedTacticRow = { puzzle_id: string; saved_at: string };
+type PendingPositionAnalysis = {
+  lines: Map<number, EngineLine>;
+  resolve: (analysis: PositionAnalysis | null) => void;
+  reject: (error: Error) => void;
+  timeout: ReturnType<typeof setTimeout>;
+};
 
 export default function AnalysePage() {
   const [pgn, setPgn] = useState("");
@@ -21,7 +39,13 @@ export default function AnalysePage() {
   const [promotionPending, setPromotionPending] = useState<{ from: Square; to: Square } | null>(null);
   const [message, setMessage] = useState("");
   const [engineReady, setEngineReady] = useState(false);
+  const [engineStopping, setEngineStopping] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [gameAnalyzing, setGameAnalyzing] = useState(false);
+  const [gameAnalysisProgress, setGameAnalysisProgress] = useState<{ current: number; total: number } | null>(null);
+  const [gameAnalysis, setGameAnalysis] = useState<AnalyzedMove[]>([]);
+  const [gameAnalysisError, setGameAnalysisError] = useState("");
+  const [cageAiInitialQuestion, setCageAiInitialQuestion] = useState("");
   const [evaluation, setEvaluation] = useState<EvalInfo | null>(null);
   const [engineError, setEngineError] = useState("");
   const [savedPuzzles, setSavedPuzzles] = useState<TacticsPuzzle[]>([]);
@@ -30,6 +54,11 @@ export default function AnalysePage() {
   const [analysisPuzzleId, setAnalysisPuzzleId] = useState<string | null>(null);
   const [sheetName, setSheetName] = useState(""); const [sheetFile, setSheetFile] = useState<File | null>(null); const [ocrStatus, setOcrStatus] = useState(""); const [ocrBusy, setOcrBusy] = useState(false); const [manualMove, setManualMove] = useState<{ index: number; token: string; fen: string } | null>(null); const [manualSan, setManualSan] = useState(""); const [ocrTokens, setOcrTokens] = useState<string[]>([]); const [acceptedOcrMoves, setAcceptedOcrMoves] = useState<string[]>([]);
   const workerRef = useRef<Worker | null>(null);
+  const pendingPositionAnalysisRef = useRef<PendingPositionAnalysis | null>(null);
+  const regularAnalysisLinesRef = useRef<Map<number, EngineLine>>(new Map());
+  const currentAnalysisFenRef = useRef(START_FEN);
+  const gameAnalysisRunRef = useRef(0);
+  const engineStoppingRef = useRef(false);
   const game = useMemo(() => new Chess(positions[moveIndex] ?? START_FEN), [positions, moveIndex]);
   const board = game.board();
   const legalTargets = selectedSquare
@@ -38,6 +67,7 @@ export default function AnalysePage() {
 
   function loadTacticsPuzzle(puzzle: TacticsPuzzle) {
     try {
+      cancelGameAnalysis();
       const position = new Chess(puzzle.fen);
       if (puzzle.setupMove) {
         position.move({
@@ -57,7 +87,6 @@ export default function AnalysePage() {
       setAnalysisPuzzleId(puzzle.id);
       setMessage("Taktikaufgabe geladen.");
       setEngineError("");
-      workerRef.current?.postMessage("stop");
     } catch (loadError) {
       console.error("Gespeicherte Taktikaufgabe konnte nicht geladen werden:", loadError);
       setSavedPuzzleMessage("Diese Taktikaufgabe konnte nicht geladen werden.");
@@ -74,34 +103,82 @@ export default function AnalysePage() {
         if (text.includes("uciok")) {
           worker?.postMessage("setoption name Threads value 1");
           worker?.postMessage("setoption name Hash value 16");
+          worker?.postMessage("setoption name MultiPV value 3");
           worker?.postMessage("isready");
         }
         if (text.includes("readyok")) setEngineReady(true);
-        if (text.startsWith("info ")) {
-          const depth = text.match(/depth (\d+)/)?.[1];
-          const score = text.match(/score (cp|mate) (-?\d+)/);
-          const line = text.match(/\spv (.+)$/)?.[1];
-          if (depth && score) {
-            setEvaluation({
-              depth,
-              score: score[1] === "mate"
-                ? "Matt in " + Math.abs(Number(score[2]))
-                : (Number(score[2]) / 100).toFixed(2),
-              line: line ?? "",
-            });
+        if (engineStoppingRef.current) {
+          if (parseStockfishBestMove(text)) {
+            engineStoppingRef.current = false;
+            setEngineStopping(false);
+            setAnalyzing(false);
+          }
+          return;
+        }
+        const pendingAnalysis = pendingPositionAnalysisRef.current;
+        const info = parseStockfishInfoLine(text);
+        if (info) {
+          if (pendingAnalysis) {
+            const previousLine = pendingAnalysis.lines.get(info.multipv);
+            if (!previousLine || info.depth >= previousLine.depth) {
+              pendingAnalysis.lines.set(info.multipv, info);
+            }
+          } else {
+            const previousLine = regularAnalysisLinesRef.current.get(info.multipv);
+            if (!previousLine || info.depth >= previousLine.depth) {
+              regularAnalysisLinesRef.current.set(info.multipv, info);
+            }
+            const bestLine = regularAnalysisLinesRef.current.get(1);
+            if (bestLine) {
+              setEvaluation({
+                score: formatEngineScore(bestLine.score, new Chess(currentAnalysisFenRef.current).turn()),
+                depth: String(bestLine.depth),
+                line: uciLineToSan(currentAnalysisFenRef.current, bestLine.pv).join(" "),
+                lines: [...regularAnalysisLinesRef.current.values()].sort((a, b) => a.multipv - b.multipv),
+              });
+            }
           }
         }
-        if (text.startsWith("bestmove")) setAnalyzing(false);
+        const bestMove = parseStockfishBestMove(text);
+        if (bestMove) {
+          const activeAnalysis = pendingPositionAnalysisRef.current;
+          if (activeAnalysis) {
+            clearTimeout(activeAnalysis.timeout);
+            pendingPositionAnalysisRef.current = null;
+            activeAnalysis.resolve({
+              lines: [...activeAnalysis.lines.values()].sort((a, b) => a.multipv - b.multipv),
+              bestMove,
+            });
+          } else {
+            setAnalyzing(false);
+          }
+        }
       };
       worker.onerror = () => {
         setEngineError("Stockfish konnte nicht geladen werden. Bitte lade die Seite neu.");
+        engineStoppingRef.current = false;
+        setEngineStopping(false);
         setAnalyzing(false);
+        const pendingAnalysis = pendingPositionAnalysisRef.current;
+        if (pendingAnalysis) {
+          clearTimeout(pendingAnalysis.timeout);
+          pendingPositionAnalysisRef.current = null;
+          pendingAnalysis.reject(new Error("Stockfish konnte nicht geladen werden."));
+        }
       };
       worker.postMessage("uci");
     } catch {
       setEngineError("Dieser Browser konnte Stockfish nicht starten.");
     }
     return () => {
+      gameAnalysisRunRef.current += 1;
+      const pendingAnalysis = pendingPositionAnalysisRef.current;
+      if (pendingAnalysis) {
+        clearTimeout(pendingAnalysis.timeout);
+        pendingPositionAnalysisRef.current = null;
+        pendingAnalysis.resolve(null);
+      }
+      engineStoppingRef.current = false;
       workerRef.current = null;
       worker?.terminate();
     };
@@ -144,6 +221,8 @@ export default function AnalysePage() {
       if (!active) return;
       const params = new URLSearchParams(window.location.search);
       const sharedPgn = params.get("pgn");
+      const initialQuestion = params.get("cageAiQuestion");
+      if (initialQuestion) setCageAiInitialQuestion(initialQuestion.slice(0, 500));
       if (sharedPgn) {
         loadPgn(sharedPgn);
         return;
@@ -160,6 +239,7 @@ export default function AnalysePage() {
 
   function loadPgn(source: string) {
     try {
+      cancelGameAnalysis();
       const parsed = new Chess();
       parsed.loadPgn(source);
       const headers = parsed.header();
@@ -207,6 +287,7 @@ export default function AnalysePage() {
   function commitMove(from: Square, to: Square, promotion?: "q" | "r" | "b" | "n") {
     const next = new Chess(game.fen());
     try {
+      cancelGameAnalysis();
       const played = next.move({ from, to, promotion });
       const nextPositions = positions.slice(0, moveIndex + 1);
       nextPositions.push(next.fen());
@@ -220,7 +301,6 @@ export default function AnalysePage() {
       setPromotionPending(null);
       setEvaluation(null);
       setAnalyzing(false);
-      workerRef.current?.postMessage("stop");
       setMessage("Zug übernommen. Du kannst die Stellung jetzt analysieren.");
       return true;
     } catch {
@@ -256,6 +336,7 @@ export default function AnalysePage() {
   }
 
   function resetGame() {
+    cancelGameAnalysis();
     setPgn("");
     setMoves([]);
     setPositions([START_FEN]);
@@ -285,10 +366,13 @@ export default function AnalysePage() {
 
   function analyzePosition() {
     const worker = workerRef.current;
+    if (gameAnalyzing || engineStoppingRef.current) return;
     if (!worker || !engineReady) {
       setEngineError("Stockfish wird noch geladen. Bitte warte kurz.");
       return;
     }
+    currentAnalysisFenRef.current = game.fen();
+    regularAnalysisLinesRef.current.clear();
     setEngineError("");
     setEvaluation(null);
     setAnalyzing(true);
@@ -297,12 +381,108 @@ export default function AnalysePage() {
     worker.postMessage("go depth 15");
   }
 
+  function cancelGameAnalysis() {
+    gameAnalysisRunRef.current += 1;
+    const pendingAnalysis = pendingPositionAnalysisRef.current;
+    if (pendingAnalysis) {
+      clearTimeout(pendingAnalysis.timeout);
+      pendingPositionAnalysisRef.current = null;
+      pendingAnalysis.resolve(null);
+    }
+    if (pendingAnalysis || analyzing) {
+      engineStoppingRef.current = true;
+      setEngineStopping(true);
+      workerRef.current?.postMessage("stop");
+    }
+    setGameAnalyzing(false);
+    setGameAnalysisProgress(null);
+    setGameAnalysis([]);
+    setGameAnalysisError("");
+  }
+
+  function analyzeFen(fen: string): Promise<PositionAnalysis | null> {
+    const worker = workerRef.current;
+    if (!worker || !engineReady) return Promise.reject(new Error("Stockfish ist noch nicht bereit."));
+
+    const position = new Chess(fen);
+    if (position.isCheckmate()) {
+      return Promise.resolve({
+        lines: [{ depth: 1, multipv: 1, score: { type: "mate", value: -0 }, pv: [] }],
+        bestMove: "0000",
+      });
+    }
+    if (position.isDraw()) {
+      return Promise.resolve({
+        lines: [{ depth: 1, multipv: 1, score: { type: "cp", value: 0 }, pv: [] }],
+        bestMove: "0000",
+      });
+    }
+
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        if (pendingPositionAnalysisRef.current?.timeout !== timeout) return;
+        pendingPositionAnalysisRef.current = null;
+        engineStoppingRef.current = true;
+        setEngineStopping(true);
+        worker.postMessage("stop");
+        reject(new Error("Stockfish hat eine Stellung nicht rechtzeitig ausgewertet."));
+      }, 20_000);
+      pendingPositionAnalysisRef.current = { lines: new Map(), resolve, reject, timeout };
+      worker.postMessage("position fen " + fen);
+      worker.postMessage("go depth 10");
+    });
+  }
+
+  async function analyzeGame() {
+    if (!workerRef.current || !engineReady || engineStoppingRef.current) {
+      setGameAnalysisError("Stockfish wird noch geladen. Bitte warte kurz.");
+      return;
+    }
+    if (moves.length === 0) {
+      setGameAnalysisError("Lade zuerst eine Partie mit Zügen.");
+      return;
+    }
+    if (moves.length > MAX_GAME_ANALYSIS_PLIES) {
+      setGameAnalysisError(`Die Partieanalyse ist im Browser auf ${MAX_GAME_ANALYSIS_PLIES} Halbzüge begrenzt.`);
+      return;
+    }
+    if (positions.length !== moves.length + 1) {
+      setGameAnalysisError("Die Partie konnte nicht vollständig für Stockfish vorbereitet werden.");
+      return;
+    }
+
+    const runId = ++gameAnalysisRunRef.current;
+    const positionsToAnalyze = [...positions];
+    const movesToAnalyze = [...moves];
+    const analyses: PositionAnalysis[] = [];
+    setGameAnalysis([]);
+    setGameAnalysisError("");
+    setGameAnalysisProgress({ current: 0, total: positionsToAnalyze.length });
+    setGameAnalyzing(true);
+    setEngineError("");
+
+    try {
+      for (let index = 0; index < positionsToAnalyze.length; index += 1) {
+        if (runId !== gameAnalysisRunRef.current) return;
+        setGameAnalysisProgress({ current: index + 1, total: positionsToAnalyze.length });
+        const analysis = await analyzeFen(positionsToAnalyze[index]);
+        if (runId !== gameAnalysisRunRef.current || !analysis) return;
+        analyses.push(analysis);
+      }
+      setGameAnalysis(analyzePlayedMoves(movesToAnalyze, positionsToAnalyze, analyses));
+    } catch (error) {
+      console.error("Die Partie konnte nicht mit Stockfish analysiert werden:", error);
+      setGameAnalysisError(error instanceof Error ? error.message : "Die Partie konnte nicht analysiert werden.");
+    } finally {
+      if (runId === gameAnalysisRunRef.current) {
+        setGameAnalyzing(false);
+        setGameAnalysisProgress(null);
+      }
+    }
+  }
+
   const promotionColor = promotionPending ? game.get(promotionPending.from)?.color ?? "w" : "w";
-  const scoreLabel = evaluation
-    ? evaluation.score.startsWith("Matt")
-      ? evaluation.score
-      : (Number(evaluation.score) > 0 ? "+" : "") + evaluation.score
-    : "Noch nicht analysiert";
+  const scoreLabel = evaluation?.score ?? "Noch nicht analysiert";
 
   return <main className="min-h-screen bg-slate-950 px-3 py-4 text-white sm:px-5 sm:py-6">
     <div className="mx-auto max-w-7xl">
@@ -412,10 +592,43 @@ export default function AnalysePage() {
           </section>
           <section className="rounded-xl border border-violet-500/30 bg-slate-900 p-3 sm:p-4">
             <h2 className="font-bold">Stockfish</h2>
-            <button type="button" onClick={analyzePosition} disabled={analyzing || !engineReady} className="mt-2 w-full rounded-lg bg-violet-500 px-3 py-2.5 font-semibold text-white transition hover:bg-violet-400 disabled:cursor-wait disabled:opacity-50">{analyzing ? "Analysiert …" : "Stellung analysieren"}</button>
+            <button type="button" onClick={analyzePosition} disabled={analyzing || gameAnalyzing || engineStopping || !engineReady} className="mt-2 w-full rounded-lg bg-violet-500 px-3 py-2.5 font-semibold text-white transition hover:bg-violet-400 disabled:cursor-wait disabled:opacity-50">{analyzing ? "Analysiert …" : "Stellung analysieren"}</button>
             {engineError && <p role="alert" className="mt-2 text-sm text-red-300">{engineError}</p>}
             <div className="mt-3 rounded-lg border border-slate-800 bg-slate-950 p-3"><p className="text-xs text-slate-400">Bewertung</p><p className="mt-1 text-xl font-bold text-emerald-300">{scoreLabel}</p>{evaluation && <><p className="mt-1 text-xs text-slate-500">Tiefe {evaluation.depth} · Variante</p><p className="break-words font-mono text-sm text-slate-200">{evaluation.line || "—"}</p></>}</div>
+            {evaluation && evaluation.lines.length > 1 && <div className="mt-3 space-y-2" aria-label="Beste Stockfish-Züge">{evaluation.lines.map((line) => <div key={line.multipv} className="rounded-lg border border-slate-800 bg-slate-950 p-2"><p className="text-xs text-slate-400">Zug {line.multipv} · {formatEngineScore(line.score, new Chess(currentAnalysisFenRef.current).turn())}</p><p className="break-words font-mono text-sm text-slate-200">{uciLineToSan(currentAnalysisFenRef.current, line.pv).join(" ") || "—"}</p></div>)}</div>}
+            <div className="mt-4 border-t border-slate-800 pt-3">
+              <h3 className="font-semibold">Partie analysieren</h3>
+              <p className="mt-1 text-xs text-slate-400">Bewertet jeden Zug lokal im Browser mit Stockfish.</p>
+              <button type="button" onClick={() => void analyzeGame()} disabled={gameAnalyzing || analyzing || engineStopping || !engineReady || moves.length === 0} className="mt-2 w-full rounded-lg border border-violet-400/50 px-3 py-2.5 font-semibold text-violet-100 transition hover:bg-violet-500/10 disabled:cursor-not-allowed disabled:opacity-50">{gameAnalyzing ? "Partie wird analysiert …" : "Ganze Partie analysieren"}</button>
+              {gameAnalyzing && gameAnalysisProgress && <div className="mt-2"><p className="text-xs text-slate-300" role="status">Stellung {gameAnalysisProgress.current} von {gameAnalysisProgress.total}</p><progress className="mt-1 w-full accent-violet-400" value={gameAnalysisProgress.current} max={gameAnalysisProgress.total} aria-label="Fortschritt der Partieanalyse" /><button type="button" onClick={cancelGameAnalysis} className="mt-2 text-sm text-violet-200 underline hover:text-white">Analyse abbrechen</button></div>}
+              {gameAnalysisError && <p role="alert" className="mt-2 text-sm text-red-300">{gameAnalysisError}</p>}
+            </div>
           </section>
+          {gameAnalysis.length > 0 && <section className="rounded-xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
+            <h2 className="font-bold">Zugbewertung</h2>
+            <p className="mt-1 text-xs text-slate-400">Näherungswerte bei Engine-Tiefe 10; die Einstufung hängt von der Engine-Bewertung ab.</p>
+            <ul className="mt-3 max-h-[28rem] space-y-2 overflow-y-auto">
+              {gameAnalysis.map((item) => {
+                const qualityLabel = { good: "Gut", inaccuracy: "Ungenauigkeit", mistake: "Fehler", blunder: "Schwerer Fehler" }[item.quality];
+                const qualityColor = item.quality === "good" ? "text-emerald-300" : item.quality === "inaccuracy" ? "text-amber-200" : "text-red-300";
+                return <li key={item.ply} className="rounded-lg border border-slate-800 bg-slate-950 p-2">
+                  <button type="button" onClick={() => { setMoveIndex(item.ply); setSelectedSquare(null); }} className="w-full text-left">
+                    <span className="flex flex-wrap justify-between gap-1 text-sm font-semibold"><span>{Math.ceil(item.ply / 2)}{item.color === "w" ? "." : "…"} {item.san}</span><span className={qualityColor}>{qualityLabel} · {item.centipawnLoss} cp</span></span>
+                  </button>
+                  {item.quality !== "good" && <p className="mt-1 text-xs text-slate-400">Besser: <span className="font-mono text-slate-200">{item.bestMove || "keine Variante verfügbar"}</span>{item.variation.length > 1 && <span> · Variante: <span className="font-mono text-slate-300">{item.variation.join(" ")}</span></span>}</p>}
+                </li>;
+              })}
+            </ul>
+          </section>}
+          {gameAnalysis.length > 0 && <CageAiPanel
+            key={gameAnalysis.map((item) => `${item.ply}:${item.bestMove}`).join("|")}
+            contextLabel="Die abgeschlossene Stockfish-Partieanalyse und deine Frage werden CageAI zur Erklärung bereitgestellt."
+            contextReady={!gameAnalyzing}
+            placeholder="Frage zur Partieanalyse …"
+            initialQuestion={cageAiInitialQuestion}
+            quickPrompts={["Warum war mein größter Fehler schlecht?", "Was sollte ich aus der Partie lernen?"]}
+            requestConfig={{ purpose: "game_review", moves: gameAnalysis, positions }}
+          />}
           <section className="rounded-xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
             <h2 className="font-bold">Partie aus Foto</h2>
             <label className="mt-2 inline-flex cursor-pointer rounded-lg border border-slate-700 px-3 py-2 text-sm hover:bg-slate-800">Foto wählen<input type="file" accept="image/*" onChange={(event) => { const file = event.target.files?.[0] ?? null; setSheetFile(file); setSheetName(file?.name ?? ""); setOcrStatus(""); }} className="sr-only" /></label>

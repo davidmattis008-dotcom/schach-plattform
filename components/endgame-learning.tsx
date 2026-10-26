@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Chess, type Square } from "chess.js";
 import { MiniChessboard } from "@/components/mini-chessboard";
+import { CageAiPanel } from "@/components/cage-ai-panel";
 import exercisesData from "@/lib/endgame-exercises.json";
 import { subscribeToAccountProgressUpdates, writeProgressStorage } from "@/lib/account-progress";
 
@@ -187,6 +188,24 @@ function ExerciseWorkspace({
         {isCompleted && <span className="rounded-full border border-emerald-300/30 px-2 py-1 text-xs text-emerald-200">Gelöst</span>}
       </header>
       {uniqueMotifs.length > 0 && <p className="mt-1 text-xs text-slate-500">{uniqueMotifs.join(" · ")}</p>}
+      <div className="mt-3">
+        <CageAiPanel
+          key={`${exercise.categoryId}:${exercise.number}`}
+          contextLabel={`Frage CageAI zur Endspielidee „${exercise.categoryLabel}“.`}
+          contextReady
+          contextBadge="Endspielkurs"
+          placeholder="Frage zu dieser Endspielidee …"
+          quickPrompts={["Erkläre mir den wichtigsten Plan in diesem Endspiel."]}
+          requestConfig={{
+            purpose: "course_question",
+            course: {
+              courseId: "endgames",
+              lessonTitle: exercise.categoryLabel,
+              sourceKeys: [`course:lesson:${exercise.categoryId === "pawn" ? "bauernendspiel" : exercise.categoryId === "rook" ? "turmendspiel" : "stellungsplan"}`],
+            },
+          }}
+        />
+      </div>
 
       <div className="mt-3 grid items-start gap-3 lg:grid-cols-[minmax(0,34rem)_minmax(15rem,1fr)]">
         <div>
