@@ -161,7 +161,7 @@ export function CageAiTrainingPlanManager() {
           <div>
             <h2 className="font-semibold text-white">Dein persönlicher Trainingsplan</h2>
             <p className="mt-1 text-sm leading-6 text-slate-300">
-              Der Plan wird ohne Sprachmodell aus deinen ChessCage-Daten und den von dir gespeicherten Zielen und Schwerpunkten berechnet. Stockfish bleibt für Schachberechnungen zuständig.
+              Der Wochenplan wird aus deinen ChessCage-Daten und den von dir gespeicherten Zielen und Schwerpunkten berechnet. ChessCageAI kann deine Fragen zum Plan mit dem verfügbaren Textmodell beantworten; Stockfish bleibt für Schachberechnungen zuständig.
             </p>
           </div>
         </div>
@@ -218,7 +218,7 @@ export function CageAiTrainingPlanManager() {
           </button>
         </form>
         <p className="mt-3 text-xs leading-5 text-slate-500">
-          Als persönliche Daten fließen nur Spielstärken, Taktik- und Kursfortschritt, zusammengefasste Ergebnisse deiner letzten Partien sowie passende CageAI-Erinnerungen ein. Gespeicherte Partien werden nicht als Rohdaten in den Plan kopiert.
+          Als persönliche Daten fließen nur Spielstärken, Taktik- und Kursfortschritt, zusammengefasste Ergebnisse deiner letzten Partien sowie passende ChessCageAI-Erinnerungen ein. Gespeicherte Partien werden nicht als Rohdaten in den Plan kopiert.
         </p>
       </section>
 
@@ -241,7 +241,7 @@ export function CageAiTrainingPlanManager() {
               </p>
             </div>
             <span className="rounded-full border border-slate-700 px-2.5 py-1 text-xs text-slate-400">
-              Ohne externes KI-Modell
+              Wochenplan ohne Textmodell
             </span>
           </div>
 
@@ -285,7 +285,7 @@ export function CageAiTrainingPlanManager() {
 
       {!loading && !plan && !error && (
         <p className="rounded-lg border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm text-slate-400">
-          Deine erste Erstellung liest deine gespeicherten Lernfortschritte und Partien nur zusammengefasst ein. Deine Ziele und Schwächen kannst du unter Einstellungen → CageAI Memory pflegen.
+          Deine erste Erstellung liest deine gespeicherten Lernfortschritte und Partien nur zusammengefasst ein. Deine Ziele und Schwächen kannst du unter Einstellungen → ChessCageAI Memory pflegen.
         </p>
       )}
     </div>

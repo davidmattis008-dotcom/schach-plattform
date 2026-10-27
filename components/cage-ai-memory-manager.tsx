@@ -46,7 +46,7 @@ async function readResponse(response: Response): Promise<ApiResponse> {
   try {
     result = await response.json() as ApiResponse;
   } catch {
-    throw new Error("Der CageAI-Speicher hat eine ungültige Antwort geliefert.");
+    throw new Error("Der ChessCageAI-Speicher hat eine ungültige Antwort geliefert.");
   }
   if (!response.ok) throw new Error(result.error || "Die Anfrage ist fehlgeschlagen.");
   return result;
@@ -132,7 +132,7 @@ export function CageAiMemoryManager() {
 
   async function deleteAllMemories() {
     if (busy || memories.length === 0) return;
-    if (!window.confirm("Möchtest du wirklich alle CageAI-Erinnerungen dauerhaft löschen?")) return;
+    if (!window.confirm("Möchtest du wirklich alle ChessCageAI-Erinnerungen dauerhaft löschen?")) return;
     setBusy(true);
     setError("");
     setNotice("");
@@ -155,9 +155,9 @@ export function CageAiMemoryManager() {
     <section className="mt-8 rounded-2xl border border-amber-300/20 bg-slate-900/60 p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="font-semibold text-white">CageAI Memory</h2>
+          <h2 className="font-semibold text-white">ChessCageAI Memory</h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">
-            Speichere nur kurze, nützliche Informationen. CageAI speichert keine kompletten Chats oder Engine-Berechnungen automatisch.
+            Speichere nur kurze, nützliche Informationen. ChessCageAI speichert keine kompletten Chats oder Engine-Berechnungen automatisch.
             Erinnerungen sind privat und können jederzeit einzeln oder vollständig gelöscht werden.
           </p>
         </div>

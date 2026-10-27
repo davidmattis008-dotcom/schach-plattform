@@ -119,7 +119,10 @@ export default function GameHistoryPage() {
                   <div className="border-t border-slate-800 px-4 py-4 sm:px-5">
                     <p className="text-sm text-slate-400">{game.reason} · Weiß: {game.whiteName ?? "Gast"} · Schwarz: {game.blackName ?? "Gast"}</p>
                     <button type="button" onClick={() => { setSelectedGameId(game.id); setReplayPly(0); }} className="mt-3 rounded-lg border border-emerald-400/40 px-3 py-2 text-xs font-semibold text-emerald-200">Partie nachspielen</button>
-                    {game.moves.length > 0 && <Link href={`/analyse?pgn=${encodeURIComponent(getOnlineGamePgn(game))}`} className="ml-2 mt-3 inline-flex rounded-lg border border-emerald-400/40 px-3 py-2 text-xs font-semibold text-emerald-200">Analyse öffnen</Link>}
+                    {game.moves.length > 0 && <Link href={`/analyse?${new URLSearchParams({
+                      pgn: getOnlineGamePgn(game),
+                      playerColor: game.color,
+                    }).toString()}`} className="ml-2 mt-3 inline-flex rounded-lg border border-emerald-400/40 px-3 py-2 text-xs font-semibold text-emerald-200">Analyse öffnen</Link>}
                     {game.moves.length === 0 ? (
                       <p className="mt-3 text-sm text-slate-500">In dieser Partie wurden keine Züge gespeichert.</p>
                     ) : (

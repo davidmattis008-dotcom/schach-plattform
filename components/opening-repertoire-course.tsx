@@ -335,7 +335,7 @@ export function OpeningRepertoireCourse() {
                 <div className="mt-4">
                   <CageAiPanel
                     key={selectedOpening.id}
-                    contextLabel={`Frage CageAI zur Eröffnung „${selectedOpening.name}“.`}
+                    contextLabel={`Frage ChessCageAI zur Eröffnung „${selectedOpening.name}“.`}
                     contextReady
                     contextBadge="Eröffnungskurs"
                     placeholder="Frage zu dieser Eröffnung …"

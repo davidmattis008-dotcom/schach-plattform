@@ -36,8 +36,8 @@ async function authenticate() {
   try {
     client = await createSupabaseServerClient();
   } catch (error) {
-    console.error("CageAI-Speicher ist nicht verfügbar:", error);
-    return { error: response(503, { error: "Der CageAI-Speicher ist vorübergehend nicht verfügbar." }) };
+    console.error("ChessCageAI-Speicher ist nicht verfügbar:", error);
+    return { error: response(503, { error: "Der ChessCageAI-Speicher ist vorübergehend nicht verfügbar." }) };
   }
   const { data: { user }, error } = await client.auth.getUser();
   if (error || !user) {
@@ -72,7 +72,7 @@ export async function GET() {
     .limit(MAX_CAGE_AI_MEMORIES);
 
   if (error) {
-    console.error("CageAI-Erinnerungen konnten nicht geladen werden:", error);
+    console.error("ChessCageAI-Erinnerungen konnten nicht geladen werden:", error);
     return response(503, { error: "Deine Erinnerungen konnten nicht geladen werden." });
   }
   return response(200, { memories: data ?? [] });
@@ -105,10 +105,10 @@ export async function POST(request: Request) {
     return response(409, { error: "Diese Erinnerung ist bereits gespeichert." });
   }
   if (error?.code === "P0001") {
-    return response(409, { error: "Dein CageAI-Speicher ist voll. Lösche zuerst eine Erinnerung." });
+    return response(409, { error: "Dein ChessCageAI-Speicher ist voll. Lösche zuerst eine Erinnerung." });
   }
   if (error) {
-    console.error("CageAI-Erinnerung konnte nicht gespeichert werden:", error);
+    console.error("ChessCageAI-Erinnerung konnte nicht gespeichert werden:", error);
     return response(503, { error: "Die Erinnerung konnte nicht gespeichert werden." });
   }
   return response(201, { memory: data });
@@ -136,7 +136,7 @@ export async function DELETE(request: Request) {
   if (!deleteAll && memoryId) query = query.eq("id", memoryId);
   const { data, error } = await query.select("id");
   if (error) {
-    console.error("CageAI-Erinnerungen konnten nicht gelöscht werden:", error);
+    console.error("ChessCageAI-Erinnerungen konnten nicht gelöscht werden:", error);
     return response(503, { error: "Die Erinnerungen konnten nicht gelöscht werden." });
   }
   if (!deleteAll && (!data || data.length === 0)) {

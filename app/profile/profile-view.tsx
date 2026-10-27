@@ -207,7 +207,7 @@ export function PlayerProfileView({ requestedUsername }: { requestedUsername?: s
             </section>
             <section className="mt-5">
               <CageAiPanel
-                contextLabel="CageAI kann deinen eigenen Lernfortschritt erklären und beim Erkennen sinnvoller Trainingsschwerpunkte helfen."
+                contextLabel="ChessCageAI kann deinen eigenen Lernfortschritt erklären und beim Erkennen sinnvoller Trainingsschwerpunkte helfen."
                 contextReady
                 contextBadge="Dein Fortschritt"
                 placeholder="Frage nach deinem Lernfortschritt oder möglichen Schwerpunkten …"

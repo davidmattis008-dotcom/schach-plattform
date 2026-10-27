@@ -5,10 +5,15 @@ import {
   isCageAiExplanationResponse,
   validateCageAiExplanationRequest,
 } from "@/lib/cage-ai/contracts";
-import { getCageAiExplanationProvider } from "@/lib/cage-ai/provider";
+import { getCageAiTextModelProvider } from "@/lib/cage-ai/provider";
+import type { CageAiTextModelProvider } from "@/lib/cage-ai/contracts";
 import { loadCageAiPersonalContext } from "@/lib/cage-ai/personal-context";
 import type { CageAiPersonalContext } from "@/lib/cage-ai/context-selection";
 import { retrieveCageAiKnowledge, type CageAiKnowledgeChunk } from "@/lib/cage-ai/knowledge-retrieval";
+import { createLocalGameReviewExplanation } from "@/lib/cage-ai/local-game-review";
+import { CageAiModelResponseTooLargeError, CageAiModelUnavailableError } from "@/lib/cage-ai/ollama-provider";
+import { CageAiModelBusyError, runCageAiModelRequest } from "@/lib/cage-ai/model-capacity";
+import { resolveCageAiKnowledgeCitations } from "@/lib/cage-ai/knowledge-search";
 
 export const runtime = "nodejs";
 const MAX_REQUEST_BYTES = 64 * 1024;
@@ -45,11 +50,11 @@ export async function POST(request: Request) {
   try {
     sessionClient = await createSupabaseServerClient();
   } catch (error) {
-    console.error("CageAI-Authentifizierung ist nicht verfügbar:", error);
-    return response(503, { error: "CageAI ist vorübergehend nicht verfügbar." });
+    console.error("ChessCageAI-Authentifizierung ist nicht verfügbar:", error);
+    return response(503, { error: "ChessCageAI ist vorübergehend nicht verfügbar." });
   }
   const { data: { user }, error: authError } = await sessionClient.auth.getUser();
-  if (authError || !user) return response(401, { error: "Bitte melde dich an, um CageAI zu verwenden." });
+  if (authError || !user) return response(401, { error: "Bitte melde dich an, um ChessCageAI zu verwenden." });
 
   let body: unknown;
   try {
@@ -60,48 +65,97 @@ export async function POST(request: Request) {
   const explanationRequest = validateCageAiExplanationRequest(body);
   if (!explanationRequest) return response(400, { error: "Die Analyseanfrage ist ungültig." });
 
-  const provider = getCageAiExplanationProvider();
-  if (!provider) return response(503, { error: "CageAI ist noch nicht mit einem Sprachmodell verbunden." });
+  let provider: CageAiTextModelProvider | null;
+  try {
+    provider = getCageAiTextModelProvider();
+  } catch (error) {
+    console.error("Die ChessCageAI-Modellkonfiguration ist ungültig:", error);
+    return response(503, { error: "ChessCageAI ist momentan nicht mit einem KI-Modell verbunden." });
+  }
+  if (!provider && explanationRequest.purpose !== "game_review") {
+    return response(503, { error: "ChessCageAI ist momentan nicht mit einem KI-Modell verbunden." });
+  }
 
   let personalContext: CageAiPersonalContext;
-  let knowledgeContext: CageAiKnowledgeChunk[];
+  let knowledgeContext: CageAiKnowledgeChunk[] = [];
   try {
     personalContext = await loadCageAiPersonalContext(
       sessionClient, user.id, explanationRequest.purpose,
     );
-    knowledgeContext = await retrieveCageAiKnowledge(sessionClient, explanationRequest);
+    if (provider) {
+      knowledgeContext = await retrieveCageAiKnowledge(sessionClient, explanationRequest);
+    }
   } catch (error) {
-    console.error("CageAI-Kontext konnte nicht sicher geladen werden:", error);
-    return response(503, { error: "Dein Lern- und Wissenskontext ist vorübergehend nicht verfügbar." });
+    console.error("ChessCageAI-Kontext konnte nicht sicher geladen werden:", error);
+    return response(503, { error: "Dein Lern- und Wissenskontext für ChessCageAI ist vorübergehend nicht verfügbar." });
+  }
+
+  if (explanationRequest.purpose === "course_question" && knowledgeContext.length === 0) {
+    return NextResponse.json(
+      {
+        explanation: "Ich habe in der geprüften ChessCage-Wissensbasis keine passende Quelle für diese Frage gefunden. Deshalb gebe ich dazu keine unbestätigte Sachauskunft.",
+        sources: [],
+        mode: "knowledge_unavailable",
+      },
+      { headers: { "Cache-Control": "private, no-store, max-age=0" } },
+    );
   }
 
   try {
-    const result: unknown = await provider.explain(
-      explanationRequest,
-      CAGE_AI_EXPLANATION_INSTRUCTIONS,
-      personalContext,
-      knowledgeContext,
-    );
+    const result: unknown = provider
+      ? await runCageAiModelRequest(() => provider.explain(
+          explanationRequest,
+          CAGE_AI_EXPLANATION_INSTRUCTIONS,
+          personalContext,
+          knowledgeContext,
+          request.signal,
+        ))
+      : createLocalGameReviewExplanation(explanationRequest, personalContext);
     if (!isCageAiExplanationResponse(result)) {
-      console.error("Der CageAI-Provider hat eine ungültige Antwort geliefert.");
-      return response(502, { error: "CageAI konnte keine gültige Erklärung erstellen." });
+      console.error("Der ChessCageAI-Provider hat eine ungültige Antwort geliefert.");
+      return response(502, { error: "ChessCageAI konnte keine gültige Erklärung erstellen." });
     }
-    const citedKeys = new Set(result.sourceKeys ?? []);
-    const availableChunks = new Map(knowledgeContext.map((chunk) => [chunk.chunkId, chunk]));
-    if ([...citedKeys].some((chunkId) => !availableChunks.has(chunkId))) {
-      console.error("Der CageAI-Provider hat eine nicht abgerufene Wissensquelle zitiert.");
-      return response(502, { error: "CageAI hat eine ungültige Quellenangabe geliefert." });
+    if (explanationRequest.purpose === "course_question"
+      && knowledgeContext.length > 0
+      && !result.sourceKeys?.length) {
+      console.error("ChessCageAI hat eine Kursantwort ohne Wissensquellen geliefert.");
+      return response(502, { error: "ChessCageAI konnte keine quellengebundene Kursantwort erstellen." });
     }
-    const sources = [...citedKeys].flatMap((chunkId) => {
-      const chunk = availableChunks.get(chunkId);
-      return chunk ? [{ title: chunk.title, url: chunk.sourceUrl, heading: chunk.heading }] : [];
-    });
+    const sources = resolveCageAiKnowledgeCitations(result.sourceKeys ?? [], knowledgeContext);
+    if (!sources) {
+      console.error("Der ChessCageAI-Provider hat eine nicht abgerufene Wissensquelle zitiert.");
+      return response(502, { error: "ChessCageAI hat eine ungültige Quellenangabe geliefert." });
+    }
     return NextResponse.json(
-      { explanation: result.explanation.trim(), sources },
+      {
+        explanation: result.explanation.trim(),
+        sources,
+        mode: provider ? "model" : "stockfish_local",
+      },
       { headers: { "Cache-Control": "private, no-store, max-age=0" } },
     );
   } catch (error) {
-    console.error("CageAI konnte die Stellung nicht erklären:", error);
-    return response(502, { error: "CageAI konnte die Erklärung derzeit nicht erstellen." });
+    if (error instanceof CageAiModelBusyError) {
+      return response(503, { error: error.message });
+    }
+    if (error instanceof CageAiModelUnavailableError) {
+      if (explanationRequest.purpose === "game_review") {
+        const fallback = createLocalGameReviewExplanation(explanationRequest, personalContext);
+        return NextResponse.json(
+          {
+            explanation: fallback.explanation,
+            sources: [],
+            mode: "stockfish_local",
+          },
+          { headers: { "Cache-Control": "private, no-store, max-age=0" } },
+        );
+      }
+      return response(503, { error: error.message });
+    }
+    if (error instanceof CageAiModelResponseTooLargeError) {
+      return response(502, { error: error.message });
+    }
+    console.error("ChessCageAI konnte die Stellung nicht erklären:", error);
+    return response(502, { error: "ChessCageAI konnte die Erklärung derzeit nicht erstellen." });
   }
 }

@@ -219,7 +219,7 @@ function CheckmateWorkspace({
       <div className="mt-3">
         <CageAiPanel
           key={lesson.id}
-          contextLabel={`Frage CageAI zur Mattlektion „${lesson.title}“.`}
+          contextLabel={`Frage ChessCageAI zur Mattlektion „${lesson.title}“.`}
           contextReady
           contextBadge="Mattkurs"
           placeholder="Frage zu dieser Mattmethode …"

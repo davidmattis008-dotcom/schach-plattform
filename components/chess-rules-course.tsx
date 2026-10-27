@@ -170,7 +170,7 @@ function RuleLessonWorkspace({
       <div className="mt-3">
         <CageAiPanel
           key={lesson.id}
-          contextLabel={`Frage CageAI zur Regel „${lesson.title}“.`}
+          contextLabel={`Frage ChessCageAI zur Regel „${lesson.title}“.`}
           contextReady
           contextBadge="Regelkurs"
           placeholder="Frage zu dieser Regel …"

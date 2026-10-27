@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { Chess } from "chess.js";
+import { getOnlineGamePgn } from "../app/online/history-store.ts";
 import { analyzePlayedMoves } from "../lib/chess/stockfish-analysis.ts";
 import {
   createCageAiExplanationRequest,
@@ -10,6 +11,7 @@ import {
   validateCageAiExplanationRequest,
 } from "../lib/cage-ai/contracts.ts";
 import { selectCageAiPersonalContext } from "../lib/cage-ai/context-selection.ts";
+import { createLocalGameReviewExplanation } from "../lib/cage-ai/local-game-review.ts";
 
 const game = new Chess();
 const moves = ["e4", "e5"];
@@ -52,6 +54,87 @@ assert.equal(gameRequest.analysis.qualityCounts.inaccuracy, 1);
 assert.deepEqual(gameRequest.analysis.evidence.map((evidence) => evidence.ply), [2]);
 assert.equal(validateCageAiExplanationRequest(gameRequest)?.analysis.evidence.length, 1);
 assert.equal("userId" in gameRequest, false);
+const detailedGameRequest = createCageAiExplanationRequest(
+  "Was war der größte Fehler?",
+  analyzedMoves,
+  positions,
+  undefined,
+  "game_review",
+  {
+    white: "Ada",
+    black: "Bobby",
+    whiteElo: 1800,
+    blackElo: 1900,
+    result: "1-0",
+    playerColor: "w",
+  },
+);
+assert.deepEqual(validateCageAiExplanationRequest(detailedGameRequest)?.analysis.game, {
+  white: "Ada",
+  black: "Bobby",
+  whiteElo: 1800,
+  blackElo: 1900,
+  result: "1-0",
+  playerColor: "w",
+});
+assert.equal(validateCageAiExplanationRequest({
+  ...detailedGameRequest,
+  analysis: { ...detailedGameRequest.analysis, game: { whiteElo: 99_999 } },
+}), null);
+const localReview = createLocalGameReviewExplanation(
+  detailedGameRequest,
+  {
+    purpose: "game_review",
+    ratings: [{ game_mode: "rapid", rating: 1750, rated_games: 20 }],
+    learning: { tactics: { rating: 1500, solved: 80, attempted: 100, dailyExercisesCompleted: 4 } },
+    memories: [{ memoryType: "weakness", content: "Übersieht gegnerische Drohungen" }],
+  },
+);
+assert.match(localReview.explanation, /Ada – Bobby/);
+assert.match(localReview.explanation, /Ergebnis laut PGN: Weiß gewann/);
+assert.match(localReview.explanation, /Deine gespeicherten Wertungen: Rapid 1750 Elo/);
+assert.match(localReview.explanation, /80 von 100 Taktikaufgaben/);
+assert.match(localReview.explanation, /Stockfish-Hauptvariante: Nf6/);
+assert.match(localReview.explanation, /kein konkretes taktisches Motiv/);
+const noErrorMoves = analyzePlayedMoves(moves, positions, [
+  { lines: [{ depth: 10, multipv: 1, score: { type: "cp", value: 20 }, pv: ["e2e4"] }], bestMove: "e2e4" },
+  { lines: [{ depth: 10, multipv: 1, score: { type: "cp", value: -20 }, pv: ["g8f6"] }], bestMove: "g8f6" },
+  { lines: [{ depth: 10, multipv: 1, score: { type: "cp", value: 20 }, pv: ["g1f3"] }], bestMove: "g1f3" },
+]);
+const noErrorRequest = createCageAiExplanationRequest(
+  "Wie lief meine Partie?",
+  noErrorMoves,
+  positions,
+);
+assert.match(
+  createLocalGameReviewExplanation(noErrorRequest, { purpose: "game_review" }).explanation,
+  /kein auffälliger Zug gefunden/,
+);
+assert.doesNotMatch(
+  createLocalGameReviewExplanation(noErrorRequest, { purpose: "game_review" }).explanation,
+  /Stockfish-Hauptvariante:/,
+);
+
+const onlinePgn = getOnlineGamePgn({
+  id: "game-1",
+  playedAt: "2026-10-27T00:00:00.000Z",
+  timeControl: "5+0",
+  whiteName: "Ada",
+  blackName: "Bobby",
+  color: "w",
+  result: "win",
+  resultText: "Gewonnen",
+  reason: "Matt",
+  moves: [
+    { san: "e4", color: "w", from: "e2", to: "e4" },
+    { san: "e5", color: "b", from: "e7", to: "e5" },
+  ],
+});
+const pgnHeaders = new Chess();
+pgnHeaders.loadPgn(onlinePgn);
+assert.equal(pgnHeaders.header().White, "Ada");
+assert.equal(pgnHeaders.header().Black, "Bobby");
+assert.equal(pgnHeaders.header().Result, "1-0");
 
 assert.equal(validateCageAiExplanationRequest({ ...moveRequest, userId: "private-data" }), null);
 assert.equal(validateCageAiExplanationRequest({
@@ -181,4 +264,4 @@ assert.equal(isCageAiExplanationResponse({
 }), false);
 assert.equal(isCageAiExplanationResponse({ explanation: " ".repeat(6001) }), false);
 
-console.log("Validated CageAI request building, minimal Stockfish evidence, and API-boundary input checks.");
+console.log("Validated ChessCageAI request building, minimal Stockfish evidence, and API-boundary input checks.");

@@ -194,7 +194,7 @@ export function ChessScoreSheetImporter({ onLoadPgn }: Props) {
         </div>
 
         {review.issue && <div className="mt-3 rounded-lg border border-amber-300/40 bg-amber-400/5 p-3" role="alert">
-          <h3 className="font-semibold text-amber-100">CageAI: Ich bin mir bei Zug {formatMoveLabel(review.issue.ply)} nicht sicher. {getScoreSheetIssueMessage(review.issue)}</h3>
+          <h3 className="font-semibold text-amber-100">ChessCageAI: Ich bin mir bei Zug {formatMoveLabel(review.issue.ply)} nicht sicher. {getScoreSheetIssueMessage(review.issue)}</h3>
           {issueRow && <div className="mt-2 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             <div>
               <p className="mb-1 text-xs text-slate-400">Ausschnitt · Seite {issueRow.page}, Zeile {issueRow.row}</p>

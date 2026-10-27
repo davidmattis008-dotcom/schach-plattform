@@ -30,8 +30,8 @@ async function authenticate() {
   try {
     client = await createSupabaseServerClient();
   } catch (error) {
-    console.error("CageAI-Trainingsplan ist nicht verfügbar:", error);
-    return { error: response(503, { error: "Der CageAI-Trainingsplan ist vorübergehend nicht verfügbar." }) };
+    console.error("ChessCageAI-Trainingsplan ist nicht verfügbar:", error);
+    return { error: response(503, { error: "Der ChessCageAI-Trainingsplan ist vorübergehend nicht verfügbar." }) };
   }
   const { data: { user }, error } = await client.auth.getUser();
   if (error || !user) {
@@ -65,14 +65,14 @@ export async function GET() {
     .eq("user_id", auth.user.id)
     .maybeSingle();
   if (error) {
-    console.error("CageAI-Trainingsplan konnte nicht geladen werden:", error);
+    console.error("ChessCageAI-Trainingsplan konnte nicht geladen werden:", error);
     return response(503, { error: "Dein Trainingsplan konnte nicht geladen werden." });
   }
   if (!data) {
     return response(200, { plan: null, preferences: DEFAULT_TRAINING_PREFERENCES });
   }
   if (!isCageAiTrainingPlan(data.plan)) {
-    console.error("Der gespeicherte CageAI-Trainingsplan ist ungültig.");
+    console.error("Der gespeicherte ChessCageAI-Trainingsplan ist ungültig.");
     return response(503, { error: "Der gespeicherte Trainingsplan ist ungültig und konnte nicht geladen werden." });
   }
   return response(200, {
@@ -129,7 +129,7 @@ export async function POST(request: Request) {
     if (error) throw error;
     return response(200, { plan: nextPlan });
   } catch (error) {
-    console.error("CageAI-Trainingsplan konnte nicht erstellt werden:", error);
+    console.error("ChessCageAI-Trainingsplan konnte nicht erstellt werden:", error);
     return response(503, { error: "Dein Plan konnte nicht aktualisiert werden. Bitte versuche es erneut." });
   }
 }

@@ -15,6 +15,8 @@
     "test:stockfish-analysis": "node --experimental-strip-types scripts/validate-stockfish-analysis.mjs",
     "test:score-sheet": "node --experimental-strip-types scripts/validate-score-sheet.mjs",
     "test:cage-ai-contract": "node --experimental-strip-types scripts/validate-cage-ai-contract.mjs",
+    "test:cage-ai-provider": "node --experimental-strip-types scripts/validate-cage-ai-provider.mjs",
+    "test:cage-ai-speech": "node --experimental-strip-types scripts/validate-cage-ai-speech.mjs",
     "test:cage-ai-knowledge": "node --experimental-strip-types scripts/validate-cage-ai-knowledge.mjs",
     "test:cage-ai-memory": "node --experimental-strip-types scripts/validate-cage-ai-memory.mjs",
     "test:cage-ai-training-plan": "node --experimental-strip-types scripts/validate-cage-ai-training-plan.mjs",

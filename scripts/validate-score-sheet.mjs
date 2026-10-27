@@ -22,8 +22,8 @@ const normal = reviewScoreSheet([
 assert.equal(normal.issue, null, "Normal notation should validate.");
 assert.equal(normal.moves.length, 4);
 assert.ok(normal.moves.every((move) => move.confidence === 1));
-assert.match(normal.pgn, /1\. e4 \{\[CageAI OCR confidence: 1\.00\]\} e5/);
-assert.match(normal.pgn, /CageAI OCR confidence: 1\.00/, "PGN should preserve per-move confidence.");
+assert.match(normal.pgn, /1\. e4 \{\[ChessCageAI OCR confidence: 1\.00\]\} e5/);
+assert.match(normal.pgn, /ChessCageAI OCR confidence: 1\.00/, "PGN should preserve per-move confidence.");
 const roundTrip = new Chess();
 roundTrip.loadPgn(normal.pgn);
 assert.deepEqual(roundTrip.history(), ["e4", "e5", "Nf3", "Nc6"]);

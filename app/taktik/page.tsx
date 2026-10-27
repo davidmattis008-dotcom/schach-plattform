@@ -147,7 +147,7 @@ export default function TacticsPage() {
         if (!controller.signal.aborted) setWeaknessThemes(getPreferredTacticsThemes(weaknesses));
       } catch (loadError) {
         if (!controller.signal.aborted) {
-          console.error("Gespeicherte CageAI-Taktikschwächen konnten nicht geladen werden:", loadError);
+          console.error("Gespeicherte ChessCageAI-Taktikschwächen konnten nicht geladen werden:", loadError);
           setCoachMemoryError("Gespeicherte Schwerpunkte konnten nicht geladen werden; du kannst die Aufgaben trotzdem normal lösen.");
         }
       }
@@ -360,9 +360,9 @@ export default function TacticsPage() {
       const result = await response.json() as { error?: string };
       if (!response.ok) throw new Error(result.error || "Die Taktikschwäche konnte nicht gespeichert werden.");
       setWeaknessThemes((current) => [...new Set([...current, ...getPreferredTacticsThemes([content])])]);
-      setCoachMemoryMessage("Als private CageAI-Erinnerung gespeichert. Künftige Aufgaben berücksichtigen diesen Schwerpunkt.");
+      setCoachMemoryMessage("Als private ChessCageAI-Erinnerung gespeichert. Künftige Aufgaben berücksichtigen diesen Schwerpunkt.");
     } catch (saveError) {
-      console.error("CageAI-Taktikschwäche konnte nicht gespeichert werden:", saveError);
+      console.error("ChessCageAI-Taktikschwäche konnte nicht gespeichert werden:", saveError);
       setCoachMemoryError(saveError instanceof Error
         ? saveError.message
         : "Die Taktikschwäche konnte nicht gespeichert werden.");
@@ -518,7 +518,7 @@ export default function TacticsPage() {
               {message}
             </div>
             {!outcome && <section aria-labelledby="tactics-coach-title" className="mt-4 rounded-xl border border-amber-300/20 bg-slate-950/70 p-4">
-              <h2 id="tactics-coach-title" className="font-semibold text-amber-100">CageAI Taktik-Coach</h2>
+              <h2 id="tactics-coach-title" className="font-semibold text-amber-100">ChessCageAI Taktik-Coach</h2>
               <p className="mt-1 text-xs leading-5 text-slate-400">
                 Hinweise werden lokal aus dem Aufgabenthema erstellt. Die Lösung bleibt bis zum Abschluss verborgen; es wird kein KI-Dienst aufgerufen.
               </p>
@@ -538,7 +538,7 @@ export default function TacticsPage() {
               </button>
             </section>}
             {outcome && coachFeedback && <section aria-labelledby="tactics-feedback-title" className="mt-4 rounded-xl border border-emerald-300/20 bg-slate-950/70 p-4">
-              <h2 id="tactics-feedback-title" className="font-semibold text-white">CageAI erklärt das Ergebnis</h2>
+              <h2 id="tactics-feedback-title" className="font-semibold text-white">ChessCageAI erklärt das Ergebnis</h2>
               <p className="mt-2 text-sm leading-6 text-slate-300">
                 {outcome === "solved"
                   ? `Richtig: ${coachFeedback.playedMove} folgt der hinterlegten Aufgabenlösung.`
@@ -562,7 +562,7 @@ export default function TacticsPage() {
                 </button>
               )}
               {outcome === "missed" && !userId && (
-                <p className="mt-3 text-xs text-slate-400">Melde dich an, wenn du dieses Motiv als private CageAI-Erinnerung speichern möchtest.</p>
+                <p className="mt-3 text-xs text-slate-400">Melde dich an, wenn du dieses Motiv als private ChessCageAI-Erinnerung speichern möchtest.</p>
               )}
               {coachMemoryMessage && <p role="status" className="mt-2 text-xs text-emerald-200">{coachMemoryMessage}</p>}
               {coachMemoryError && <p role="alert" className="mt-2 text-xs text-amber-200">{coachMemoryError}</p>}

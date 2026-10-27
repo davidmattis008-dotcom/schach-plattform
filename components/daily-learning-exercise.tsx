@@ -261,7 +261,7 @@ function DailyLessonChallenge({
       <div className="mt-4">
         <CageAiPanel
           key={lesson.id}
-          contextLabel={`Frage CageAI zur heutigen Lektion „${lesson.title}“. Die Antwort wird auf passende ChessCage-Kursinhalte begrenzt.`}
+          contextLabel={`Frage ChessCageAI zur heutigen Lektion „${lesson.title}“. Die Antwort wird auf passende ChessCage-Kursinhalte begrenzt.`}
           contextReady
           contextBadge="Aktuelle Lektion"
           placeholder="Frage zu dieser Lektion …"

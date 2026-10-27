@@ -7,6 +7,7 @@ import { MiniChessboard } from "@/components/mini-chessboard";
 import { ChessPieceIcon } from "@/components/chess-piece";
 import { CageAiPanel } from "@/components/cage-ai-panel";
 import { ChessScoreSheetImporter } from "@/components/chess-score-sheet-importer";
+import type { CageAiGameDetails } from "@/lib/cage-ai/contracts";
 import {
   analyzePlayedMoves,
   formatEngineScore,
@@ -22,6 +23,7 @@ import { createClient } from "@/lib/supabase/client";
 
 const START_FEN = new Chess().fen();
 const MAX_GAME_ANALYSIS_PLIES = 200;
+const PGN_RESULTS = new Set(["1-0", "0-1", "1/2-1/2", "*"]);
 type EvalInfo = { score: string; depth: string; line: string; lines: EngineLine[] };
 type SavedTacticRow = { puzzle_id: string; saved_at: string };
 type PendingPositionAnalysis = {
@@ -33,6 +35,7 @@ type PendingPositionAnalysis = {
 
 export default function AnalysePage() {
   const [pgn, setPgn] = useState("");
+  const [gameDetails, setGameDetails] = useState<CageAiGameDetails>({});
   const [moves, setMoves] = useState<string[]>([]);
   const [positions, setPositions] = useState<string[]>([START_FEN]);
   const [moveIndex, setMoveIndex] = useState(0);
@@ -79,6 +82,7 @@ export default function AnalysePage() {
         });
       }
       setPgn("");
+      setGameDetails({});
       setMoves([]);
       setPositions([position.fen()]);
       setMoveIndex(0);
@@ -224,9 +228,10 @@ export default function AnalysePage() {
       const params = new URLSearchParams(window.location.search);
       const sharedPgn = params.get("pgn");
       const initialQuestion = params.get("cageAiQuestion");
+      const playerColor = params.get("playerColor");
       if (initialQuestion) setCageAiInitialQuestion(initialQuestion.slice(0, 500));
       if (sharedPgn) {
-        loadPgn(sharedPgn);
+        loadPgn(sharedPgn, playerColor === "w" || playerColor === "b" ? playerColor : undefined);
         return;
       }
       const puzzleId = params.get("puzzle");
@@ -239,12 +244,27 @@ export default function AnalysePage() {
     return () => { active = false; };
   }, []);
 
-  function loadPgn(source: string) {
+  function loadPgn(source: string, playerColor?: "w" | "b") {
     try {
       cancelGameAnalysis();
       const parsed = new Chess();
       parsed.loadPgn(source);
       const headers = parsed.header();
+      const readElo = (value: string | null) => {
+        if (!value || !/^\d{1,5}$/.test(value)) return undefined;
+        const rating = Number(value);
+        return rating <= 10_000 ? rating : undefined;
+      };
+      setGameDetails({
+        ...(typeof headers.White === "string" && headers.White.trim() ? { white: headers.White.trim().slice(0, 80) } : {}),
+        ...(typeof headers.Black === "string" && headers.Black.trim() ? { black: headers.Black.trim().slice(0, 80) } : {}),
+        ...(readElo(headers.WhiteElo) !== undefined ? { whiteElo: readElo(headers.WhiteElo) } : {}),
+        ...(readElo(headers.BlackElo) !== undefined ? { blackElo: readElo(headers.BlackElo) } : {}),
+        ...(typeof headers.Result === "string" && PGN_RESULTS.has(headers.Result)
+          ? { result: headers.Result as CageAiGameDetails["result"] }
+          : {}),
+        ...(playerColor ? { playerColor } : {}),
+      });
       const replay = new Chess(headers.FEN || START_FEN);
       const sanMoves = parsed.history();
       const nextPositions = [replay.fen()];
@@ -340,6 +360,7 @@ export default function AnalysePage() {
   function resetGame() {
     cancelGameAnalysis();
     setPgn("");
+    setGameDetails({});
     setMoves([]);
     setPositions([START_FEN]);
     setMoveIndex(0);
@@ -657,12 +678,17 @@ export default function AnalysePage() {
           </section>}
           {gameAnalysis.length > 0 && <CageAiPanel
             key={gameAnalysis.map((item) => `${item.ply}:${item.bestMove}`).join("|")}
-            contextLabel="Die abgeschlossene Stockfish-Partieanalyse und deine Frage werden CageAI zur Erklärung bereitgestellt."
+            contextLabel="Die abgeschlossene Stockfish-Partieanalyse und deine Frage werden ChessCageAI zur Erklärung bereitgestellt."
             contextReady={!gameAnalyzing}
             placeholder="Frage zur Partieanalyse …"
             initialQuestion={cageAiInitialQuestion}
-            quickPrompts={["Warum war mein größter Fehler schlecht?", "Was sollte ich aus der Partie lernen?"]}
-            requestConfig={{ purpose: "game_review", moves: gameAnalysis, positions }}
+            quickPrompts={[
+              "Wo wurde die Partie entschieden?",
+              "Was war mein größter Fehler?",
+              "Welche bessere Möglichkeit zeigt Stockfish?",
+              "Was sollte ich aus der Partie lernen?",
+            ]}
+            requestConfig={{ purpose: "game_review", moves: gameAnalysis, positions, game: gameDetails }}
           />}
           {gameAnalysis.length > 0 && <section className="rounded-xl border border-amber-300/20 bg-slate-900 p-3 sm:p-4">
             <h2 className="font-semibold">Analyse als Trainingsschwerpunkt merken</h2>
@@ -675,7 +701,7 @@ export default function AnalysePage() {
               disabled={savingAnalysisMemory}
               className="mt-3 min-h-10 rounded-lg border border-amber-300/40 px-3 py-2 text-sm font-medium text-amber-100 transition hover:bg-amber-300/10 disabled:opacity-50"
             >
-              {savingAnalysisMemory ? "Wird gespeichert …" : "Zusammenfassung im CageAI Memory speichern"}
+              {savingAnalysisMemory ? "Wird gespeichert …" : "Zusammenfassung im ChessCageAI Memory speichern"}
             </button>
             {analysisMemoryMessage && <p role="status" className="mt-2 text-sm text-slate-300">{analysisMemoryMessage}</p>}
           </section>}
