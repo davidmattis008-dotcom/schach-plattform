@@ -1,11 +1,17 @@
 import "server-only";
 
-import type {
-  CageAiExplanationProvider,
-} from "./contracts.ts";
+import type { CageAiTextModelProvider } from "./contracts.ts";
+import {
+  createOllamaCageAiTextModelProvider,
+  resolveCageAiTextModelName,
+} from "./ollama-provider.ts";
 
-export type { CageAiExplanationProvider };
+export type { CageAiTextModelProvider };
 
-export function getCageAiExplanationProvider(): CageAiExplanationProvider | null {
-  return null;
+export function getCageAiTextModelProvider(): CageAiTextModelProvider | null {
+  const model = resolveCageAiTextModelName(process.env.CAGE_AI_OLLAMA_MODEL);
+  return createOllamaCageAiTextModelProvider({
+    baseUrl: process.env.CAGE_AI_OLLAMA_BASE_URL?.trim() || "http://127.0.0.1:11434",
+    model,
+  });
 }

@@ -75,7 +75,7 @@ export async function loadCageAiPersonalContext(
   ]);
   if (ratingResult?.error) throw new Error("Elo-Kontext konnte nicht sicher geladen werden.", { cause: ratingResult.error });
   if (progressResult.error) throw new Error("Lernfortschritt konnte nicht sicher geladen werden.", { cause: progressResult.error });
-  if (memoriesResult.error) throw new Error("CageAI-Erinnerungen konnten nicht sicher geladen werden.", { cause: memoriesResult.error });
+  if (memoriesResult.error) throw new Error("ChessCageAI-Erinnerungen konnten nicht sicher geladen werden.", { cause: memoriesResult.error });
   if (gamesResult?.error) throw new Error("Deine gespeicherten Partien konnten nicht sicher geladen werden.", { cause: gamesResult.error });
 
   const ratings = (ratingResult?.data ?? []).filter((row): row is RatingRow =>

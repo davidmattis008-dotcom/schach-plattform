@@ -121,7 +121,7 @@ export function reviewScoreSheet(
     if (correction) {
       try {
         const move = applySan(game, correction.trim());
-        game.setComment("[CageAI OCR confidence: 1.00; manually corrected]");
+        game.setComment("[ChessCageAI OCR confidence: 1.00; manually corrected]");
         moves.push({ ply, san: move.san, confidence: 1, corrected: true, page, row });
         continue;
       } catch {
@@ -198,7 +198,7 @@ export function reviewScoreSheet(
     }
 
     const played = applySan(game, best[0]);
-    game.setComment(`[CageAI OCR confidence: ${confidence.toFixed(2)}]`);
+    game.setComment(`[ChessCageAI OCR confidence: ${confidence.toFixed(2)}]`);
     moves.push({ ply, san: played.san, confidence, corrected: false, page, row });
   }
 

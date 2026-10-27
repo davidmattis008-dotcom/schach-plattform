@@ -59,4 +59,4 @@ const boundedMemories = selectRelevantCageAiMemories(oversizedMemories, "tactic_
 assert.ok(boundedMemories.length <= 10);
 assert.ok(boundedMemories.reduce((total, memory) => total + memory.content.length, 0) <= 3_000);
 
-console.log("Validated CageAI memory limits, purpose-based selection, and bounded personal context.");
+console.log("Validated ChessCageAI memory limits, purpose-based selection, and bounded personal context.");

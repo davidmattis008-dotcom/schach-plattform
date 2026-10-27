@@ -191,7 +191,7 @@ function ExerciseWorkspace({
       <div className="mt-3">
         <CageAiPanel
           key={`${exercise.categoryId}:${exercise.number}`}
-          contextLabel={`Frage CageAI zur Endspielidee „${exercise.categoryLabel}“.`}
+          contextLabel={`Frage ChessCageAI zur Endspielidee „${exercise.categoryLabel}“.`}
           contextReady
           contextBadge="Endspielkurs"
           placeholder="Frage zu dieser Endspielidee …"

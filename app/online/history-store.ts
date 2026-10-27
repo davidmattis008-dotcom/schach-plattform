@@ -70,6 +70,14 @@ export function getOnlineGamePgn(game: OnlineGameRecord) {
   game.moves.forEach((move) => {
     replay.move({ from: move.from as Square, to: move.to as Square, ...(move.promotion ? { promotion: move.promotion } : {}) });
   });
+  const white = game.whiteName?.replace(/[\u0000-\u001f\u007f"]/g, "").trim().slice(0, 80) || "Weiß";
+  const black = game.blackName?.replace(/[\u0000-\u001f\u007f"]/g, "").trim().slice(0, 80) || "Schwarz";
+  const result = game.result === "draw"
+    ? "1/2-1/2"
+    : game.result === "win"
+      ? game.color === "w" ? "1-0" : "0-1"
+      : game.color === "w" ? "0-1" : "1-0";
+  replay.header("White", white, "Black", black, "Result", result);
   return replay.pgn();
 }
 

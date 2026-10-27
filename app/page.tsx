@@ -10,7 +10,7 @@ export default function Home() {
       <div className="mx-auto flex w-full max-w-4xl flex-col items-center gap-5 sm:gap-7">
         <div className="w-full">
           <CageAiPanel
-            contextLabel="CageAI kann künftig deine Trainingsfortschritte nutzen, um passende nächste Schritte vorzuschlagen."
+            contextLabel="ChessCageAI kann deine Trainingsfortschritte nutzen, um passende nächste Schritte vorzuschlagen. Ist kein Modell erreichbar, wird das klar angezeigt."
             contextReady
             contextBadge="Persönliche Empfehlung"
             placeholder="Frage nach deiner nächsten Trainingsempfehlung …"
